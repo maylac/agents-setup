@@ -1,4 +1,4 @@
-# Agent Environment Backup
+# Agents Setup
 
 Public-safe backup and restore scaffold for global agent assets used across
 Claude Code, Codex, and related local agent tooling.
@@ -53,4 +53,3 @@ scripts/install.sh --apply
 Hooks, plugins, and main settings are documented in `docs/restore.md` because
 they can include machine-specific trust hashes, application paths, or auth
 state.
-

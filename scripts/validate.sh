@@ -12,9 +12,9 @@ fail() {
 check_no_matches() {
   local label="$1"
   local pattern="$2"
-  if rg -n --hidden --glob '!.git/**' --glob '!**/.git/**' --glob '!*.png' --glob '!*.jpg' --glob '!*.webp' "$pattern" "$ROOT" >/tmp/agent-env-backup-rg.out 2>/dev/null; then
+  if rg -n --hidden --glob '!.git/**' --glob '!**/.git/**' --glob '!*.png' --glob '!*.jpg' --glob '!*.webp' "$pattern" "$ROOT" >/tmp/agents-setup-rg.out 2>/dev/null; then
     printf '%s\n' "$label" >&2
-    sed -n '1,80p' /tmp/agent-env-backup-rg.out >&2
+    sed -n '1,80p' /tmp/agents-setup-rg.out >&2
     failed=1
   fi
 }
@@ -22,9 +22,9 @@ check_no_matches() {
 check_no_paths() {
   if /usr/bin/find "$ROOT" -path "$ROOT/.git" -prune -o \
     \( -name '*.db' -o -name '*.sqlite' -o -name '*.sqlite3' -o -name '*.sqlite-shm' -o -name '*.sqlite-wal' -o -name '.env' \) -print |
-    rg . >/tmp/agent-env-backup-paths.out; then
+    rg . >/tmp/agents-setup-paths.out; then
     printf 'Runtime/private files are present:\n' >&2
-    sed -n '1,80p' /tmp/agent-env-backup-paths.out >&2
+    sed -n '1,80p' /tmp/agents-setup-paths.out >&2
     failed=1
   fi
 }
