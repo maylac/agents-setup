@@ -22,3 +22,5 @@ For heavy tasks -- long research, multi-file refactors, complex implementation -
 # Coding Behavior
 
 Karpathy Guidelines are maintained in skill `karpathy-guidelines`. Load and follow that skill for coding, review, and refactoring instead of duplicating it here.
+
+For coding, review, or refactoring, apply the Karpathy Guidelines as an execution gate: smallest scoped change, no unrelated cleanup, explicit assumptions when needed, and concrete verification before completion.

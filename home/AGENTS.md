@@ -9,6 +9,14 @@
 
 For the full rationale and worked examples, load the `karpathy-guidelines` skill before writing, reviewing, or refactoring code.
 
+## Execution Gate
+
+Before non-trivial code edits:
+- Identify the smallest change that satisfies the request.
+- State assumptions only when they affect implementation.
+- Do not touch unrelated files or refactor adjacent code.
+- Verify with the narrowest relevant command before finishing.
+
 ## Tool Use Rules
 
 - For X/Twitter information gathering, prefer `agmsg` with a Grok Build teammate when available; do not default to browser scraping or unofficial X automation.
