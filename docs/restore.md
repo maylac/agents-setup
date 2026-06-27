@@ -24,10 +24,34 @@ Then sync runtime mirrors with the local sync helper if available:
 ~/.agents/sync-skills.sh
 ```
 
+## Instruction Files
+
+Review instruction snapshots before applying:
+
+- `home/AGENTS.md`
+- `home/CLAUDE.md`
+- `claude/CLAUDE.md`
+- `claude/AGENTS.md`
+- `claude/rules/common`
+- `codex/AGENTS.md`
+
+The intended symlink shape is:
+
+```text
+~/CLAUDE.md -> AGENTS.md
+~/.codex/AGENTS.md -> ../AGENTS.md
+```
+
+Do not blindly overwrite local instruction files on a live machine. Compare the
+snapshot against the target files, then copy or recreate symlinks intentionally.
+
 ## Claude Code
 
 Review these directories before applying:
 
+- `claude/CLAUDE.md`
+- `claude/AGENTS.md`
+- `claude/rules/common`
 - `claude/agents`
 - `claude/commands`
 - `claude/hooks`
@@ -40,6 +64,7 @@ Do not copy auth, channel, session, project, telemetry, cache, or
 
 Review these directories before applying:
 
+- `codex/AGENTS.md`
 - `codex/agents`
 - `codex/hooks`
 - `templates/codex-config.public.toml`
@@ -53,4 +78,3 @@ the live file.
 Plugin cache directories are not backed up. Use the inventories under
 `claude/plugins` and `codex/plugins` to reinstall or enable plugins from their
 marketplaces.
-

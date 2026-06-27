@@ -56,7 +56,7 @@ check_skills
 check_json
 check_shell
 
-check_no_matches 'Private home paths remain:' '/Users/(maylac|gotasaki)'
+check_no_matches 'Private home paths remain:' '(/Users/(maylac|gotasaki)|-Users-(maylac|gotasaki))'
 check_no_matches 'Email address remains:' 'may\.lac1206@gmail\.com'
 check_no_matches 'GitHub token-like value remains:' '(gho_[A-Za-z0-9_]{20,}|ghp_[A-Za-z0-9_]{20,}|ghu_[A-Za-z0-9_]{20,}|ghs_[A-Za-z0-9_]{20,}|github_pat_[A-Za-z0-9_]{20,})'
 check_no_matches 'OpenAI/Sakana token-like value remains:' '(sk-[A-Za-z0-9_-]{20,}|SAKANA_[A-Z0-9_]*=[A-Za-z0-9_-]{16,})'
