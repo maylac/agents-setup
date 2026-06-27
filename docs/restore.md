@@ -26,7 +26,23 @@ Then sync runtime mirrors with the local sync helper if available:
 
 ## Instruction Files
 
-Review instruction snapshots before applying:
+This repo is the canonical source for public-safe instruction files and scoped
+rules. Review the dry-run first:
+
+```sh
+scripts/install.sh --instructions-only
+```
+
+Apply symlinks from the live home config back to this repo:
+
+```sh
+scripts/install.sh --apply-instructions --instructions-only
+```
+
+The installer backs up replaced instruction files under
+`~/.agents-setup-backups/<timestamp>/`.
+
+Canonical snapshots:
 
 - `home/AGENTS.md`
 - `home/CLAUDE.md`
@@ -38,12 +54,18 @@ Review instruction snapshots before applying:
 The intended symlink shape is:
 
 ```text
+~/AGENTS.md -> <repo>/home/AGENTS.md
 ~/CLAUDE.md -> AGENTS.md
+~/.claude/CLAUDE.md -> <repo>/claude/CLAUDE.md
+~/.claude/AGENTS.md -> <repo>/claude/AGENTS.md
+~/.claude/rules/common -> <repo>/claude/rules/common
 ~/.codex/AGENTS.md -> ../AGENTS.md
 ```
 
-Do not blindly overwrite local instruction files on a live machine. Compare the
-snapshot against the target files, then copy or recreate symlinks intentionally.
+The backup sanitizer rewrites local home paths and Claude project-id fragments
+such as `-Users-...` when snapshots are generated. If a future snapshot contains
+an explicit `[redacted-*]` placeholder, resolve it manually before promoting that
+file into a live symlink.
 
 ## Claude Code
 

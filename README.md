@@ -34,16 +34,28 @@ scripts/backup.sh
 scripts/validate.sh
 ```
 
+Refresh only the canonical instruction snapshot:
+
+```sh
+scripts/backup.sh --instructions-only
+```
+
 `backup.sh` copies only public-safe candidates and rewrites local home paths to
 `$HOME`. It excludes known runtime state, caches, sessions, databases, and
 assets that require manual review before public release.
 
 ## Restore
 
-Run a dry-run first:
+Run a dry-run first. This reports instruction diffs and skill symlink changes:
 
 ```sh
 scripts/install.sh
+```
+
+Make this repo the canonical source for instruction files and rules:
+
+```sh
+scripts/install.sh --apply-instructions --instructions-only
 ```
 
 Apply symlinks for skills only:

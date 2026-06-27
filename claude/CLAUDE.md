@@ -9,7 +9,7 @@
 
 # Memory System
 
-Auto-memory lives at `~/.claude/projects/-Users-[redacted-user]/memory/` (types: user, feedback, project, reference). Use it proactively, and **always verify memory against current files before acting** -- paths, names, and state drift.
+Auto-memory lives under `~/.claude/projects/<current-project>/memory/` (types: user, feedback, project, reference). Use it proactively, and **always verify memory against current files before acting** -- paths, names, and state drift.
 
 # Codex Collaboration
 

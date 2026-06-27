@@ -5,6 +5,36 @@ export LC_ALL="en_US.UTF-8"
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 HOME_DIR="${HOME:?HOME must be set}"
+INSTRUCTIONS_ONLY=0
+
+usage() {
+  cat <<'USAGE'
+Usage: scripts/backup.sh [--instructions-only]
+
+Refresh the public-safe backup snapshot.
+
+Options:
+  --instructions-only  Refresh only home/AGENTS.md, home/CLAUDE.md,
+                       claude/CLAUDE.md, claude/AGENTS.md,
+                       claude/rules/common, and codex/AGENTS.md.
+USAGE
+}
+
+case "${1:-}" in
+  "")
+    ;;
+  --instructions-only)
+    INSTRUCTIONS_ONLY=1
+    ;;
+  -h|--help)
+    usage
+    exit 0
+    ;;
+  *)
+    usage >&2
+    exit 2
+    ;;
+esac
 
 require_command() {
   command -v "$1" >/dev/null 2>&1 || {
@@ -39,6 +69,9 @@ sync_dir() {
   local src="$1"
   local dst="$2"
   [ -d "$src" ] || return 0
+  if [ -d "$dst" ] && [ "$(cd -P "$src" && pwd)" = "$(cd -P "$dst" && pwd)" ]; then
+    return 0
+  fi
   mkdir -p "$dst"
   rsync -a --delete \
     --exclude='.git/' \
@@ -63,6 +96,9 @@ sync_file() {
   local src="$1"
   local dst="$2"
   [ -f "$src" ] || return 0
+  if [ -e "$dst" ] && cmp -s "$src" "$dst"; then
+    return 0
+  fi
   mkdir -p "$(dirname "$dst")"
   cp "$src" "$dst"
 }
@@ -88,6 +124,14 @@ sync_instruction_files() {
   else
     sync_file "$HOME_DIR/.codex/AGENTS.md" "$ROOT/codex/AGENTS.md"
   fi
+}
+
+sanitize_instruction_files() {
+  sanitize_tree "$ROOT/home"
+  sanitize_file "$ROOT/claude/CLAUDE.md"
+  sanitize_file "$ROOT/claude/AGENTS.md"
+  sanitize_tree "$ROOT/claude/rules/common"
+  [ -L "$ROOT/codex/AGENTS.md" ] || sanitize_file "$ROOT/codex/AGENTS.md"
 }
 
 write_codex_template() {
@@ -246,6 +290,12 @@ mkdir -p "$ROOT/home" "$ROOT/skills" "$ROOT/claude/agents" "$ROOT/claude/command
 
 sync_instruction_files
 
+if [ "$INSTRUCTIONS_ONLY" -eq 1 ]; then
+  sanitize_instruction_files
+  printf 'Instruction snapshot refreshed in %s\n' "$ROOT"
+  exit 0
+fi
+
 sync_dir "$HOME_DIR/.agents/skills" "$ROOT/skills"
 rm -rf "$ROOT/skills/gstack" "$ROOT/skills/capafy-publisher" \
   "$ROOT/skills/defense-in-depth" "$ROOT/skills/root-cause-tracing"
@@ -268,7 +318,7 @@ write_claude_settings_template
 write_plugin_inventory
 
 sanitize_tree "$ROOT/skills"
-sanitize_tree "$ROOT/home"
+sanitize_instruction_files
 sanitize_tree "$ROOT/claude"
 sanitize_tree "$ROOT/codex"
 sanitize_tree "$ROOT/templates"
