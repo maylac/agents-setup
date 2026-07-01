@@ -42,6 +42,8 @@ Four possible outputs:
   > - `/agmsg mode <monitor|turn|both|off>` — switch delivery mode
   > - `/agmsg actas <name>` — switch to another role in this project (creates if needed)
   > - `/agmsg drop <name>` — remove a role from this project
+  > - `/agmsg spawn <type> <name>` — launch a new agent in a tmux pane / terminal and have it actas <name>
+  > - `/agmsg despawn <name>` — tear down a member you spawned (graceful, or `--force`)
 
   5. **REQUIRED — Do NOT skip this step.** Ask the user to pick a delivery mode using exactly this prompt:
 
@@ -93,6 +95,22 @@ Four possible outputs:
 
 Then continue with the user's subcommand. This catches the case where the user invokes `/agmsg` as the first prompt before the SessionStart-hook directive has been acted on.
 
+**Sandbox compatibility.** When Claude Code's sandbox is enabled, `watch.sh` (monitor mode) runs inside the sandbox and needs to write pidfiles and SQLite WAL files under `~/.agents/skills/agmsg/`. If monitor mode fails with write/permission errors there, add an allowlist entry to `~/.claude/settings.json` (or project-level `.claude/settings.local.json`):
+
+```json
+{
+  "sandbox": {
+    "filesystem": {
+      "allowWrite": [
+        "~/.agents/skills/agmsg/"
+      ]
+    }
+  }
+}
+```
+
+The allowlist merges across scopes and takes effect immediately — no restart needed. (The `BASH_SOURCE`-empty case under the sandbox — the Bash tool runs commands via pipe/eval, so `BASH_SOURCE[0]` is empty inside sourced functions — is handled internally: `watch.sh` resolves `SKILL_DIR` from `$0` and `storage.sh` falls back to it. No user configuration needed.)
+
 **If no arguments provided (DEFAULT action — always do this when the command is invoked without arguments):**
 1. **IMMEDIATELY** run inbox check for each TEAM: `~/.agents/skills/agmsg/scripts/inbox.sh $TEAM $AGENT`
 2. Do NOT ask the user what to do — just run the inbox check.
@@ -143,6 +161,22 @@ If argument starts with "drop" followed by an agent name (e.g. "drop alice"):
       - persistent: true
 4. Tell the user: "Dropped role `<name>` from this project."
 
+If argument starts with "spawn" (e.g. "spawn codex reviewer", "spawn claude-code alice --window"):
+1. Parse `<type>` (must be `claude-code` or `codex`), `<name>`, and any options (`--project`, `--team`, `--window`, `--split h|v`, `--terminal`, `--no-wait`, `--ready-timeout <secs>`).
+2. Run: `~/.agents/skills/agmsg/scripts/spawn.sh <type> <name> --project "$(pwd)" [options]`
+   - spawn.sh pre-joins `<name>`, then opens a tmux pane/window (when this session is inside tmux) or a new OS terminal, and launches the target CLI with `/agmsg actas <name>` as its initial prompt.
+   - By default it BLOCKS until the new agent's watcher attaches and prints `status=ready` — so you can message `<name>` right away. It prints `status=timeout` and exits 3 if not ready within `--ready-timeout` (default 90s); pass `--no-wait` for fire-and-forget. Codex skips the wait (no Monitor).
+   - It refuses early if `<name>` is already held by another live session, if the target CLI is not installed, or if there is no tmux and no usable terminal (headless).
+3. Show the script's output. Do NOT TaskStop or relaunch this session's own Monitor — spawn affects a separate, newly launched agent, not this session's subscription.
+
+If argument starts with "despawn" (e.g. "despawn reviewer", "despawn alice --force"):
+1. Parse `<name>` and any options (`--force`, `--timeout <secs>`). `despawn` is the inverse of `spawn` — it tears down a member you previously spawned.
+2. Determine which team `<name>` belongs to (as with `send`), then run:
+   `~/.agents/skills/agmsg/scripts/despawn.sh <team> $AGENT <name> [--force] [--timeout <secs>]`
+   - Default (graceful): sends a `ctrl:despawn` control message to `<name>`. The member's watcher drops its own role (releasing the actas lock + registration) and closes its own tmux pane, which ends the agent CLI. Blocks until the lock releases, up to `--timeout` (default 30s), then prints `status=ok`. On timeout it prints `status=timeout` and exits 3 — the member's watcher didn't respond (dead watcher, or a codex member with no Monitor); retry with `--force`.
+   - `--force`: skips the message and tears the member down from the placement recorded at spawn time — kills its tmux pane/window and drops its registration. Use when the member's watcher can't respond.
+3. Show the script's output. Do NOT TaskStop or relaunch this session's own Monitor — despawn affects the spawned member, not this session's subscription.
+
 If argument is "mode" (no further args):
 1. Run: `~/.agents/skills/agmsg/scripts/delivery.sh status claude-code "$(pwd)"`
 2. Show the output to the user.
@@ -167,6 +201,10 @@ If argument is "config":
 If argument starts with "config set" (e.g. "config set hook.check_interval 30"):
 1. Parse key and value from the arguments.
 2. Run: `~/.agents/skills/agmsg/scripts/config.sh set <key> <value>`
+
+If argument is "version":
+1. Run: `~/.agents/skills/agmsg/scripts/version.sh`
+2. Show the output — the installed version (git-describe provenance recorded at install time).
 
 If argument is "reset":
 1. Run: `~/.agents/skills/agmsg/scripts/reset.sh "$(pwd)" claude-code`

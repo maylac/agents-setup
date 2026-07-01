@@ -237,7 +237,7 @@ If you catch yourself thinking:
 - "Is that not happening?" - You assumed without verifying
 - "Will it show us...?" - You should have added evidence gathering
 - "Stop guessing" - You're proposing fixes without understanding
-- "Ultrathink this" - Question fundamentals, not just symptoms
+- "Ultra-think this" - Question fundamentals, not just symptoms
 - "We're stuck?" (frustrated) - Your approach isn't working
 
 **When you see these:** STOP. Return to Phase 1.
@@ -294,4 +294,3 @@ From debugging sessions:
 - Random fixes approach: 2-3 hours of thrashing
 - First-time fix rate: 95% vs 40%
 - New bugs introduced: Near zero vs common
-

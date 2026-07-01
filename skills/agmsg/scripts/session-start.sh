@@ -32,51 +32,72 @@ SKILL_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 RUN_DIR="$SKILL_DIR/run"
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/lib/actas-lock.sh"
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/lib/resolve-project.sh"
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/lib/node.sh"
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/lib/hash.sh"
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/lib/storage.sh"
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/lib/type-registry.sh"
 
 # Identity sanity check — no point launching a watcher with an empty pair set.
 PAIRS=$("$SCRIPT_DIR/identities.sh" "$PROJECT" "$TYPE" 2>/dev/null || true)
 [ -n "$PAIRS" ] || exit 0
 
-# Read hook input JSON from stdin. session_id field is sent for SessionStart.
+# Type-specific SessionStart behaviour (Template Method). A type may ship
+# scripts/drivers/types/<type>/_session-start.sh defining agmsg_session_start to override the
+# default no-op — codex uses it to hand the session off to the bridge. The plug
+# is sourced in this script's context so it sees PROJECT / RUN_DIR / SKILL_DIR /
+# PAIRS and the helpers sourced above; it may exit 0 (codex does, having no
+# Monitor tool) to skip the Monitor-directive path below.
+agmsg_session_start_default() { :; }
+
+_tdir="$(agmsg_type_dir "$TYPE" 2>/dev/null || true)"
+if [ -n "$_tdir" ] && [ -f "$_tdir/_session-start.sh" ]; then
+  # shellcheck disable=SC1090
+  . "$_tdir/_session-start.sh"
+  agmsg_session_start
+else
+  agmsg_session_start_default
+fi
+
+# Read hook input JSON from stdin. The session id field name differs by vendor:
+# Claude Code emits snake_case "session_id"; Grok Build (and Cursor) emit
+# camelCase "sessionId". Try snake first (claude-code unaffected), then camel,
+# then the GROK_SESSION_ID env Grok injects into every hook.
 INPUT=$(cat 2>/dev/null || true)
 SESSION_ID=""
 if [ -n "$INPUT" ]; then
   SESSION_ID=$(printf '%s' "$INPUT" \
     | sed -n 's/.*"session_id"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' \
     | head -1)
+  [ -z "$SESSION_ID" ] && SESSION_ID=$(printf '%s' "$INPUT" \
+    | sed -n 's/.*"sessionId"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' \
+    | head -1)
 fi
-# Fallback so the instruction is still actionable even outside CC's hook flow.
+[ -z "$SESSION_ID" ] && SESSION_ID="${GROK_SESSION_ID:-}"
+# Fallback so the instruction is still actionable even outside a hook flow.
 [ -z "$SESSION_ID" ] && SESSION_ID="unknown-$$"
 
 mkdir -p "$RUN_DIR" 2>/dev/null || true
 
 # --- Identify the enclosing Claude Code process. ---
-# Walk the parent chain looking for a process whose argv contains "claude".
-# Stop at PID 1 or after a bounded number of hops. Returns empty when no
-# match — in that case we skip the dedup step entirely.
-find_cc_pid() {
-  local pid="$$"
-  local hops=0
-  while [ "$pid" -gt 1 ] && [ "$hops" -lt 20 ]; do
-    pid=$(ps -o ppid= -p "$pid" 2>/dev/null | tr -d ' ')
-    [ -z "$pid" ] && return 1
-    [ "$pid" = "0" ] && return 1
-    local cmd
-    cmd=$(ps -o args= -p "$pid" 2>/dev/null || true)
-    # Match the actual claude binary, not e.g. "/bin/zsh -c '...claude...'"
-    # by requiring the basename of the first token to be exactly "claude".
-    local first
-    first=$(printf '%s' "$cmd" | awk '{print $1}')
-    if [ "$(basename -- "${first:-}")" = "claude" ]; then
-      echo "$pid"
-      return 0
-    fi
-    hops=$((hops + 1))
-  done
-  return 1
-}
+# Reuse the shared agent-process resolver (#92) instead of a local ps-walk: it
+# checks both the `comm` name and argv[0] basename against the type's binaries,
+# which is more robust to wrapper/launch shapes than matching only "claude".
+# Empty when no agent ancestor is found (detached / sandboxed) — in that case
+# the instance id degrades to the bare session_id and the dedup step is skipped.
+CC_PID=$(agmsg_agent_pid "$TYPE" 2>/dev/null || true)
 
-CC_PID=$(find_cc_pid 2>/dev/null || true)
+# Per-process instance id (see instance-id.sh): "<session_id>.<cc_pid>", or the
+# bare session_id when cc_pid is unresolved. This — not the bare session_id — is
+# what keys the watcher pidfile / watermark / actas owner, so parallel
+# --continue/--resume processes that share a session_id stay isolated (#93).
+# The cc-instance dedup record and the emitted watch.sh directive both use it.
+INSTANCE_ID="$(agmsg_instance_id_from_pid "$SESSION_ID" "$CC_PID")"
 
 # --- Cleanup of stale cc-instance files and their orphan watchers. ---
 # A cc-instance.<pid> whose CC pid is dead is left over from a previous CC.
@@ -147,13 +168,43 @@ done
 # files. See #62.
 actas_lock_gc_stale >/dev/null 2>&1 || true
 
+# --- Record this session's real project root, keyed by the agent process. ---
+# Slash commands resolve the project from $(pwd), which breaks when the user
+# cd's into a subdir/worktree (see #92). Persist the authoritative project (our
+# $2, baked into the hook at delivery time) keyed by the enclosing agent PID so
+# actas/join/whoami can recover it without a stable session_id — the key that
+# makes this work for Codex too. Drop markers whose agent process has died.
+agmsg_marker_gc_stale 2>/dev/null || true
+AGENT_PID=$(agmsg_agent_pid "$TYPE" 2>/dev/null || true)
+[ -n "$AGENT_PID" ] && agmsg_write_project_marker "$AGENT_PID" "$PROJECT" 2>/dev/null || true
+
+# Garbage-collect stream watermarks (#107) and readiness sentinels (#108) whose
+# owner session_id is no longer alive — left behind when a watcher dies without
+# running its EXIT trap (SIGKILL, terminal crash). Runs after the dead
+# cc-instance cleanup so actas_lock_sid_alive reflects current liveness. Both
+# are advisory (a live watcher rewrites them on attach; spawn clears the
+# sentinel before use), so this is hygiene, not correctness.
+for f in "$RUN_DIR"/watch.*.watermark; do
+  [ -f "$f" ] || continue
+  wm_sid=${f##*/}; wm_sid=${wm_sid#watch.}; wm_sid=${wm_sid%.watermark}
+  actas_lock_sid_alive "$wm_sid" || rm -f "$f"
+done
+for f in "$RUN_DIR"/ready.*; do
+  [ -f "$f" ] || continue
+  rd_sid=$(cat "$f" 2>/dev/null || true)
+  { [ -n "$rd_sid" ] && actas_lock_sid_alive "$rd_sid"; } || rm -f "$f"
+done
+
 
 # --- Dedup against the previous watcher in this CC instance. ---
 if [ -n "$CC_PID" ]; then
   STATE="$RUN_DIR/cc-instance.$CC_PID"
   if [ -f "$STATE" ]; then
+    # Records the previous instance id this CC attached to. Comparing/killing
+    # by instance id (not bare session_id) keeps the prev_pidfile lookup aligned
+    # with watch.sh's pidfile key.
     prev=$(cat "$STATE" 2>/dev/null || true)
-    if [ -n "$prev" ] && [ "$prev" != "$SESSION_ID" ]; then
+    if [ -n "$prev" ] && [ "$prev" != "$INSTANCE_ID" ]; then
       prev_pidfile="$RUN_DIR/watch.$prev.pid"
       if [ -f "$prev_pidfile" ]; then
         prev_pid=$(cat "$prev_pidfile" 2>/dev/null || true)
@@ -163,16 +214,21 @@ if [ -n "$CC_PID" ]; then
       fi
     fi
   fi
-  printf '%s\n' "$SESSION_ID" > "$STATE"
+  printf '%s\n' "$INSTANCE_ID" > "$STATE"
 fi
 
 WATCH="$SKILL_DIR/scripts/watch.sh"
+# Shell-quote each argv so the host can paste the command into Monitor and run
+# it verbatim. A plain '...' wrap breaks on paths with an apostrophe
+# ($HOME'brien/...); printf %q escapes spaces, quotes and other metacharacters
+# safely for shell re-execution (#188).
+WATCH_COMMAND="$(printf '%q %q %q %q' "$WATCH" "$INSTANCE_ID" "$PROJECT" "$TYPE")"
 
 cat <<EOF
 AGMSG monitor mode: invoke the Monitor tool now with the following parameters,
 before any other action in this session.
 
-  command: $WATCH $SESSION_ID $PROJECT $TYPE
+  command: $WATCH_COMMAND
   description: agmsg inbox stream
   persistent: true
 

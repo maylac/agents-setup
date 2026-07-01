@@ -72,6 +72,7 @@
     "codex@openai-codex": true,
     "clangd-lsp@claude-plugins-official": true,
     "andrej-karpathy-skills@karpathy-skills": false,
-    "frontend-design@claude-plugins-official": true
+    "frontend-design@claude-plugins-official": true,
+    "superpowers@superpowers-marketplace": true
   }
 }

@@ -12,20 +12,51 @@ SKILL_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 source "$SCRIPT_DIR/lib/storage.sh"
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/lib/actas-lock.sh"
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/lib/resolve-project.sh"  # agmsg_agent_pid, for instance-id derivation
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/lib/type-registry.sh"
+
+# Some Stop-hook runtimes (codex, copilot) want an explicit JSON status object
+# even when there is nothing to deliver; others (claude-code) stay silent. This
+# is the type's manifest `stop_output=` (data), not a hardcoded type list.
+STOP_OUTPUT="$(agmsg_type_get "$TYPE" stop_output 2>/dev/null || true)"
+emit_status_json() {
+  [ "$STOP_OUTPUT" = "json" ] || return 0
+  printf '{\n  "continue": true,\n  "systemMessage": "%s"\n}\n' "$1"
+}
+
+# Hook runtimes that pass JSON do so on stdin. Interactive invocations such as
+# Gemini's PostToolUse command may inherit a terminal stdin instead; reading
+# unconditionally there blocks waiting for input.
+INPUT=""
+if [ ! -t 0 ]; then
+  INPUT=$(cat 2>/dev/null || true)
+fi
 
 # Prevent infinite loop: if stop hook is already active, exit silently
-INPUT=$(cat 2>/dev/null || true)
 if echo "$INPUT" | grep -q '"stop_hook_active"[[:space:]]*:[[:space:]]*true' 2>/dev/null; then
   exit 0
 fi
 
 # Defer to the monitor watcher when one is alive for this session.
-# Avoids double-delivery when delivery.mode = both. session_id is sent in
-# the hook input JSON for Stop events.
+# Avoids double-delivery when delivery.mode = both. The session id field name
+# differs by vendor: Claude Code emits snake_case "session_id"; Grok Build (and
+# Cursor) emit camelCase "sessionId". Try snake first (claude-code unaffected),
+# then camel, then the GROK_SESSION_ID env Grok injects into every hook.
 SESSION_ID=$(printf '%s' "$INPUT" \
   | sed -n 's/.*"session_id"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' \
   | head -1)
+[ -z "$SESSION_ID" ] && SESSION_ID=$(printf '%s' "$INPUT" \
+  | sed -n 's/.*"sessionId"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' \
+  | head -1)
+[ -z "$SESSION_ID" ] && SESSION_ID="${GROK_SESSION_ID:-}"
 if [ -n "$SESSION_ID" ]; then
+  # The monitor watcher keys its pidfile (and its actas owner, below) on the
+  # per-process instance id (#93), not the bare session_id. Normalize to the
+  # same token so this Stop-hook defers to a live watcher in `both` mode instead
+  # of double-delivering.
+  SESSION_ID="$(agmsg_normalize_instance_id "$SESSION_ID" "$TYPE")"
   PIDFILE="$SKILL_DIR/run/watch.$SESSION_ID.pid"
   if [ -f "$PIDFILE" ]; then
     WATCH_PID=$(cat "$PIDFILE" 2>/dev/null || true)
@@ -72,14 +103,7 @@ if [ -f "$MARKER" ]; then
   [ -z "$INTERVAL" ] && INTERVAL=$("$SCRIPT_DIR/config.sh" get hook.check_interval 60)
   case "$INTERVAL" in ''|*[!0-9]*) INTERVAL=60 ;; esac
   if [ $(( now - last )) -lt "$INTERVAL" ]; then
-    if [ "$TYPE" = "codex" ]; then
-      cat <<'ENDJSON'
-{
-  "continue": true,
-  "systemMessage": "agmsg: check skipped (cooldown)"
-}
-ENDJSON
-    fi
+    emit_status_json "agmsg: check skipped (cooldown)"
     exit 0
   fi
 fi
@@ -110,7 +134,7 @@ for team in "${TEAM_LIST[@]}"; do
     other:*) continue ;;
   esac
 
-  RESULT=$(sqlite3 "$DB" "
+  RESULT=$(agmsg_sqlite "$DB" "
     SELECT from_agent || char(31) || replace(replace(body, char(10), '\n'), char(9), '\t') || char(31) || created_at
     FROM messages WHERE team='$team' AND to_agent='$AGENT' AND read_at IS NULL
     ORDER BY created_at ASC;
@@ -123,20 +147,13 @@ for team in "${TEAM_LIST[@]}"; do
     done <<< "$RESULT"
     OUTPUT+=$'\n'
     # Mark as read
-    sqlite3 "$DB" "UPDATE messages SET read_at=strftime('%Y-%m-%dT%H:%M:%SZ','now') WHERE team='$team' AND to_agent='$AGENT' AND read_at IS NULL;" 2>/dev/null || true
+    agmsg_sqlite "$DB" "UPDATE messages SET read_at=strftime('%Y-%m-%dT%H:%M:%SZ','now') WHERE team='$team' AND to_agent='$AGENT' AND read_at IS NULL;" 2>/dev/null || true
   fi
 done
 
 # No new messages
 if [ -z "$OUTPUT" ]; then
-  if [ "$TYPE" = "codex" ]; then
-    cat <<'ENDJSON'
-{
-  "continue": true,
-  "systemMessage": "agmsg: no new messages"
-}
-ENDJSON
-  fi
+  emit_status_json "agmsg: no new messages"
   exit 0
 fi
 
