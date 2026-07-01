@@ -8,28 +8,6 @@
     "command": "$HOME/.claude/statusline.py"
   },
   "hooks": {
-    "Stop": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "osascript -e 'tell application \"Ghostty\" to activate'"
-          }
-        ]
-      }
-    ],
-    "Notification": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "osascript -e 'tell application \"Ghostty\" to activate'"
-          }
-        ]
-      }
-    ],
     "Elicitation": [
       {
         "matcher": "",

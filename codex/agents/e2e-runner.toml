@@ -16,13 +16,10 @@ You are an expert end-to-end testing specialist. Your mission is to ensure criti
 
 ## Primary Tool: Agent Browser
 
-**Prefer Agent Browser over raw Playwright** — Semantic selectors, AI-optimized, auto-waiting, built on Playwright.
+**If `agent-browser` is already on PATH, prefer it over raw Playwright** — semantic selectors, AI-optimized, auto-waiting, built on Playwright. Check with `which agent-browser` first; if it's missing, do not install it — go straight to the Playwright fallback below.
 
 ```bash
-# Setup
-npm install -g agent-browser && agent-browser install
-
-# Core workflow
+# Core workflow (only if agent-browser is already installed)
 agent-browser open https://example.com
 agent-browser snapshot -i          # Get elements with refs [ref=e1]
 agent-browser click @e1            # Click by ref
@@ -31,9 +28,11 @@ agent-browser wait visible @e5     # Wait for element
 agent-browser screenshot result.png
 ```
 
+**Prerequisite (human setup, not run automatically):** `npm install -g agent-browser && agent-browser install`
+
 ## Fallback: Playwright
 
-When Agent Browser isn't available, use Playwright directly.
+When Agent Browser isn't on PATH, use Playwright directly.
 
 ```bash
 npx playwright test                        # Run all E2E tests

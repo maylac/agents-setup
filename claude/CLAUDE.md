@@ -2,9 +2,10 @@
 
 - Planning, verification, and code-quality workflow: see `rules/common/development-workflow.md`, `rules/common/performance.md`, `rules/common/testing.md`, and `rules/common/coding-style.md`.
 - Agent and subagent orchestration: see `rules/common/agents.md`.
+- When a language-specific rule (`rules/<language>/`) conflicts with `rules/common/`, the language-specific rule takes precedence.
 - TodoWrite and task-tracking mechanics: see `rules/common/hooks.md`.
-- Personal workflow thresholds: use plan mode for 3+ step or architectural work; if execution goes sideways, stop and re-plan; summarize changes per step; prove completion with tests, logs, or behavior diff at a staff-engineer bar.
-- **Self-improvement loop**: After recurring corrections or durable workflow lessons, record the pattern in `~/tasks/lessons.md` as a rule that prevents recurrence. Review relevant lessons when they are likely to apply.
+- Personal workflow thresholds: plan mode trigger — see `rules/common/performance.md` (Plan Mode); summarize changes per step; prove completion with tests, logs, or behavior diff at a staff-engineer bar.
+- **Self-improvement loop**: After recurring corrections or durable workflow lessons, record the pattern in `~/tasks/lessons.md` as a rule that prevents recurrence. Review relevant lessons when they are likely to apply. Workflow/process lessons go in `~/tasks/lessons.md`; facts about the user or environment go in auto-memory.
 - **Autonomous bug fixing**: Given a bug report, just fix it -- point at logs/errors/failing tests and resolve, without hand-holding.
 
 # Memory System
@@ -13,7 +14,7 @@ Auto-memory lives under `~/.claude/projects/<current-project>/memory/` (types: u
 
 # Prompt Interpretation
 
-Assume many user prompts are dictated by voice and may include transcription errors, typos, omitted words, or unusual punctuation. Use context to reconstruct the likely intent and act on that interpretation. Ask only when the ambiguity changes scope, safety, destination, data loss risk, credentials, or another irreversible decision.
+See the Voice Input Assumption in `home/AGENTS.md` (loaded as `~/AGENTS.md` / `~/CLAUDE.md`) — same rule, single source.
 
 # Codex Collaboration
 
@@ -25,6 +26,4 @@ For heavy tasks -- long research, multi-file refactors, complex implementation -
 
 # Coding Behavior
 
-Karpathy Guidelines are maintained in skill `karpathy-guidelines`. Load and follow that skill for coding, review, and refactoring instead of duplicating it here.
-
-For coding, review, or refactoring, apply the Karpathy Guidelines as an execution gate: smallest scoped change, no unrelated cleanup, explicit assumptions when needed, and concrete verification before completion.
+See the Core Principles and Execution Gate in `home/AGENTS.md` (loaded as `~/AGENTS.md` / `~/CLAUDE.md`) — same rule, single source. Karpathy Guidelines are maintained in skill `karpathy-guidelines`; load and follow that skill for coding, review, and refactoring instead of duplicating it here.

@@ -16,7 +16,7 @@ Avoid starting large refactors, broad debugging, or multi-file features in the l
 
 ## Plan Mode
 
-Use plan mode for complex tasks, ambiguous requirements, or work that needs user review before edits. Do not require plan mode for straightforward local changes.
+Use plan mode for 3+ step or architectural work, ambiguous requirements, or work that needs user review before edits. Do not require plan mode for straightforward local changes. If execution goes sideways mid-plan, stop and re-plan rather than pushing through.
 
 ## Build Troubleshooting
 

@@ -1,6 +1,6 @@
 ---
 name: rust-reviewer
-description: Expert Rust code reviewer specializing in ownership, lifetimes, error handling, unsafe usage, and idiomatic patterns. Use for all Rust code changes. MUST BE USED for Rust projects.
+description: Expert Rust code reviewer specializing in ownership, lifetimes, error handling, unsafe usage, and idiomatic patterns. Use when a Rust change has enough risk to justify specialist review.
 tools: ["Read", "Grep", "Glob", "Bash"]
 model: sonnet
 ---

@@ -180,27 +180,33 @@ apply_materialized_file() {
 show_instruction_dry_run() {
   printf 'Instruction restore dry-run:\n'
   compare_file "$ROOT/home/AGENTS.md" "$HOME/AGENTS.md" '~/AGENTS.md'
-  compare_symlink "$HOME/CLAUDE.md" 'AGENTS.md' '~/CLAUDE.md'
+  compare_symlink "$HOME/CLAUDE.md" "$ROOT/home/AGENTS.md" '~/CLAUDE.md'
   compare_file "$ROOT/claude/CLAUDE.md" "$HOME/.claude/CLAUDE.md" '~/.claude/CLAUDE.md'
   compare_file "$ROOT/claude/AGENTS.md" "$HOME/.claude/AGENTS.md" '~/.claude/AGENTS.md'
   compare_file "$ROOT/claude/RTK.md" "$HOME/.claude/RTK.md" '~/.claude/RTK.md'
 
-  if [ -d "$ROOT/claude/rules/common" ]; then
-    while IFS= read -r -d '' rule; do
-      compare_file "$rule" "$HOME/.claude/rules/common/$(basename "$rule")" "~/.claude/rules/common/$(basename "$rule")"
-    done < <(/usr/bin/find "$ROOT/claude/rules/common" -type f -name '*.md' -print0 | sort -z)
-  fi
+  for rule_dir in common typescript python swift kotlin; do
+    if [ -d "$ROOT/claude/rules/$rule_dir" ]; then
+      while IFS= read -r -d '' rule; do
+        compare_file "$rule" "$HOME/.claude/rules/$rule_dir/$(basename "$rule")" "~/.claude/rules/$rule_dir/$(basename "$rule")"
+      done < <(/usr/bin/find "$ROOT/claude/rules/$rule_dir" -type f -name '*.md' -print0 | sort -z)
+    fi
+  done
 
   compare_symlink "$HOME/.codex/AGENTS.md" '../AGENTS.md' '~/.codex/AGENTS.md'
   compare_materialized_file "$ROOT/codex/hooks.json" "$HOME/.codex/hooks.json" '~/.codex/hooks.json'
 
   printf '\nCanonical symlink plan:\n'
   compare_symlink "$HOME/AGENTS.md" "$ROOT/home/AGENTS.md" '~/AGENTS.md'
-  compare_symlink "$HOME/CLAUDE.md" 'AGENTS.md' '~/CLAUDE.md'
+  compare_symlink "$HOME/CLAUDE.md" "$ROOT/home/AGENTS.md" '~/CLAUDE.md'
   compare_symlink "$HOME/.claude/CLAUDE.md" "$ROOT/claude/CLAUDE.md" '~/.claude/CLAUDE.md'
   compare_symlink "$HOME/.claude/AGENTS.md" "$ROOT/claude/AGENTS.md" '~/.claude/AGENTS.md'
   compare_symlink "$HOME/.claude/RTK.md" "$ROOT/claude/RTK.md" '~/.claude/RTK.md'
   compare_symlink "$HOME/.claude/rules/common" "$ROOT/claude/rules/common" '~/.claude/rules/common'
+  compare_symlink "$HOME/.claude/rules/typescript" "$ROOT/claude/rules/typescript" '~/.claude/rules/typescript'
+  compare_symlink "$HOME/.claude/rules/python" "$ROOT/claude/rules/python" '~/.claude/rules/python'
+  compare_symlink "$HOME/.claude/rules/swift" "$ROOT/claude/rules/swift" '~/.claude/rules/swift'
+  compare_symlink "$HOME/.claude/rules/kotlin" "$ROOT/claude/rules/kotlin" '~/.claude/rules/kotlin'
   compare_symlink "$HOME/.codex/AGENTS.md" '../AGENTS.md' '~/.codex/AGENTS.md'
   printf 'materialized file: %s -> %s (%s)\n' "$ROOT/codex/hooks.json" "$HOME/.codex/hooks.json" '~/.codex/hooks.json'
 }
@@ -208,11 +214,15 @@ show_instruction_dry_run() {
 apply_instruction_symlinks() {
   printf '\nApplying canonical instruction symlinks:\n'
   apply_symlink "$ROOT/home/AGENTS.md" "$HOME/AGENTS.md" '~/AGENTS.md'
-  apply_symlink 'AGENTS.md' "$HOME/CLAUDE.md" '~/CLAUDE.md'
+  apply_symlink "$ROOT/home/AGENTS.md" "$HOME/CLAUDE.md" '~/CLAUDE.md'
   apply_symlink "$ROOT/claude/CLAUDE.md" "$HOME/.claude/CLAUDE.md" '~/.claude/CLAUDE.md'
   apply_symlink "$ROOT/claude/AGENTS.md" "$HOME/.claude/AGENTS.md" '~/.claude/AGENTS.md'
   apply_symlink "$ROOT/claude/RTK.md" "$HOME/.claude/RTK.md" '~/.claude/RTK.md'
   apply_symlink "$ROOT/claude/rules/common" "$HOME/.claude/rules/common" '~/.claude/rules/common'
+  apply_symlink "$ROOT/claude/rules/typescript" "$HOME/.claude/rules/typescript" '~/.claude/rules/typescript'
+  apply_symlink "$ROOT/claude/rules/python" "$HOME/.claude/rules/python" '~/.claude/rules/python'
+  apply_symlink "$ROOT/claude/rules/swift" "$HOME/.claude/rules/swift" '~/.claude/rules/swift'
+  apply_symlink "$ROOT/claude/rules/kotlin" "$HOME/.claude/rules/kotlin" '~/.claude/rules/kotlin'
   apply_symlink '../AGENTS.md' "$HOME/.codex/AGENTS.md" '~/.codex/AGENTS.md'
   apply_materialized_file "$ROOT/codex/hooks.json" "$HOME/.codex/hooks.json" '~/.codex/hooks.json'
 

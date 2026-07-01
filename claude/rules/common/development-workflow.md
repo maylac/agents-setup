@@ -14,7 +14,7 @@ Do not do external research just because a small local pattern is already clear.
 
 ## Plan First
 
-For work with three or more meaningful steps, architectural impact, or ambiguous requirements, state assumptions and a short plan before editing. Planning docs such as PRDs, architecture notes, or task lists are only needed when the task asks for them or the work is large enough to benefit from a durable artifact.
+For work with three or more meaningful steps, architectural impact, or ambiguous requirements, state assumptions and a short plan before editing. Planning docs such as PRDs, architecture notes, or task lists are only needed when the task asks for them or the work is large enough to benefit from a durable artifact. This is about drafting/documenting a plan, not the tool's plan mode — see `rules/common/performance.md` (Plan Mode) for when to actually enter plan mode.
 
 ## Testing Approach
 

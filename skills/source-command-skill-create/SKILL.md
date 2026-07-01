@@ -19,7 +19,8 @@ Analyze your repository's git history to extract coding patterns and generate SK
 /skill-create                    # Analyze current repo
 /skill-create --commits 100      # Analyze last 100 commits
 /skill-create --output ./skills  # Custom output directory
-/skill-create --shared           # Create one canonical skill and symlink the other runtime
+/skill-create --shared           # (default) canonical skill in ~/.agents/skills + symlinks to Claude Code & Codex
+/skill-create --claude-only      # Skip sharing: write the skill only under ~/.claude/skills
 /skill-create --instincts        # Also generate instincts for continuous-learning-v2
 ```
 
@@ -27,7 +28,7 @@ Analyze your repository's git history to extract coding patterns and generate SK
 
 1. **Parses Git History** - Analyzes commits, file changes, and patterns
 2. **Detects Patterns** - Identifies recurring workflows and conventions
-3. **Generates SKILL.md** - Creates valid Claude or shared Claude/Codex skill files
+3. **Generates SKILL.md** - Creates valid Claude Code or shared Codex/Claude Code skill files
 4. **Optionally Creates Instincts** - For the continuous-learning-v2 system
 
 ## Analysis Steps
@@ -84,27 +85,36 @@ Source: local git analysis of {count} commits.
 {detected test conventions}
 ```
 
-For shared Claude/Codex skills, keep frontmatter to `name` and `description` only. Put source, version, analyzed commit count, and provenance in the body so the same `SKILL.md` remains Codex-valid.
+For shared Codex/Claude Code skills, keep frontmatter to `name` and `description` only. Put source, version, analyzed commit count, and provenance in the body so the same `SKILL.md` remains Codex-valid.
 
 ### Step 3b: Install Without Double Maintenance (canonical = `~/.agents/skills`)
 
 A skill has **one** home — the agent-neutral canonical store `~/.agents/skills/<skill-name>/`
-(the store the `skills` CLI manages). Claude Code and Codex both point at it via symlink, so
-editing the canonical `SKILL.md` updates every runtime at once. Never copy `SKILL.md` into
+(the same store the `skills` CLI manages). Both Claude Code and Codex point at it via symlink,
+so editing the canonical `SKILL.md` updates every runtime at once. Never copy `SKILL.md` into
 multiple agent trees.
 
-1. Write the skill once to `~/.agents/skills/<skill-name>/` (SKILL.md + any `agents/openai.yaml`).
-2. Mirror to all runtimes with the idempotent sync script:
+1. Write the skill once to the canonical store:
+   ```bash
+   mkdir -p ~/.agents/skills/<skill-name>
+   # ...write SKILL.md (and any agents/openai.yaml etc.) here, and ONLY here...
+   ```
+2. Mirror it into both runtimes. Easiest — let the sync script do it (idempotent, full-mirror):
    ```bash
    bash ~/.agents/sync-skills.sh
    ```
-   Or symlink by hand (matches the sync script's relative convention):
+   Or create the relative symlinks by hand (matches the sync script's convention):
    ```bash
    ln -s ../../.agents/skills/<skill-name> ~/.claude/skills/<skill-name>
    ln -s ../../.agents/skills/<skill-name> ~/.codex/skills/<skill-name>
    ```
-3. Do not create real copies under `~/.claude/skills/` or `~/.codex/skills/` — only symlinks.
-   After any manual add/remove in `~/.agents/skills`, re-run `~/.agents/sync-skills.sh`.
+3. Do **not** create a real copy under `~/.claude/skills/` or `~/.codex/skills/` — only symlinks.
+   If a future runtime cannot follow symlinks, keep the canonical source authoritative and mark any
+   copied artifact as derived.
+
+> `--shared` is the default, recommended path: every new skill is born in `~/.agents/skills` and
+> mirrored to all runtimes. Pass `--claude-only` only when a skill must stay local to one agent.
+> After any manual add/remove in `~/.agents/skills`, re-run `~/.agents/sync-skills.sh`.
 
 ### Step 4: Generate Instincts (if --instincts)
 

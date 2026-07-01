@@ -95,17 +95,16 @@ json_has_hook_command() {
   fi
 }
 
-json_has_stop_ghostty() {
+json_has_no_stop_ghostty() {
   local path="$1"
   local label="$2"
 
   if jq -e '
-    .hooks.Stop // []
-    | any((.hooks // []) | any((.command // "") | contains("Ghostty")))
+    (.hooks.Stop // []) | any((.hooks // []) | any((.command // "") | contains("Ghostty")))
   ' "$path" >/dev/null; then
-    ok "$label"
+    fail "$label present (should have been removed — Stop no longer steals focus)"
   else
-    fail "$label missing in $path"
+    ok "$label absent"
   fi
 }
 
@@ -122,11 +121,14 @@ json_ok "$HOME_DIR/.claude/settings.json"
 json_ok "$HOME_DIR/.codex/hooks.json"
 
 expect_symlink "$HOME_DIR/AGENTS.md" "$ROOT/home/AGENTS.md" "~/AGENTS.md"
-expect_symlink "$HOME_DIR/CLAUDE.md" "AGENTS.md" "~/CLAUDE.md"
+expect_symlink "$HOME_DIR/CLAUDE.md" "$ROOT/home/AGENTS.md" "~/CLAUDE.md"
 expect_symlink "$HOME_DIR/.claude/CLAUDE.md" "$ROOT/claude/CLAUDE.md" "~/.claude/CLAUDE.md"
 expect_symlink "$HOME_DIR/.claude/AGENTS.md" "$ROOT/claude/AGENTS.md" "~/.claude/AGENTS.md"
 expect_symlink "$HOME_DIR/.claude/RTK.md" "$ROOT/claude/RTK.md" "~/.claude/RTK.md"
 expect_symlink "$HOME_DIR/.claude/rules/common" "$ROOT/claude/rules/common" "~/.claude/rules/common"
+for lang in typescript python swift kotlin; do
+  expect_symlink "$HOME_DIR/.claude/rules/$lang" "$ROOT/claude/rules/$lang" "~/.claude/rules/$lang"
+done
 expect_symlink "$HOME_DIR/.codex/AGENTS.md" "../AGENTS.md" "~/.codex/AGENTS.md"
 
 expect_same_file "$ROOT/claude/hooks/rtk-rewrite.sh" "$ROOT/codex/hooks/rtk-rewrite.sh" "repo RTK hook pair"
@@ -136,8 +138,91 @@ expect_materialized_same "$ROOT/codex/hooks.json" "$HOME_DIR/.codex/hooks.json" 
 
 json_has_hook_command "$HOME_DIR/.claude/settings.json" "PreToolUse" "Bash" ".claude/hooks/rtk-rewrite.sh" "Claude RTK PreToolUse hook"
 json_has_hook_command "$HOME_DIR/.codex/hooks.json" "PreToolUse" "Bash" ".codex/hooks/rtk-rewrite.sh" "Codex RTK PreToolUse hook"
-json_has_stop_ghostty "$HOME_DIR/.claude/settings.json" "Claude Ghostty Stop hook"
-json_has_stop_ghostty "$HOME_DIR/.codex/hooks.json" "Codex Ghostty Stop hook"
+json_has_no_stop_ghostty "$HOME_DIR/.claude/settings.json" "Claude Ghostty Stop hook"
+json_has_no_stop_ghostty "$HOME_DIR/.codex/hooks.json" "Codex Ghostty Stop hook"
+
+# --- Skill store 3-way parity (PS-3 / SF-4 / PS-0 / PS-1) ---
+CANON_SKILLS="$HOME_DIR/.agents/skills"
+CLAUDE_SKILLS="$HOME_DIR/.claude/skills"
+CODEX_SKILLS="$HOME_DIR/.codex/skills"
+# source-command-* is deliberately excluded from the Claude mirror (D5).
+CLAUDE_EXCLUDE_PATTERN='^source-command-'
+
+skill_parity_check() {
+  local agent_dir="$1"
+  local label="$2"
+  local exclude_pattern="${3:-}"
+  local diff
+  diff="$(comm -3 <(ls "$CANON_SKILLS" | sort) <(ls "$agent_dir" 2>/dev/null | /usr/bin/grep -v '^\.' | sort) \
+    | { [ -n "$exclude_pattern" ] && /usr/bin/grep -v -E "$exclude_pattern" || cat; })"
+  if [ -n "$diff" ]; then
+    fail "$label parity mismatch:"$'\n'"$diff"
+  else
+    ok "$label parity"
+  fi
+}
+
+skill_parity_check "$CLAUDE_SKILLS" "canonical <-> Claude skills" "$CLAUDE_EXCLUDE_PATTERN"
+skill_parity_check "$CODEX_SKILLS" "canonical <-> Codex skills"
+
+orphan_real_dirs_check() {
+  local agent_dir="$1"
+  local label="$2"
+  local orphans
+  orphans="$(/usr/bin/find "$agent_dir" -mindepth 1 -maxdepth 1 -type d ! -name '.*' -print 2>/dev/null)"
+  if [ -n "$orphans" ]; then
+    fail "$label has real (non-symlink) skill directories bypassing the canonical store:"$'\n'"$orphans"
+  else
+    ok "$label has no orphan real directories"
+  fi
+}
+
+orphan_real_dirs_check "$CLAUDE_SKILLS" "~/.claude/skills"
+orphan_real_dirs_check "$CODEX_SKILLS" "~/.codex/skills"
+
+dangling_symlinks_check() {
+  local base="$1"
+  local label="$2"
+  local dead
+  # ~/.claude/debug/latest is a Claude Code-managed "current log" pointer that is
+  # legitimately absent between sessions — known-benign, excluded here.
+  dead="$(/usr/bin/find "$base" -maxdepth 3 -type l ! -exec test -e {} \; -print 2>/dev/null | { /usr/bin/grep -v '/.claude/debug/latest$' || true; })"
+  if [ -n "$dead" ]; then
+    fail "$label has dangling symlinks:"$'\n'"$dead"
+  else
+    ok "$label has no dangling symlinks"
+  fi
+}
+
+dangling_symlinks_check "$HOME_DIR/.claude" "~/.claude"
+dangling_symlinks_check "$HOME_DIR/.codex" "~/.codex"
+dangling_symlinks_check "$HOME_DIR/.agents" "~/.agents"
+
+# --- SKILL.md frontmatter validity (SF-0 / SF-3) ---
+skill_frontmatter_check() {
+  local dir path name n d
+  local bad=0
+  for path in "$CANON_SKILLS"/*/SKILL.md; do
+    [ -e "$path" ] || continue
+    d="$(basename "$(dirname "$path")")"
+    if [ ! -s "$path" ]; then
+      fail "empty SKILL.md: $path"
+      bad=1
+      continue
+    fi
+    n="$(awk '/^name:/{sub(/^name:[ ]*/,""); gsub(/"/,""); print; exit}' "$path")"
+    if [ -z "$n" ]; then
+      fail "SKILL.md missing name: frontmatter: $path"
+      bad=1
+    elif [ "$n" != "$d" ]; then
+      fail "SKILL.md name mismatch: $d -> $n"
+      bad=1
+    fi
+  done
+  [ "$bad" -eq 0 ] && ok "SKILL.md frontmatter (non-empty, name == dir) across canonical store"
+}
+
+skill_frontmatter_check
 
 if [ "$failed" -ne 0 ]; then
   exit 1

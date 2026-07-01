@@ -30,7 +30,7 @@ Strategic compaction at logical boundaries:
 
 ## How It Works
 
-The `suggest-compact.js` script runs on PreToolUse (Edit/Write) and:
+The `suggest-compact.sh` script runs on PreToolUse (Edit/Write) and:
 
 1. **Tracks tool calls** — Counts tool invocations in session
 2. **Threshold detection** — Suggests at configurable threshold (default: 50 calls)
@@ -38,7 +38,7 @@ The `suggest-compact.js` script runs on PreToolUse (Edit/Write) and:
 
 ## Hook Setup
 
-Add to your `~/.Codex/settings.json`:
+Add to your `~/.claude/settings.json`:
 
 ```json
 {
@@ -46,11 +46,11 @@ Add to your `~/.Codex/settings.json`:
     "PreToolUse": [
       {
         "matcher": "Edit",
-        "hooks": [{ "type": "command", "command": "node ~/.Codex/skills/strategic-compact/suggest-compact.js" }]
+        "hooks": [{ "type": "command", "command": "node ~/.claude/skills/strategic-compact/suggest-compact.sh" }]
       },
       {
         "matcher": "Write",
-        "hooks": [{ "type": "command", "command": "node ~/.Codex/skills/strategic-compact/suggest-compact.js" }]
+        "hooks": [{ "type": "command", "command": "node ~/.claude/skills/strategic-compact/suggest-compact.sh" }]
       }
     ]
   }
@@ -83,7 +83,7 @@ Understanding what persists helps you compact with confidence:
 |----------|------|
 | AGENTS.md instructions | Intermediate reasoning and analysis |
 | TodoWrite task list | File contents you previously read |
-| Memory files (`~/.Codex/memory/`) | Multi-step conversation context |
+| Memory files (`~/.claude/memory/`) | Multi-step conversation context |
 | Git state (commits, branches) | Tool call history and counts |
 | Files on disk | Nuanced user preferences stated verbally |
 
@@ -116,7 +116,7 @@ Monitor what's consuming your context window:
 
 ### Duplicate Instruction Detection
 Common sources of duplicate context:
-- Same rules in both `~/.Codex/rules/` and project `.Codex/rules/`
+- Same rules in both `~/.claude/rules/` and project `.claude/rules/`
 - Skills that repeat AGENTS.md instructions
 - Multiple skills covering overlapping domains
 
