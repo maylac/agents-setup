@@ -23,7 +23,6 @@ Assume many user prompts are dictated by voice and may contain speech-to-text er
 
 ## Tool Use Rules
 
-- For X/Twitter information gathering, prefer `agmsg` with a Grok Build teammate when available; do not default to browser scraping or unofficial X automation.
 - When asked to verify an X article or linked article, check it through Jina Reader first (`https://r.jina.ai/http://r.jina.ai/http://<URL>`). If Jina returns only a login wall or metadata, state that limitation explicitly.
 
 <!-- Maintenance: AGENTS.md is the source of truth (shared tool-agnostically, e.g. with Codex). ~/CLAUDE.md is a symlink to this file — keep the symlink intact. -->
