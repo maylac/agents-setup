@@ -1,13 +1,13 @@
 ---
 name: eval-harness
-description: Formal evaluation framework for Codex sessions implementing eval-driven development (EDD) principles
+description: Formal evaluation framework for agent sessions implementing eval-driven development (EDD) principles
 origin: ECC
 allowed-tools: Read, Write, Edit, Bash, Grep, Glob
 ---
 
 # Eval Harness Skill
 
-A formal evaluation framework for Codex sessions, implementing eval-driven development (EDD) principles.
+A formal evaluation framework for agent sessions, implementing eval-driven development (EDD) principles.
 
 ## When to Activate
 

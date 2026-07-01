@@ -224,6 +224,38 @@ skill_frontmatter_check() {
 
 skill_frontmatter_check
 
+# --- Agents directory parity (AG-3) ---
+# harness-optimizer is a documented Claude-only exception (see
+# manifests/ai-config-sync.json intentional_differences: harness-optimizer-agent).
+AGENTS_CODEX_EXCEPTIONS='^harness-optimizer$'
+
+agents_repo_live_parity_check() {
+  local repo_dir="$ROOT/claude/agents"
+  local live_dir="$HOME_DIR/.claude/agents"
+  local diff
+  diff="$(diff -rq "$repo_dir" "$live_dir" 2>&1 || true)"
+  if [ -n "$diff" ]; then
+    fail "claude/agents (repo) and ~/.claude/agents (live) differ — run scripts/backup.sh:"$'\n'"$diff"
+  else
+    ok "claude/agents repo <-> live parity"
+  fi
+}
+
+agents_claude_codex_parity_check() {
+  local claude_names codex_names diff
+  claude_names="$(ls "$HOME_DIR/.claude/agents" | sed 's/\.md$//' | sort)"
+  codex_names="$(ls "$HOME_DIR/.codex/agents" | sed 's/\.toml$//' | sort)"
+  diff="$(comm -3 <(printf '%s\n' "$claude_names") <(printf '%s\n' "$codex_names") | { /usr/bin/grep -v -E "$AGENTS_CODEX_EXCEPTIONS" || true; })"
+  if [ -n "$diff" ]; then
+    fail "Claude <-> Codex agent name mismatch (undocumented):"$'\n'"$diff"
+  else
+    ok "Claude <-> Codex agent name parity"
+  fi
+}
+
+agents_repo_live_parity_check
+agents_claude_codex_parity_check
+
 if [ "$failed" -ne 0 ]; then
   exit 1
 fi

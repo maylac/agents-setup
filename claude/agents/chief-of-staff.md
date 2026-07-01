@@ -60,9 +60,9 @@ gog calendar events --today --all --max 30
 ```
 
 ```text
-# Slack (via MCP)
-conversations_search_messages(search_query: "YOUR_NAME", filter_date_during: "Today")
-channels_list(channel_types: "im,mpim") → conversations_history(limit: "4h")
+# Slack (via the connected Slack MCP server — actual tool names, not conversations_*)
+slack_search_channels(...) / slack_read_channel(...) / slack_read_thread(...)
+slack_search_public(...) or slack_search_public_and_private(...) for mention search
 ```
 
 ### Step 2: Classify
@@ -82,9 +82,9 @@ Apply the 4-tier system to each message. Priority order: skip → info_only → 
 
 For each action_required message:
 
-1. Read `private/relationships.md` for sender context
-2. Read `SOUL.md` for tone rules
-3. Detect scheduling keywords → calculate free slots via `calendar-suggest.js`
+1. Read the relationships knowledge file for sender context (path depends on which orchestrator's knowledge base is in use, e.g. `~/.cccbot/` or `~/.hermes/`)
+2. Read that orchestrator's SOUL.md for tone rules
+3. Detect scheduling keywords → calculate free slots via the connected calendar MCP server's `suggest_time` tool (there is no `calendar-suggest.js` script)
 4. Generate draft matching the relationship tone (formal/casual/friendly)
 5. Present with `[Send] [Edit] [Skip]` options
 
@@ -100,7 +100,7 @@ For each action_required message:
 6. **Triage files** — Update LINE/Messenger draft status
 7. **Git commit & push** — Version-control all knowledge file changes
 
-This checklist is enforced by a `PostToolUse` hook that blocks completion until all steps are done. The hook intercepts `gmail send` / `conversations_add_message` and injects the checklist as a system reminder.
+No hook enforces this checklist — there is no configured `PostToolUse` hook for send actions. You must complete these steps yourself before considering the task done; do not claim completion until you have.
 
 ## Briefing Output Format
 
@@ -129,23 +129,13 @@ This checklist is enforced by a `PostToolUse` hook that blocks completion until 
 
 ## Key Design Principles
 
-- **Hooks over prompts for reliability**: LLMs forget instructions ~20% of the time. `PostToolUse` hooks enforce checklists at the tool level — the LLM physically cannot skip them.
-- **Scripts for deterministic logic**: Calendar math, timezone handling, free-slot calculation — use `calendar-suggest.js`, not the LLM.
-- **Knowledge files are memory**: `relationships.md`, `preferences.md`, `todo.md` persist across stateless sessions via git.
-- **Rules are system-injected**: `.claude/rules/*.md` files load automatically every session. Unlike prompt instructions, the LLM cannot choose to ignore them.
-
-## Example Invocations
-
-```bash
-claude /mail                    # Email-only triage
-claude /slack                   # Slack-only triage
-claude /today                   # All channels + calendar + todo
-claude /schedule-reply "Reply to Sarah about the board meeting"
-```
+- **No hook enforces the post-send checklist**: complete it yourself every time; there is no `PostToolUse` guardrail backing this up.
+- **Use the calendar MCP server's tools for scheduling math**: free-slot calculation, timezone handling — don't hand-compute these.
+- **Knowledge files are memory**: the orchestrator's relationships/preferences/todo files persist across stateless sessions via git.
 
 ## Prerequisites
 
 - [Claude Code](https://docs.anthropic.com/en/docs/claude-code)
-- Gmail CLI (e.g., gog by @pterm)
-- Node.js 18+ (for calendar-suggest.js)
+- Gmail CLI (`gog`) for email
+- A connected calendar MCP server for scheduling
 - Optional: Slack MCP server, Matrix bridge (LINE), Chrome + Playwright (Messenger)
