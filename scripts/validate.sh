@@ -76,12 +76,18 @@ check_rules_lint() {
   done < <(/usr/bin/find "$rules_dir" -type f -name '*.md' -print0)
 
   while IFS= read -r -d '' f; do
-    if head -1 "$f" | /usr/bin/grep -q '^paths:$'; then
-      if ! python3 -c "import sys, yaml" >/dev/null 2>&1; then
-        continue
-      fi
-      if ! awk '/^---$/{c++; if(c==2) exit} {print}' "$f" | tail -n +2 | python3 -c "import sys, yaml; yaml.safe_load(sys.stdin)" >/dev/null 2>&1; then
-        fail "invalid paths frontmatter YAML: ${f#$ROOT/}"
+    if head -1 "$f" | /usr/bin/grep -q '^---$' &&
+       awk 'NR > 1 && /^---$/ { exit } NR > 1 { print }' "$f" | /usr/bin/grep -q '^paths:'; then
+      if command -v ruby >/dev/null 2>&1; then
+        if ! awk 'NR > 1 && /^---$/ { exit } NR > 1 { print }' "$f" | ruby -ryaml -e 'YAML.safe_load(STDIN.read)' >/dev/null 2>&1; then
+          fail "invalid paths frontmatter YAML: ${f#$ROOT/}"
+        fi
+      elif python3 -c "import sys, yaml" >/dev/null 2>&1; then
+        if ! awk 'NR > 1 && /^---$/ { exit } NR > 1 { print }' "$f" | python3 -c "import sys, yaml; yaml.safe_load(sys.stdin)" >/dev/null 2>&1; then
+          fail "invalid paths frontmatter YAML: ${f#$ROOT/}"
+        fi
+      else
+        fail "missing YAML parser for paths frontmatter: ${f#$ROOT/}"
       fi
     fi
   done < <(/usr/bin/find "$rules_dir" -type f -name '*.md' -print0)
