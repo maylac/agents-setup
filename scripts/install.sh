@@ -244,6 +244,7 @@ sync_skills() {
     local name
     local dest
     name="$(basename "$skill")"
+    case "$name" in .*) continue;; esac
     dest="$target/$name"
     if [ -L "$dest" ]; then
       local current

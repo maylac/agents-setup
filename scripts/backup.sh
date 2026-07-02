@@ -53,8 +53,8 @@ sanitize_file() {
     -e 's#may\.lac1206\@gmail\.com#[redacted-email]#g;' \
     -e 's#gh[opsu]_[A-Za-z0-9_]+#[REDACTED_GITHUB_TOKEN]#g;' \
     -e 's#github_pat_[A-Za-z0-9_]+#[REDACTED_GITHUB_TOKEN]#g;' \
-    -e 's#(Authorization[[:space:]]*=[[:space:]]*["'\'']?Bearer[[:space:]]+)[A-Za-z0-9._-]+#$1[REDACTED_BEARER_TOKEN]#g;' \
-    -e 's#(Authorization:[[:space:]]*Bearer[[:space:]]+)[A-Za-z0-9._-]+#$1[REDACTED_BEARER_TOKEN]#g;' \
+    -e 's#(Authorization[[:space:]]*=[[:space:]]*["'\'']?Bearer[[:space:]]+)[A-Za-z0-9._-]+#${1}[REDACTED_BEARER_TOKEN]#g;' \
+    -e 's#(Authorization:[[:space:]]*Bearer[[:space:]]+)[A-Za-z0-9._-]+#${1}[REDACTED_BEARER_TOKEN]#g;' \
     "$file"
 }
 

@@ -3,6 +3,12 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 failed=0
+VALIDATE_TMP="$(mktemp -d "${TMPDIR:-/tmp}/agents-setup-validate.XXXXXX")"
+
+cleanup() {
+  rm -rf "$VALIDATE_TMP"
+}
+trap cleanup EXIT
 
 fail() {
   printf 'FAIL: %s\n' "$1" >&2
@@ -12,19 +18,21 @@ fail() {
 check_no_matches() {
   local label="$1"
   local pattern="$2"
-  if rg -n --hidden --glob '!.git/**' --glob '!**/.git/**' --glob '!*.png' --glob '!*.jpg' --glob '!*.webp' "$pattern" "$ROOT" >/tmp/agents-setup-rg.out 2>/dev/null; then
+  local out="$VALIDATE_TMP/rg.out"
+  if rg -n --hidden --glob '!.git/**' --glob '!**/.git/**' --glob '!*.png' --glob '!*.jpg' --glob '!*.webp' "$pattern" "$ROOT" >"$out" 2>/dev/null; then
     printf '%s\n' "$label" >&2
-    sed -n '1,80p' /tmp/agents-setup-rg.out >&2
+    sed -n '1,80p' "$out" >&2
     failed=1
   fi
 }
 
 check_no_paths() {
+  local out="$VALIDATE_TMP/paths.out"
   if /usr/bin/find "$ROOT" -path "$ROOT/.git" -prune -o \
     \( -name '*.db' -o -name '*.sqlite' -o -name '*.sqlite3' -o -name '*.sqlite-shm' -o -name '*.sqlite-wal' -o -name '.env' \) -print |
-    rg . >/tmp/agents-setup-paths.out; then
+    rg . >"$out"; then
     printf 'Runtime/private files are present:\n' >&2
-    sed -n '1,80p' /tmp/agents-setup-paths.out >&2
+    sed -n '1,80p' "$out" >&2
     failed=1
   fi
 }
