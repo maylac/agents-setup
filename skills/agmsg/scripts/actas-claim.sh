@@ -32,6 +32,19 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 SKILL_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"  # actas-lock.sh requires SKILL_DIR
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/lib/actas-lock.sh"
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/lib/resolve-project.sh"
+
+# Resolve the session's real project root (see #92) before any lookup, so an
+# actas issued from a subdir/worktree claims against the registered project
+# rather than missing it as not_registered.
+PROJECT="$(agmsg_resolve_project "$PROJECT" "$TYPE")"
+
+# Claim the lock under the per-process instance id (#93), the same token the
+# watcher (re)launched by this actas flow keys its pidfile on. The template
+# passes a bare $CLAUDE_CODE_SESSION_ID; normalize self-derives the composite so
+# a parallel --continue/--resume session can't appear to already own the role.
+SESSION_ID="$(agmsg_normalize_instance_id "$SESSION_ID" "$TYPE")"
 
 # Find the team(s) this name is registered to for the given project/type.
 TEAMS=""

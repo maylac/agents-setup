@@ -23,7 +23,7 @@ Assume many user prompts are dictated by voice and may contain speech-to-text er
 
 ## Tool Use Rules
 
-- For X/Twitter information gathering, prefer `agmsg` with a Grok Build teammate when available; do not default to browser scraping or unofficial X automation.
-- When asked to verify an X article or linked article, check it through Jina Reader first (`https://r.jina.ai/http://r.jina.ai/http://<URL>`). If Jina returns only a login wall or metadata, state that limitation explicitly.
+- When asked to verify an X article or linked article, check it through Jina Reader first (`https://r.jina.ai/<URL>`, where `<URL>` includes its own scheme). If Jina returns only a login wall or metadata, state that limitation explicitly.
+- **RTK**: a PreToolUse hook silently rewrites common Bash commands to token-lean `rtk` equivalents (e.g. `git status` → `rtk git status`). This applies in both Claude Code and Codex sessions. If a command fails unexpectedly, check whether it was rewritten (`rtk proxy <cmd>` runs the raw command for debugging). Known limits: prefer `rg`/`rg --files` for search; use `/usr/bin/find` directly for compound predicates or `-exec` actions, since `rtk find` doesn't support those forms. See `claude/RTK.md` for the full guide (Claude-only file, but the hook and limits apply to both tools).
 
 <!-- Maintenance: AGENTS.md is the source of truth (shared tool-agnostically, e.g. with Codex). ~/CLAUDE.md is a symlink to this file — keep the symlink intact. -->

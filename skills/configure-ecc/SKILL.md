@@ -1,12 +1,12 @@
 ---
 name: configure-ecc
-description: Interactive installer for Everything Codex — guides users through selecting and installing skills and rules to user-level or project-level directories, verifies paths, and optionally optimizes installed files.
+description: Interactive installer for Everything Claude Code — guides users through selecting and installing skills and rules to user-level or project-level directories, verifies paths, and optionally optimizes installed files.
 origin: ECC
 ---
 
-# Configure Everything Codex (ECC)
+# Configure Everything Claude Code (ECC)
 
-An interactive, step-by-step installation wizard for the Everything Codex project. Uses `AskUserQuestion` to guide users through selective installation of skills and rules, then verifies correctness and offers optimization.
+An interactive, step-by-step installation wizard for the Everything Claude Code project. Uses `AskUserQuestion` to guide users through selective installation of skills and rules, then verifies correctness and offers optimization.
 
 ## When to Activate
 
@@ -19,7 +19,7 @@ An interactive, step-by-step installation wizard for the Everything Codex projec
 
 This skill must be accessible to Codex before activation. Two ways to bootstrap:
 1. **Via Plugin**: `/plugin install everything-Codex` — the plugin loads this skill automatically
-2. **Manual**: Copy only this skill to `~/.Codex/skills/configure-ecc/SKILL.md`, then activate by saying "configure ecc"
+2. **Manual**: Copy only this skill to `~/.claude/skills/configure-ecc/SKILL.md`, then activate by saying "configure ecc"
 
 ---
 
@@ -45,15 +45,15 @@ Use `AskUserQuestion` to ask the user where to install:
 ```
 Question: "Where should ECC components be installed?"
 Options:
-  - "User-level (~/.Codex/)" — "Applies to all your Codex projects"
-  - "Project-level (.Codex/)" — "Applies only to the current project"
+  - "User-level (~/.claude/)" — "Applies to all your Codex projects"
+  - "Project-level (.claude/)" — "Applies only to the current project"
   - "Both" — "Common/shared items user-level, project-specific items project-level"
 ```
 
 Store the choice as `INSTALL_LEVEL`. Set the target directory:
-- User-level: `TARGET=~/.Codex`
-- Project-level: `TARGET=.Codex` (relative to current project root)
-- Both: `TARGET_USER=~/.Codex`, `TARGET_PROJECT=.Codex`
+- User-level: `TARGET=~/.claude`
+- Project-level: `TARGET=.claude` (relative to current project root)
+- Both: `TARGET_USER=~/.claude`, `TARGET_PROJECT=.claude`
 
 Create the target directories if they don't exist:
 ```bash
@@ -135,18 +135,17 @@ For each selected category, print the full list of skills below and ask the user
 | `jpa-patterns` | JPA/Hibernate entity design, relationships, query optimization, transactions |
 | `postgres-patterns` | PostgreSQL query optimization, schema design, indexing, security |
 
-**Category: Workflow & Quality (8 skills)**
+**Category: Workflow & Quality (6 skills)**
 
 | Skill | Description |
 |-------|-------------|
-| `continuous-learning` | Auto-extract reusable patterns from sessions as learned skills |
 | `continuous-learning-v2` | Instinct-based learning with confidence scoring, evolves into skills/commands/agents |
 | `eval-harness` | Formal evaluation framework for eval-driven development (EDD) |
 | `iterative-retrieval` | Progressive context refinement for subagent context problem |
 | `security-review` | Security checklist: auth, input, secrets, API, payment features |
 | `strategic-compact` | Suggests manual context compaction at logical intervals |
-| `tdd-workflow` | Enforces TDD with 80%+ coverage: unit, integration, E2E |
-| `verification-loop` | Verification and quality loop patterns |
+
+TDD and verification-loop workflows are covered by the `superpowers` plugin (`test-driven-development`, `verification-before-completion`) — no separate canonical-store copy is maintained.
 
 **Category: Business & Content (5 skills)**
 
@@ -199,7 +198,7 @@ For each selected skill, copy the entire skill directory:
 cp -r $ECC_ROOT/skills/<skill-name> $TARGET/skills/
 ```
 
-Note: `continuous-learning` and `continuous-learning-v2` have extra files (config.json, hooks, scripts) — ensure the entire directory is copied, not just SKILL.md.
+Note: `continuous-learning-v2` has extra files (config.json, hooks, scripts) — ensure the entire directory is copied, not just SKILL.md.
 
 ---
 
@@ -248,14 +247,14 @@ ls -la $TARGET/rules/
 
 Scan all installed `.md` files for path references:
 ```bash
-grep -rn "~/.Codex/" $TARGET/skills/ $TARGET/rules/
+grep -rn "~/.claude/" $TARGET/skills/ $TARGET/rules/
 grep -rn "../common/" $TARGET/rules/
 grep -rn "skills/" $TARGET/skills/
 ```
 
-**For project-level installs**, flag any references to `~/.Codex/` paths:
-- If a skill references `~/.Codex/settings.json` — this is usually fine (settings are always user-level)
-- If a skill references `~/.Codex/skills/` or `~/.Codex/rules/` — this may be broken if installed only at project level
+**For project-level installs**, flag any references to `~/.claude/` paths:
+- If a skill references `~/.claude/settings.json` — this is usually fine (settings are always user-level)
+- If a skill references `~/.claude/skills/` or `~/.claude/rules/` — this may be broken if installed only at project level
 - If a skill references another skill by name — check that the referenced skill was also installed
 
 ### 4c: Check Cross-References Between Skills
@@ -264,7 +263,7 @@ Some skills reference others. Verify these dependencies:
 - `django-tdd` may reference `django-patterns`
 - `laravel-tdd` may reference `laravel-patterns`
 - `springboot-tdd` may reference `springboot-patterns`
-- `continuous-learning-v2` references `~/.Codex/homunculus/` directory
+- `continuous-learning-v2` references `~/.claude/homunculus/` directory
 - `python-testing` may reference `python-patterns`
 - `golang-testing` may reference `golang-patterns`
 - `crosspost` references `content-engine` and `x-api`
@@ -278,8 +277,8 @@ Some skills reference others. Verify these dependencies:
 For each issue found, report:
 1. **File**: The file containing the problematic reference
 2. **Line**: The line number
-3. **Issue**: What's wrong (e.g., "references ~/.Codex/skills/python-patterns but python-patterns was not installed")
-4. **Suggested fix**: What to do (e.g., "install python-patterns skill" or "update path to .Codex/skills/")
+3. **Issue**: What's wrong (e.g., "references ~/.claude/skills/python-patterns but python-patterns was not installed")
+4. **Suggested fix**: What to do (e.g., "install python-patterns skill" or "update path to .claude/skills/")
 
 ---
 
@@ -355,13 +354,13 @@ Then print a summary report:
 
 ### "Skills not being picked up by Codex"
 - Verify the skill directory contains a `SKILL.md` file (not just loose .md files)
-- For user-level: check `~/.Codex/skills/<skill-name>/SKILL.md` exists
-- For project-level: check `.Codex/skills/<skill-name>/SKILL.md` exists
+- For user-level: check `~/.claude/skills/<skill-name>/SKILL.md` exists
+- For project-level: check `.claude/skills/<skill-name>/SKILL.md` exists
 
 ### "Rules not working"
 - Rules are flat files, not in subdirectories: `$TARGET/rules/coding-style.md` (correct) vs `$TARGET/rules/common/coding-style.md` (incorrect for flat install)
 - Restart Codex after installing rules
 
 ### "Path reference errors after project-level install"
-- Some skills assume `~/.Codex/` paths. Run Step 4 verification to find and fix these.
-- For `continuous-learning-v2`, the `~/.Codex/homunculus/` directory is always user-level — this is expected and not an error.
+- Some skills assume `~/.claude/` paths. Run Step 4 verification to find and fix these.
+- For `continuous-learning-v2`, the `~/.claude/homunculus/` directory is always user-level — this is expected and not an error.

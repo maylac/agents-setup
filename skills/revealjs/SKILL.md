@@ -96,8 +96,8 @@ node <path-to-skill>/scripts/create-presentation.js --structure 1,1,d,3,1,d,1 --
 ```
 
 **Finding the script path:** The script is at `scripts/create-presentation.js` relative to where this SKILL.md file is located. Common locations:
-- Project skill: `.Codex/skills/revealjs/scripts/create-presentation.js`
-- User skill: `~/.Codex/skills/revealjs/scripts/create-presentation.js`
+- Project skill: `.claude/skills/revealjs/scripts/create-presentation.js`
+- User skill: `~/.claude/skills/revealjs/scripts/create-presentation.js`
 
 **Options:**
 - `--slides N` - Create N horizontal slides (simple mode)

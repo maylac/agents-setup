@@ -1,13 +1,13 @@
 ---
 name: eval-harness
-description: Formal evaluation framework for Codex sessions implementing eval-driven development (EDD) principles
+description: Formal evaluation framework for agent sessions implementing eval-driven development (EDD) principles
 origin: ECC
-tools: Read, Write, Edit, Bash, Grep, Glob
+allowed-tools: Read, Write, Edit, Bash, Grep, Glob
 ---
 
 # Eval Harness Skill
 
-A formal evaluation framework for Codex sessions, implementing eval-driven development (EDD) principles.
+A formal evaluation framework for agent sessions, implementing eval-driven development (EDD) principles.
 
 ## When to Activate
 
@@ -168,7 +168,7 @@ Status: READY FOR REVIEW
 ```
 /eval define feature-name
 ```
-Creates eval definition file at `.Codex/evals/feature-name.md`
+Creates eval definition file at `.claude/evals/feature-name.md`
 
 ### During Implementation
 ```
@@ -186,7 +186,7 @@ Generates full eval report
 
 Store evals in project:
 ```
-.Codex/
+.claude/
   evals/
     feature-xyz.md      # Eval definition
     feature-xyz.log     # Eval run history
@@ -265,6 +265,6 @@ Recommended thresholds:
 
 ### Minimal Eval Artifact Layout
 
-- `.Codex/evals/<feature>.md` definition
-- `.Codex/evals/<feature>.log` run history
+- `.claude/evals/<feature>.md` definition
+- `.claude/evals/<feature>.log` run history
 - `docs/releases/<version>/eval-summary.md` release snapshot

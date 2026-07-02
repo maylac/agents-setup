@@ -1,0 +1,101 @@
+---
+name: oracle
+description: "Consult a stronger second model (GPT-5.4 Pro / GPT-5.x / Gemini 3 / Claude) on a hard question with bundled file context. Use for deep diagnosis, cross-repo comparison, architecture review, or any problem where you are stuck and want a one-shot expert opinion grounded in real source files."
+origin: steipete/oracle
+---
+
+# Oracle — one-shot consult of a stronger model with file context
+
+Oracle bundles a prompt **plus the actual source files** and sends them to a
+heavyweight model (default `gpt-5.4-pro`) for a single, deep answer. Reach for it
+when you are stuck, need a second opinion, or face a problem that benefits from
+large file context and server-side reasoning — root-cause hunts, cross-repo
+comparisons, architecture/security review, "why is this subtly wrong" questions.
+
+CLI: `oracle` (pinned to Node 24 via `~/.local/bin/oracle`). Install lives at
+`/opt/homebrew/lib/node_modules/@steipete/oracle`.
+
+## The one rule that matters
+
+**Always pass BOTH a prompt AND `--file`.** Oracle starts empty and cannot see
+the project otherwise. Attach generously — whole directories and globs beat
+single files — and keep total input under **~196k tokens**.
+
+```bash
+oracle -p "<6–30 sentence briefing + the actual question + what you already tried>" \
+  --file "src/**/*.ts" --file "!src/**/*.test.ts"
+```
+
+Open with a short project briefing (stack, services, build steps), spell out the
+question and prior attempts, and say why it matters. Very short prompts yield
+generic answers. When comparing files/repos, label each one (repo + path + role)
+so the model knows what it is reading.
+
+## Authentication / engine
+
+`-e, --engine <api|browser>`. If omitted, Oracle picks **api** when
+`OPENAI_API_KEY` is set, otherwise **browser**.
+
+- **browser** — automates a signed-in ChatGPT (GPT models) / cookie-based
+  gemini.google.com (Gemini). No API key, no metered cost. Good default for
+  interactive use.
+- **api** — uses `OPENAI_API_KEY` (or Azure flags). **This costs money.** Only
+  trigger an API run when you explicitly mean to, and get the user's consent
+  first. Never set the key yourself — the user must provide it.
+
+Force one explicitly with `--engine browser` or `--engine api`.
+
+## Token budget — check before you spend
+
+`--files-report` prints per-file token usage (also auto-prints when files exceed
+the budget). `--dry-run` (summary|json|full) previews the bundle without calling
+the model. `--render` prints the assembled markdown; `--copy-markdown` puts it on
+the clipboard for manual paste.
+
+## Sessions — never blindly re-run
+
+Non-preview runs (especially `gpt-5.4-pro` API) spawn **detached** sessions and
+can take a long time. If the CLI times out, **do not re-run** — reattach:
+
+```bash
+oracle status                 # recent sessions (24h window; --hours, --all)
+oracle session <id|slug>      # attach and stream the saved transcript
+```
+
+A duplicate-prompt guard blocks an identical prompt that is already running
+unless you pass `--force`; prefer reattaching. Give a tidy `--slug "3-5 words"`.
+
+## Useful flags
+
+- `-m, --model <name>` — e.g. `gpt-5.4-pro` (default), `gpt-5.4`, `gpt-5.2-pro`,
+  `gemini-3-pro`, `claude-4.5-sonnet`.
+- `--models a,b` — query several API models in parallel and aggregate.
+- `--followup <sessionId|responseId>` — chain a follow-up (API runs).
+- `--write-output <path>` — write only the final assistant message to a file.
+- `--timeout <s|auto>` — auto = 60m for gpt-5.4-pro, 120s otherwise.
+
+## Safety
+
+- **Do not attach secrets** (`.env`, keys, tokens, credentials) — file contents
+  are sent to a third-party model. Exclude them with `--file "!**/.env*"`.
+- Treat API runs as a metered, consent-gated action.
+
+## Examples
+
+```bash
+# Browser run (no API key), TS data layer minus tests
+oracle --engine browser -p "Review the TS data layer for schema drift; we suspect the Zod schema and the DB row type have diverged. Stack: Node 24 + Drizzle. What I tried: ..." \
+  --file "src/**/*.ts" --file "!src/**/*.test.ts"
+
+# Cross-repo comparison — label each file's role
+oracle -p "Tabs freeze on switch. Compare App A SettingsView vs App B SettingsView and find the divergence." \
+  --file appA/Sources/SettingsView.swift \
+  --file ../appB/mac/App/Presentation/Views/SettingsView.swift
+
+# Inspect token spend first, then decide
+oracle --files-report -p "Summarize risk register" --file docs/
+
+# Reattach instead of re-running after a timeout
+oracle status
+oracle session release-readiness-audit
+```

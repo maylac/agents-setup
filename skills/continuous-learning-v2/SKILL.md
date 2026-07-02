@@ -26,7 +26,7 @@ An advanced learning system that turns your Codex sessions into reusable knowled
 
 | Feature | v2.0 | v2.1 |
 |---------|------|------|
-| Storage | Global (~/.Codex/homunculus/) | Project-scoped (projects/<hash>/) |
+| Storage | Global (~/.claude/homunculus/) | Project-scoped (projects/<hash>/) |
 | Scope | All instincts apply everywhere | Project-scoped + global |
 | Detection | None | git remote URL / repo path |
 | Promotion | N/A | Project → global when seen in 2+ projects |
@@ -132,13 +132,13 @@ The system automatically detects your current project:
 3. **`git rev-parse --show-toplevel`** -- fallback using repo path (machine-specific)
 4. **Global fallback** -- if no project is detected, instincts go to global scope
 
-Each project gets a 12-character hash ID (e.g., `a1b2c3d4e5f6`). A registry file at `~/.Codex/homunculus/projects.json` maps IDs to human-readable names.
+Each project gets a 12-character hash ID (e.g., `a1b2c3d4e5f6`). A registry file at `~/.claude/homunculus/projects.json` maps IDs to human-readable names.
 
 ## Quick Start
 
 ### 1. Enable Observation Hooks
 
-Add to your `~/.Codex/settings.json`.
+Add to your `~/.claude/settings.json`.
 
 **If installed as a plugin** (recommended):
 
@@ -163,7 +163,7 @@ Add to your `~/.Codex/settings.json`.
 }
 ```
 
-**If installed manually** to `~/.Codex/skills`:
+**If installed manually** to `~/.claude/skills`:
 
 ```json
 {
@@ -172,14 +172,14 @@ Add to your `~/.Codex/settings.json`.
       "matcher": "*",
       "hooks": [{
         "type": "command",
-        "command": "~/.Codex/skills/continuous-learning-v2/hooks/observe.sh"
+        "command": "~/.claude/skills/continuous-learning-v2/hooks/observe.sh"
       }]
     }],
     "PostToolUse": [{
       "matcher": "*",
       "hooks": [{
         "type": "command",
-        "command": "~/.Codex/skills/continuous-learning-v2/hooks/observe.sh"
+        "command": "~/.claude/skills/continuous-learning-v2/hooks/observe.sh"
       }]
     }]
   }
@@ -192,7 +192,7 @@ The system creates directories automatically on first use, but you can also crea
 
 ```bash
 # Global directories
-mkdir -p ~/.Codex/homunculus/{instincts/{personal,inherited},evolved/{agents,skills,commands},projects}
+mkdir -p ~/.claude/homunculus/{instincts/{personal,inherited},evolved/{agents,skills,commands},projects}
 
 # Project directories are auto-created when the hook first runs in a git repo
 ```
@@ -245,7 +245,7 @@ Other behavior (observation capture, instinct thresholds, project scoping, promo
 ## File Structure
 
 ```
-~/.Codex/homunculus/
+~/.claude/homunculus/
 +-- identity.json           # Your profile, technical level
 +-- projects.json           # Registry: project hash -> name/path/remote
 +-- observations.jsonl      # Global observations (fallback)
@@ -341,8 +341,8 @@ Hooks fire **100% of the time**, deterministically. This means:
 ## Backward Compatibility
 
 v2.1 is fully compatible with v2.0 and v1:
-- Existing global instincts in `~/.Codex/homunculus/instincts/` still work as global instincts
-- Existing `~/.Codex/skills/learned/` skills from v1 still work
+- Existing global instincts in `~/.claude/homunculus/instincts/` still work as global instincts
+- Existing `~/.claude/skills/learned/` skills from v1 still work
 - Stop hook still runs (but now also feeds into v2)
 - Gradual migration: run both in parallel
 

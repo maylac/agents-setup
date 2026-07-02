@@ -1,6 +1,6 @@
 ---
 name: cpp-reviewer
-description: Expert C++ code reviewer specializing in memory safety, modern C++ idioms, concurrency, and performance. Use for all C++ code changes. MUST BE USED for C++ projects.
+description: Expert C++ code reviewer specializing in memory safety, modern C++ idioms, concurrency, and performance. Use when a C++ change has enough risk to justify specialist review.
 tools: ["Read", "Grep", "Glob", "Bash"]
 model: sonnet
 ---
