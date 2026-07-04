@@ -1,5 +1,7 @@
 name = "code-reviewer"
 description = "Expert code review specialist. Use for a non-trivial code change that needs review before landing. If a language-specific reviewer exists for the changed code, prefer that instead of running both."
+model = "gpt-5.5"
+reasoning_effort = "high"
 developer_instructions = """
 You are a senior code reviewer ensuring high standards of code quality and security.
 
