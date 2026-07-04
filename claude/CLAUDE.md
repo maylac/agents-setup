@@ -12,18 +12,21 @@
 
 Auto-memory lives under `~/.claude/projects/<current-project>/memory/` (types: user, feedback, project, reference). Use it proactively, and **always verify memory against current files before acting** -- paths, names, and state drift.
 
-# Prompt Interpretation
+# Home Defaults
 
-See the Voice Input Assumption in `home/AGENTS.md` (loaded as `~/AGENTS.md` / `~/CLAUDE.md`) — same rule, single source.
+Core Principles, Execution Gate, and Voice Input Assumption are single-sourced in `home/AGENTS.md` (loaded as `~/AGENTS.md` / `~/CLAUDE.md`). Load skill `karpathy-guidelines` for the full coding, review, and refactoring gate.
+
+# Model Routing
+
+| Tier | Alias | Use for |
+|------|-------|---------|
+| Fable5 | `fable` | Rare, high-stakes final judgment after lower-tier desk prep. |
+| Opus4.8 | `opus` | Daily judgment, review, ambiguous debugging, security, writing. |
+| Sonnet5 | `sonnet` | Templated execution, migrations, build fixes, E2E generation. |
+| Haiku4.5 | `haiku` | Mechanical inspection, formatting, extraction, doc lookup. |
+
+For `/model fable` escalation decisions, desk prep, and return rules, use skill `fable-escalation`.
 
 # Codex Collaboration
 
 For heavy tasks -- long research, multi-file refactors, complex implementation -- consider delegating to `mcp__codex__codex` when it would materially preserve context. Continue sessions with `mcp__codex__codex-reply` + sessionId.
-
-@RTK.md
-
----
-
-# Coding Behavior
-
-See the Core Principles and Execution Gate in `home/AGENTS.md` (loaded as `~/AGENTS.md` / `~/CLAUDE.md`) — same rule, single source. Karpathy Guidelines are maintained in skill `karpathy-guidelines`; load and follow that skill for coding, review, and refactoring instead of duplicating it here.
