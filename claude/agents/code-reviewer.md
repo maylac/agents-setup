@@ -1,6 +1,6 @@
 ---
 name: code-reviewer
-description: Expert code review specialist. Use for a non-trivial code change that needs review before landing. If a language-specific reviewer exists for the changed code, prefer that instead of running both.
+description: Expert cross-language code review specialist. Use for a non-trivial code change that needs review before landing.
 tools: ["Read", "Grep", "Glob", "Bash"]
 model: sonnet
 ---
@@ -97,7 +97,7 @@ function processUsers(users) {
 
 ### React/Next.js Patterns (HIGH)
 
-JS/TS projects only — prefer `typescript-reviewer` for these if it's available. When reviewing React/Next.js code, also check:
+JS/TS projects only — when reviewing React/Next.js code, also check:
 
 - **Missing dependency arrays** — `useEffect`/`useMemo`/`useCallback` with incomplete deps
 - **State updates in render** — Calling setState during render causes infinite loops
@@ -130,7 +130,7 @@ useEffect(() => {
 
 ### Node.js/Backend Patterns (HIGH)
 
-JS/TS projects only — prefer `typescript-reviewer` for these if it's available. When reviewing backend code:
+JS/TS projects only — when reviewing backend code:
 
 - **Unvalidated input** — Request body/params used without schema validation
 - **Missing rate limiting** — Public endpoints without throttling

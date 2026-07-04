@@ -26,4 +26,4 @@ Use test-first development when it clarifies the work or prevents regression. It
 
 When tests fail, check isolation, fixtures, mocks, and assumptions before changing production code. Fix the implementation unless the test is demonstrably wrong or stale.
 
-Use `tdd-guide` when a test-first loop or tricky regression needs focused support.
+Use `planner` when a test-first loop or tricky regression needs a focused plan before edits.
