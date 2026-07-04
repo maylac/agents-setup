@@ -1,13 +1,13 @@
 ---
 name: twitter-archive-analysis
-description: Analyze the local Twitter/X archive in $HOME/workspace/twitter for posting tendencies, risk screening, public link checks, personality-style summaries, topic history, or representative tweet examples. Use when the user asks about their tweets, Twitter archive, X archive, flame risk, deleted/public tweet status, or archive-grounded self-analysis.
+description: Analyze the local Twitter/X archive in $HOME/Archives/twitter-export for posting tendencies, risk screening, public link checks, personality-style summaries, topic history, or representative tweet examples. Use when the user asks about their tweets, Twitter archive, X archive, flame risk, deleted/public tweet status, or archive-grounded self-analysis.
 ---
 
 # Twitter Archive Analysis
 
 ## Source Order
 
-Start in `$HOME/workspace/twitter`. Prefer local archive evidence before public web checks.
+Start in `$HOME/Archives/twitter-export`. Prefer local archive evidence before public web checks.
 
 Likely files include:
 
