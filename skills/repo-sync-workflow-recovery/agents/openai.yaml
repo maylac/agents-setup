@@ -1,4 +1,0 @@
-interface:
-  display_name: "myLife Sync Recovery"
-  short_description: "Recover myLife ingestion workflows"
-  default_prompt: "Use $mylife-sync-workflow-recovery to diagnose and finish a failing myLife sync workflow."

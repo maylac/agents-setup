@@ -1,6 +1,6 @@
 ---
 name: "source-command-skill-create"
-description: "Analyze local git history to extract coding patterns and generate SKILL.md files. New skills are created once in the canonical store (~/.agents/skills) and symlinked into Claude Code and Codex — shared by default, no duplicate maintenance."
+description: Create SKILL.md files from local git history in the canonical ~/.agents/skills store and mirror them to Claude/Codex.
 ---
 
 # source-command-skill-create

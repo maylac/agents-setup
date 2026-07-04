@@ -1,6 +1,6 @@
 ---
 name: video-processing
-description: Guide for video analysis and frame-level event detection tasks using OpenCV and similar libraries. This skill should be used when detecting events in videos (jumps, movements, gestures), extracting frames, analyzing motion patterns, or implementing computer vision algorithms on video data. It provides verification strategies and helps avoid common pitfalls in video processing workflows.
+description: Analyze existing video files with frame extraction, motion/event detection, and computer-vision verification. Not for scripts/storyboards (use video-script-builder), HyperFrames production (use hyperframes-video-producer), or publishing packages (use video-channel-publisher).
 ---
 
 # Video Processing

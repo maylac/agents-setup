@@ -1,6 +1,6 @@
 ---
 name: oracle
-description: "Consult a stronger second model (GPT-5.4 Pro / GPT-5.x / Gemini 3 / Claude) on a hard question with bundled file context. Use for deep diagnosis, cross-repo comparison, architecture review, or any problem where you are stuck and want a one-shot expert opinion grounded in real source files."
+description: Consult a stronger second model with bundled file context for hard diagnosis, architecture review, or stuck problems.
 origin: steipete/oracle
 ---
 

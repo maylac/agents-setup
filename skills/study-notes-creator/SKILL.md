@@ -1,6 +1,6 @@
 ---
 name: study-notes-creator
-description: Create organized, visual study notes with folder structures, diagrams, and example-based learning from source materials (PDFs, lecture notes, documentation). Use when creating structured learning materials, exam preparation notes, or educational documentation. Triggers - organize study notes, create visual learning materials, generate notes with diagrams, exam prep notes, example-based learning.
+description: Create organized study notes, diagrams, folders, examples, and exam-prep materials from PDFs, lecture notes, or docs.
 ---
 
 # Study Notes Creator

@@ -1,6 +1,6 @@
 ---
 name: note-curator
-description: Curate a note.com creator's articles into myLife wiki without storing full article text. Use when the user gives a note creator URL and asks to curate, select recommended articles, build a reading order, or extract insights from subscribed/readable articles.
+description: Curate a note.com creator into myLife wiki: select articles, build reading order, and extract insights without full-text storage.
 ---
 
 # Note Curator

@@ -1,6 +1,6 @@
 ---
 name: "playwright"
-description: "Default choice for browser automation from the terminal (navigation, form filling, snapshots, screenshots, data extraction, UI-flow debugging) via `playwright-cli` or the bundled wrapper script. Prefer `gstack` instead for QA/dogfooding workflows specifically."
+description: Use terminal Playwright automation for navigation, forms, screenshots, snapshots, extraction, and UI debugging.
 ---
 
 

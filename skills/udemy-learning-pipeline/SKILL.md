@@ -1,6 +1,6 @@
 ---
 name: udemy-learning-pipeline
-description: "Udemyの受講済み講座から学習資産を自動構築するフルパイプライン。トランスクリプト一括収集→学習資産MD生成→NotebookLMジャンル別ノート作成までを一気通貫で実行する。トリガー: Udemyトランスクリプトを収集したい、学習資産を作りたい、NotebookLMにまとめてアップしたい。"
+description: Run the Udemy learning pipeline: collect transcripts, generate study assets, and create NotebookLM-ready materials.
 ---
 
 # Udemy Learning Pipeline

@@ -1,6 +1,6 @@
 ---
 name: generate-explainer-html
-description: turn core.yaml + view.yaml (the explainer's meaning + presentation strategy) into a self-contained html bundle that helps users understand documents, repositories, pull requests, design notes, or specifications. the bundle has a light/dark shell whose right pane switches between multiple iframe view documents, and copyable prompt templates that ask a local-file-reading ai to add another switchable view. use when the user has (or wants) a core.yaml/view.yaml pair and wants a visual html explainer, or wants to add a new representation (table, worktree, cards, faq, beginner, engineer, pdm view, …) to an existing bundle. produce the yaml first with the generate-explainer-yaml skill.
+description: Build a self-contained HTML explainer from core.yaml and view.yaml. Use after generate-explainer-yaml or when adding switchable views to an explainer bundle.
 ---
 
 # generate-explainer-html

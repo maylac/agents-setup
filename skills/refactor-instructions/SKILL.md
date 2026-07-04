@@ -1,6 +1,6 @@
 ---
 name: refactor-instructions
-description: コードベースを深く分析し、実装担当モデル(Codex/Opus等)に /goal で渡せる refactor-instructions.md(リファクタリング指示書)を作成する。自分では実装しない。トリガー: 「リファクタリング指示書を作って」「refactor-instructions を作成」「実装モデルに渡す指示書」「技術的負債を整理して指示書化」。
+description: Create refactor-instructions.md for another implementation model. Analyze deeply, write instructions, do not implement.
 ---
 
 # Refactor Instructions — リファクタリング指示書の作成

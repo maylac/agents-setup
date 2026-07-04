@@ -1,6 +1,6 @@
 ---
 name: repeat-workflow-packager
-description: Review recent user work to find repeated manual workflows and package only high-confidence missing items as skills, custom subagents, or automations. Use when the user asks to look back over recent work, identify workflows worth packaging, create skills from recurring tasks, avoid duplicating existing skills/agents/automations, or make the packaging workflow usable in Codex and Claude Code.
+description: Find repeated recent workflows and package high-confidence gaps as skills, agents, or automations without duplicating existing ones.
 ---
 
 # Repeat Workflow Packager

@@ -1,6 +1,6 @@
 ---
 name: video-growth-pipeline
-description: End-to-end video growth workflow orchestration from hit-focused topic discovery to script, video production, channel selection, and publication preparation. Use when Codex is asked to make videos that can perform well, choose themes, create scripts, produce HyperFrames/HeyGen/Codex videos, repurpose one idea across channels, or manage the full flow from research to publishing.
+description: Orchestrate end-to-end video growth workflows across topic, script, production, and publishing. Not for a single narrow step; use video-topic-scout, video-script-builder, hyperframes-video-producer, or video-channel-publisher directly.
 ---
 
 # Video Growth Pipeline

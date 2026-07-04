@@ -1,6 +1,6 @@
 ---
 name: video-script-builder
-description: Create publish-ready video scripts, hooks, storyboards, voiceovers, captions, shot lists, and CTAs for short-form or long-form videos. Use when Codex is asked to write a video script, turn a topic into a storyboard, adapt a script for YouTube Shorts/TikTok/X/LinkedIn, create narration for HeyGen avatars, or prepare on-screen text and visual direction for video production.
+description: Create publish-ready video scripts, hooks, storyboards, voiceovers, captions, shot lists, and CTAs. Not for topic discovery (use video-topic-scout), rendering videos (use hyperframes-video-producer), or channel packaging (use video-channel-publisher).
 ---
 
 # Video Script Builder

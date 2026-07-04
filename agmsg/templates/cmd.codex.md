@@ -9,7 +9,7 @@ Agent messaging command. **IMPORTANT: Always use the provided scripts. NEVER dir
 
 If you already know your AGENT and TEAMS from a previous `$agmsg` call in this session, skip to **Execute** below.
 
-Otherwise, run: `~/.agents/skills/agmsg/scripts/whoami.sh "$(pwd)" codex`
+Otherwise, run: `~/.agents/agmsg/scripts/whoami.sh "$(pwd)" codex`
 
 Four possible outputs:
 
@@ -32,7 +32,7 @@ Four possible outputs:
 
   1. Ask: "Enter a team name (joins existing or creates new)"
   2. Ask: "Enter a name for this agent"
-  3. **You MUST use join.sh** — run: `~/.agents/skills/agmsg/scripts/join.sh <team> <agent_name> codex "$(pwd)"`
+  3. **You MUST use join.sh** — run: `~/.agents/agmsg/scripts/join.sh <team> <agent_name> codex "$(pwd)"`
   4. Show the result and explain:
 
   > **Joined!** You can now use `$agmsg` to check and send messages.
@@ -57,7 +57,7 @@ Four possible outputs:
 
      - **Wait for the user's answer before proceeding.** Empty input means `1` (turn).
      - Map the chosen number to a mode (`1`→`turn`, `2`→`off`) and run:
-       `~/.agents/skills/agmsg/scripts/delivery.sh set <mode> codex "$(pwd)"`
+       `~/.agents/agmsg/scripts/delivery.sh set <mode> codex "$(pwd)"`
      - Codex has no Monitor tool, so `monitor` and `both` modes are not offered here.
 
   6. Then check inbox for the newly joined team.
@@ -69,68 +69,68 @@ Four possible outputs:
   1. Show the suggested agent names to the user.
   2. Ask whether to reuse one of those names or choose a new one.
   3. Ask for the team name to join (existing or new).
-  4. Run: `~/.agents/skills/agmsg/scripts/join.sh <team> <agent_name> codex "$(pwd)"`
+  4. Run: `~/.agents/agmsg/scripts/join.sh <team> <agent_name> codex "$(pwd)"`
   5. Then continue with the normal post-join flow above.
 
 ## Execute
 
-**Only use scripts in `~/.agents/skills/agmsg/scripts/` — do not read or modify files under `teams/` or `db/` directly.**
+**Only use scripts in `~/.agents/agmsg/scripts/` — do not read or modify files under `teams/` or `db/` directly.**
 
 **If no arguments provided (DEFAULT action — always do this when the command is invoked without arguments):**
-1. **IMMEDIATELY** run inbox check for each TEAM: `~/.agents/skills/agmsg/scripts/inbox.sh $TEAM $AGENT`
+1. **IMMEDIATELY** run inbox check for each TEAM: `~/.agents/agmsg/scripts/inbox.sh $TEAM $AGENT`
 2. Do NOT ask the user what to do — just run the inbox check.
 3. If there are messages, read and respond appropriately. To reply:
-   `~/.agents/skills/agmsg/scripts/send.sh $TEAM $AGENT <to_agent> "<message>"`
+   `~/.agents/agmsg/scripts/send.sh $TEAM $AGENT <to_agent> "<message>"`
 
 If argument is "history":
-1. Run: `~/.agents/skills/agmsg/scripts/history.sh $TEAM $AGENT`
+1. Run: `~/.agents/agmsg/scripts/history.sh $TEAM $AGENT`
 
 If argument is "team":
-1. For each TEAM, run: `~/.agents/skills/agmsg/scripts/team.sh $TEAM`
+1. For each TEAM, run: `~/.agents/agmsg/scripts/team.sh $TEAM`
 
 If argument starts with "send" (e.g. "send misaki check the server"):
 1. Parse target agent and message from the arguments
 2. Determine which team the target agent belongs to, then run:
-   `~/.agents/skills/agmsg/scripts/send.sh $TEAM $AGENT <to_agent> "<message>"`
+   `~/.agents/agmsg/scripts/send.sh $TEAM $AGENT <to_agent> "<message>"`
 
 If argument is "config":
-1. Run: `~/.agents/skills/agmsg/scripts/config.sh show`
+1. Run: `~/.agents/agmsg/scripts/config.sh show`
 2. Show the output to the user.
 
 If argument starts with "config set" (e.g. "config set hook.check_interval 30"):
 1. Parse key and value from the arguments.
-2. Run: `~/.agents/skills/agmsg/scripts/config.sh set <key> <value>`
+2. Run: `~/.agents/agmsg/scripts/config.sh set <key> <value>`
 
 
 If argument starts with "actas" followed by an agent name (e.g. "actas alice"):
 1. Parse the new role name.
-2. Run `~/.agents/skills/agmsg/scripts/identities.sh "$(pwd)" codex` to see whether the role is already registered for this (project, type).
-3. If the name does not appear in the output, join under the existing team. For a single team, run `~/.agents/skills/agmsg/scripts/join.sh <team> <name> codex "$(pwd)"`. For multiple teams, ask the user which team to join the new role into.
+2. Run `~/.agents/agmsg/scripts/identities.sh "$(pwd)" codex` to see whether the role is already registered for this (project, type).
+3. If the name does not appear in the output, join under the existing team. For a single team, run `~/.agents/agmsg/scripts/join.sh <team> <name> codex "$(pwd)"`. For multiple teams, ask the user which team to join the new role into.
 4. Set the session's active FROM to `<name>` for every `send.sh` call until another `actas`.
 5. Tell the user: "Now acting as `<name>`. Sends will use `<name>` as the from agent. (Codex has no Monitor tool, so receive still covers all of your registered roles in this project.)"
 
 If argument starts with "drop" followed by an agent name (e.g. "drop alice"):
 1. Parse the role name.
-2. Run `~/.agents/skills/agmsg/scripts/reset.sh "$(pwd)" codex <name>` to remove that role's registration.
+2. Run `~/.agents/agmsg/scripts/reset.sh "$(pwd)" codex <name>` to remove that role's registration.
 3. If the session's active FROM was `<name>`, clear that state.
 4. Tell the user: "Dropped role `<name>` from this project."
 
 If argument is "mode" (no further args):
-1. Run: `~/.agents/skills/agmsg/scripts/delivery.sh status codex "$(pwd)"`
+1. Run: `~/.agents/agmsg/scripts/delivery.sh status codex "$(pwd)"`
 2. Show the output to the user.
 
 If argument starts with "mode" followed by a mode name (e.g. "mode turn"):
 1. Parse the mode. Codex supports only `turn` and `off` — reject `monitor` and `both` with: "Codex has no Monitor tool; only `turn` or `off` modes are supported."
-2. Run: `~/.agents/skills/agmsg/scripts/delivery.sh set <mode> codex "$(pwd)"`
+2. Run: `~/.agents/agmsg/scripts/delivery.sh set <mode> codex "$(pwd)"`
 
 If argument is "hook on" (legacy alias):
-1. Run: `~/.agents/skills/agmsg/scripts/delivery.sh set turn codex "$(pwd)"`
+1. Run: `~/.agents/agmsg/scripts/delivery.sh set turn codex "$(pwd)"`
 2. Tell the user: "Delivery mode set to 'turn' (legacy hook on behavior)."
 
 If argument is "hook off" (legacy alias):
-1. Run: `~/.agents/skills/agmsg/scripts/delivery.sh set off codex "$(pwd)"`
+1. Run: `~/.agents/agmsg/scripts/delivery.sh set off codex "$(pwd)"`
 2. Tell the user: "Delivery mode set to 'off'."
 
 If argument is "reset":
-1. Run: `~/.agents/skills/agmsg/scripts/reset.sh "$(pwd)" codex`
+1. Run: `~/.agents/agmsg/scripts/reset.sh "$(pwd)" codex`
 2. Tell the user the result.

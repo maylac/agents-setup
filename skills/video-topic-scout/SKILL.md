@@ -1,6 +1,6 @@
 ---
 name: video-topic-scout
-description: Discover, research, score, and rank high-potential video topics for YouTube, Shorts, TikTok, X, LinkedIn, Instagram, newsletters, and portfolio demos. Use when Codex is asked to find video themes, choose a topic likely to perform, analyze trend signals, build a content calendar, identify hooks from current news, or turn audience/offer context into video ideas.
+description: Discover, research, score, and rank high-potential video topics. Not for scripts/storyboards (use video-script-builder), video production (use hyperframes-video-producer), or publishing packages (use video-channel-publisher).
 ---
 
 # Video Topic Scout

@@ -1,6 +1,6 @@
 ---
 name: hyperframes-video-producer
-description: Produce, edit, preview, render, and verify HyperFrames HTML/CSS/JS videos, especially HeyGen x Codex portfolio videos, AI avatar explainers, motion graphics, captioned shorts, and reusable video templates. Use when Codex is asked to create a video from a script/storyboard, build a HyperFrames composition, integrate HeyGen avatar or voice assets, render MP4/WebM output, or verify a local video production project.
+description: Produce, edit, preview, render, and verify HyperFrames HTML/CSS/JS videos. Not for topic discovery (use video-topic-scout), script/storyboard writing (use video-script-builder), or publication packages (use video-channel-publisher).
 ---
 
 # HyperFrames Video Producer

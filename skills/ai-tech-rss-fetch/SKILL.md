@@ -1,6 +1,6 @@
 ---
 name: ai-tech-rss-fetch
-description: Subscribe to AI and tech RSS feeds and persist normalized metadata into SQLite using mature Python tooling (feedparser + sqlite3). Use when adding feed URLs/OPML sources, running incremental sync with deduplication, and storing entry metadata without full-text extraction or summarization.
+description: Subscribe to AI/tech RSS or OPML sources and persist normalized feed metadata into SQLite with dedupe.
 ---
 
 # AI Tech RSS Fetch

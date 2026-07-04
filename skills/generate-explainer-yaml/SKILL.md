@@ -1,6 +1,6 @@
 ---
 name: generate-explainer-yaml
-description: analyze a document, repository summary, pull request, README, design note, or specification and produce (or refine) the two intermediate yaml files that drive the explainer pipeline — core.yaml (the semantic structure / meaning) and view.yaml (the presentation strategy for a particular reader). use when the user wants to capture what a target means and how to show it before generating an html explainer, or wants to edit/reshape an existing core.yaml / view.yaml. the generate-explainer-html skill then turns these yaml files into a switchable, light/dark html bundle.
+description: Create or refine core.yaml and view.yaml from a document, repo summary, PR, README, design note, or spec for the explainer pipeline.
 ---
 
 # generate-explainer-yaml

@@ -1,6 +1,6 @@
 ---
 name: page-monitoring
-description: Web page monitoring, change detection, and availability tracking. Use when tracking content changes, detecting when pages go down, monitoring for updates, preserving content before deletion, or generating feeds for pages without RSS. Covers Visualping, ChangeTower, Distill.io, and self-hosted monitoring solutions.
+description: Monitor pages for changes, downtime, disappearance, or RSS-less update feeds. Not for one-time article extraction (use article-extractor), myLife clipping (use clip), or broad scraping implementation (use web-scraping).
 ---
 
 # Page monitoring methodology

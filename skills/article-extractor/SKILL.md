@@ -1,6 +1,6 @@
 ---
 name: article-extractor
-description: Extract clean article content from URLs (blog posts, articles, tutorials) and save as readable text. Use when user wants to download, extract, or save an article/blog post from a URL without ads, navigation, or clutter.
+description: Extract clean article text from ordinary article/blog/tutorial URLs. Not for myLife clipping (use clip), broad scraping/social media/paywalls (use web-scraping), or ongoing change alerts (use page-monitoring).
 allowed-tools: Bash,Write
 ---
 
