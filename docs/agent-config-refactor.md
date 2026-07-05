@@ -1,6 +1,6 @@
 # agent-config-refactor.md — エージェント設定ファイル群の修正方針
 
-> 作成: 2026-06-13。`/Users/maylac` 配下のエージェント設定(skills / hooks / plugins / CLAUDE.md / AGENTS.md / settings / rules / agents / commands)を実際に読んで作成。
+> 作成: 2026-06-13。`~` 配下のエージェント設定(skills / hooks / plugins / CLAUDE.md / AGENTS.md / settings / rules / agents / commands)を実際に読んで作成。
 > 実装時は「/goal agent-config-refactor.md に書かれたことを完遂しろ」で渡せる形式。
 > 2026-06-12 の `~/refactor-instructions.md`(ホーム構成リファクタ)は **大部分実施済み**(~/.git 撤去 ✓ / open-slide 移設 ✓ / ~/AGENTS.md・~/.claude/CLAUDE.md のポインタ化 ✓ / settings バックアップ退避 ✓)。本書はその**残件と新たに発見した負債**を扱う。
 
@@ -46,7 +46,7 @@
 
 1. タイムスタンプ付きバックアップを `~/.claude/backups/refactor-20260613/` に保存(必須)。
 2. **削除可**: `Bash(...)` エントリのうち ①改行を含む(heredoc 等の複数行コマンド全文) ②500文字超 のもの。これらは一回限りのコマンド固有文字列であり、将来の許可マッチに再利用されることが事実上ない。
-3. **リスト化のみ(削除しない)**: 実在しないローカルパスを含むエントリ(例: `/Users/maylac/data-reporting-pipeline/...`)→ `~/tasks/permissions-review.md` に出力して人間レビュー。
+3. **リスト化のみ(削除しない)**: 実在しないローカルパスを含むエントリ(例: `~/data-reporting-pipeline/...`)→ `~/tasks/permissions-review.md` に出力して人間レビュー。
 4. before/after のエントリ数・ファイルサイズを報告。編集後に `python3 -c "import json; json.load(open(...))"` で妥当性確認。
 - **期待効果**: 102.6KB → 大幅減(上位5エントリだけで約43KB)。
 - **検証**: valid JSON / `permissions` 構造不変 / Claude Code 起動エラーなし。
@@ -99,7 +99,7 @@
 grep -rl "Think Before Coding" ~/AGENTS.md ~/.claude/CLAUDE.md ~/.codex/AGENTS.md 2>/dev/null
 
 # settings 妥当性(P2 後)
-python3 -c "import json; d=json.load(open('/Users/maylac/.claude/settings.local.json')); print(len(d['permissions']['allow']),'entries')"
+python3 -c "import json, os; d=json.load(open(os.path.expanduser('~/.claude/settings.local.json'))); print(len(d['permissions']['allow']),'entries')"
 
 # symlink 整合(P3 後)
 ls ~/.claude/skills | wc -l; ls ~/.codex/skills | wc -l; ls ~/.agents/skills | wc -l

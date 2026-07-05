@@ -79,6 +79,10 @@
     {
       "id": "harness-optimizer-agent",
       "reason": "harness-optimizer exists only as a Claude agent (claude/agents/harness-optimizer.md); there is no ~/.codex/agents/harness-optimizer.toml counterpart. Intentional — this agent edits ~/.claude/agents/*.md directly, which is a Claude-specific concern."
+    },
+    {
+      "id": "codex-agent-superset",
+      "reason": "Claude agents are trimmed to the small always-available roster, while Codex keeps language and execution subagent TOML files with explicit model pins. The extra Codex agents are dormant until selected and do not add Claude context."
     }
   ]
 }

@@ -225,9 +225,10 @@ skill_frontmatter_check() {
 skill_frontmatter_check
 
 # --- Agents directory parity (AG-3) ---
-# harness-optimizer is a documented Claude-only exception (see
-# manifests/ai-config-sync.json intentional_differences: harness-optimizer-agent).
-AGENTS_CODEX_EXCEPTIONS='^harness-optimizer$'
+# harness-optimizer is a documented Claude-only exception. Codex also keeps a
+# pinned TOML superset for language/runtime specialists that Claude no longer
+# loads globally (see manifests/ai-config-sync.json intentional_differences).
+AGENTS_CODEX_EXCEPTIONS='^[[:space:]]*(architect|cpp-build-resolver|cpp-reviewer|doc-updater|docs-lookup|flutter-reviewer|go-build-resolver|go-reviewer|harness-optimizer|java-build-resolver|java-reviewer|kotlin-build-resolver|kotlin-reviewer|loop-operator|python-reviewer|pytorch-build-resolver|refactor-cleaner|rust-build-resolver|rust-reviewer|tdd-guide|typescript-reviewer)$'
 
 agents_repo_live_parity_check() {
   local repo_dir="$ROOT/claude/agents"
