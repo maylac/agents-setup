@@ -8,6 +8,17 @@
     "command": "$HOME/.claude/statusline.py"
   },
   "hooks": {
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/agent-terminal-notify.sh Claude"
+          }
+        ]
+      }
+    ],
     "Elicitation": [
       {
         "matcher": "",

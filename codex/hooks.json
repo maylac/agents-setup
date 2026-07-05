@@ -10,6 +10,17 @@
           }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "'$HOME/.codex/hooks/agent-terminal-notify.sh' Codex"
+          }
+        ]
+      }
     ]
   }
 }

@@ -48,6 +48,15 @@
       "codex_script": "codex/hooks/rtk-rewrite.sh",
       "claude_registration": "~/.claude/settings.json",
       "codex_registration": "~/.codex/hooks.json"
+    },
+    {
+      "id": "agent-terminal-notify",
+      "event": "Stop",
+      "matcher": "",
+      "claude_script": "claude/hooks/agent-terminal-notify.sh",
+      "codex_script": "codex/hooks/agent-terminal-notify.sh",
+      "claude_registration": "~/.claude/settings.json",
+      "codex_registration": "~/.codex/hooks.json"
     }
   ],
   "intentional_differences": [
