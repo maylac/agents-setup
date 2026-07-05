@@ -10,6 +10,11 @@ Installed plugins:
     Scope: user
     Status: ✘ disabled
 
+  ❯ arscontexta@agenticnotetaking
+    Version: 0.8.0
+    Scope: project
+    Status: ✘ disabled
+
   ❯ clangd-lsp@claude-plugins-official
     Version: 1.0.0
     Scope: user
@@ -43,6 +48,11 @@ Installed plugins:
   ❯ imessage@claude-plugins-official
     Version: 0.1.0
     Scope: project
+    Status: ✔ enabled
+
+  ❯ superpowers@superpowers-marketplace
+    Version: 6.1.0
+    Scope: user
     Status: ✔ enabled
 
 ```

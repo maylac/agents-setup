@@ -14,6 +14,8 @@ description: Local Claude hook and task-tracking conventions.
 
 Use auto-accept only for trusted, well-defined work. Keep exploratory work explicit. Do not use dangerously-skip-permissions mode. Prefer durable allow rules in the relevant settings file when repeated permission prompts are expected.
 
+**Codex exception**: Codex is intentionally run with `approval_policy = "never"` and `sandbox_mode = "danger-full-access"` (see `~/.codex/config.toml`). This is a deliberate, user-approved exception to the rule above, not an oversight — do not "fix" it back to a restrictive policy.
+
 ## TodoWrite
 
 Use TodoWrite for multi-step tasks where progress tracking helps the user steer the work. Skip it for one-step edits or quick answers.

@@ -10,12 +10,22 @@
 #       実体dir → 削除して symlink 化 / 既存symlink → 張り直し / 無し → 新規作成。
 #   - 各エージェントdir直下のリンク切れsymlinkは prune。
 #   - 名前が "." で始まるエントリ (.system 等) と非dirは無視。
+#   - source-command-* は Codex 専用の移植成果物のため Claude 側ミラーからは除外する
+#     (対応コマンドが ~/.claude/commands/ に実在し、二重登録になるため)。
 
 set -euo pipefail
 
 CANON="$HOME/.agents/skills"
 AGENT_DIRS=("$HOME/.claude/skills" "$HOME/.codex/skills")
 REL_PREFIX="../../.agents/skills"   # <agent>/skills/<name> から見た正本への相対パス
+
+# Claude 側のみ除外するスキル名パターン (Codex 側には引き続き symlink する)
+claude_excluded() {
+  case "$1" in
+    source-command-*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
 
 DRY_RUN=0
 [ "${1:-}" = "--dry-run" ] && DRY_RUN=1
@@ -34,6 +44,13 @@ for agent in "${AGENT_DIRS[@]}"; do
     [ -d "$path" ] || continue               # dir (symlink-to-dir含む) のみ
     link="$agent/$name"
     want="$REL_PREFIX/$name"
+
+    if [ "$agent" = "$HOME/.claude/skills" ] && claude_excluded "$name"; then
+      if [ -e "$link" ] || [ -L "$link" ]; then
+        run "rm -rf \"$link\""; pruned=$((pruned+1))
+      fi
+      continue
+    fi
 
     if [ -L "$link" ]; then
       cur="$(readlink "$link")"

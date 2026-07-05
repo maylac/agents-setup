@@ -10,14 +10,10 @@ Agents live in `~/.claude/agents/`. Use them for work that benefits from isolati
 
 | Agent | Use When |
 |-------|----------|
-| planner | A feature, refactor, or migration needs a real implementation plan. |
-| architect | The task changes system boundaries, data flow, or long-term structure. |
-| tdd-guide | A bug or feature needs a test-first loop or careful regression coverage. |
+| planner | A feature, refactor, migration, or system-boundary decision needs a real implementation plan. |
 | code-reviewer | A non-trivial code change needs review before landing. |
-| language-specific reviewers | A language-specific change has enough risk to justify specialist review. |
 | build-error-resolver | A build failure is not obvious after reading the error and local context. |
 | security-reviewer | The task touches auth, secrets, permissions, payments, user input, or network boundaries. |
-| docs-lookup | Library or API behavior needs current documentation. |
 
 ## Parallel Work
 

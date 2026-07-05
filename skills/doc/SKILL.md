@@ -1,6 +1,6 @@
 ---
 name: "doc"
-description: "Use when the task involves reading, creating, or editing `.docx` documents, especially when formatting or layout fidelity matters; prefer `python-docx` plus the bundled `scripts/render_docx.py` for visual checks."
+description: Fallback for reading, creating, or editing .docx when the documents plugin is unavailable; use python-docx and render checks.
 ---
 
 

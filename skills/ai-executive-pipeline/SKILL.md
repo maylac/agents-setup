@@ -1,6 +1,6 @@
 ---
 name: ai-executive-pipeline
-description: ビジネスアイデアを5人の伝説的CEOによる取締役会でレビューする。孫正義・ピーター・ティール・スティーブ・ジョブズ・ジェフ・ベゾス・ウォーレン・バフェットがシーケンシャルに分析し、ビジョンから投資判断まで完全な戦略を生成する。
+description: Review a business idea through five legendary CEO/investor perspectives and synthesize strategy and investment judgment.
 ---
 
 # AI Executive Pipeline — 伝説のCEO取締役会

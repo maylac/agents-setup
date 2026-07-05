@@ -1,6 +1,6 @@
 ---
 name: transcription-to-content
-description: "Transform podcast transcripts into multiple content assets—blog posts, social snippets, newsletters, and SEO-optimized landing pages—using systematic repurposing workflows. Use when: Maximizing ROI from podcast episodes; Creating blog content from audio/video; Generating social media posts from long-form content; Building newsletter content from transcripts; Extracting quotes and highlights for promotion"
+description: Repurpose podcast/audio/video transcripts into blog posts, social snippets, newsletters, landing pages, quotes, and highlights.
 license: MIT
 metadata:
   author: ClawFu

@@ -1,6 +1,6 @@
 ---
 name: create-theme
-description: Use this skill when the user wants to create, draft, author, or extract a slide theme in this open-slide repo. Triggers on phrases like "create a theme", "make a theme called X", "extract a theme from <slide>", "build a theme from these images". Produces a single markdown file under `themes/<id>.md` describing palette, typography, layout, fixed Title/Footer components, and motion philosophy. Do NOT use for editing slides themselves — only for authoring `themes/<id>.md`.
+description: Create or extract an open-slide theme markdown file under themes/<id>.md. Not for editing slide content.
 ---
 
 # Create a slide theme

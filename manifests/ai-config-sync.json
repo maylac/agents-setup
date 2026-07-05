@@ -48,12 +48,6 @@
       "codex_script": "codex/hooks/rtk-rewrite.sh",
       "claude_registration": "~/.claude/settings.json",
       "codex_registration": "~/.codex/hooks.json"
-    },
-    {
-      "id": "ghostty-fronting",
-      "event": "Stop",
-      "claude_registration": "~/.claude/settings.json",
-      "codex_registration": "~/.codex/hooks.json"
     }
   ],
   "intentional_differences": [
@@ -68,6 +62,14 @@
     {
       "id": "claude-notification-hooks",
       "reason": "Claude has Notification, Elicitation, and PermissionRequest hooks that do not map cleanly to the current Codex hook surface."
+    },
+    {
+      "id": "claude-rules-common",
+      "reason": "rules/common/*.md (development workflow, testing, coding style, etc.) is loaded only via ~/.claude/rules/common; Codex has no equivalent rules directory and relies on home/AGENTS.md alone. Intentional for now — revisit if Codex sessions need the same standards."
+    },
+    {
+      "id": "harness-optimizer-agent",
+      "reason": "harness-optimizer exists only as a Claude agent (claude/agents/harness-optimizer.md); there is no ~/.codex/agents/harness-optimizer.toml counterpart. Intentional — this agent edits ~/.claude/agents/*.md directly, which is a Claude-specific concern."
     }
   ]
 }

@@ -1,6 +1,6 @@
 ---
 name: udemy-transcript-to-notebooklm
-description: Udemyの動画講義トランスクリプト(.txtファイル)をインプットとして、NotebookLMで復習・学習定着するための構造化markdownを生成する。章立てを厳守し、各章ごとに要約・キーコンセプト・復習Q&A・用語集などを含む。トリガー: 講義を復習したい、トランスクリプトを整理したい、NotebookLM用に変換したい。
+description: Convert Udemy transcript .txt files into structured Markdown for NotebookLM review, with summaries, concepts, Q&A, and glossary.
 ---
 
 # Udemy Transcript → NotebookLM 学習用Markdown

@@ -1,3 +1,8 @@
+---
+name: update-codemaps
+description: Analyze the codebase structure and generate token-lean architecture documentation under docs/CODEMAPS/.
+---
+
 # Update Codemaps
 
 Analyze the codebase structure and generate token-lean architecture documentation.

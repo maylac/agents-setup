@@ -1,6 +1,6 @@
 ---
 name: slide-authoring
-description: Technical reference for writing or editing open-slide pages — file contract, 1920×1080 canvas, type scale, layout, palette/visual direction, and assets. Consult this whenever you are about to write or modify any file under `slides/<id>/`, including from inside the `create-slide` or `apply-comments` workflows, or for any ad-hoc slide edit. Triggers on phrases like "edit slide", "tweak this page", "fix the layout", "change the palette", "investigate the slide framework", "how do slides work here".
+description: Technical reference for editing open-slide pages under slides/<id>: canvas, type, layout, palette, assets, and framework contract.
 ---
 
 # Authoring open-slide pages

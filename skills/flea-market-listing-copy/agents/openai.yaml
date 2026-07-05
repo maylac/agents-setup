@@ -1,0 +1,4 @@
+interface:
+  display_name: "Flea Market Listing Copy"
+  short_description: "Research photos and draft resale copy"
+  default_prompt: "Use $flea-market-listing-copy to research a photographed item, recommend a price, and draft a resale listing."

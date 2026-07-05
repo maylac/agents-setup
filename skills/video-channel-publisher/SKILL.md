@@ -1,6 +1,6 @@
 ---
 name: video-channel-publisher
-description: Select publication channels and prepare video publishing packages for YouTube, YouTube Shorts, TikTok, Instagram Reels, X, LinkedIn, newsletters, landing pages, and portfolios. Use when Codex is asked where to publish a video, how to adapt a video for each channel, write titles/descriptions/hashtags/captions, create a launch checklist, schedule publication, or safely publish only after explicit user approval.
+description: Prepare video publishing packages for YouTube, Shorts, TikTok, Instagram, X, LinkedIn, newsletters, and portfolios. Not for topic discovery (use video-topic-scout), scripts/storyboards (use video-script-builder), or rendering videos (use hyperframes-video-producer).
 ---
 
 # Video Channel Publisher

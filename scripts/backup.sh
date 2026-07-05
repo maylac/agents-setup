@@ -53,8 +53,8 @@ sanitize_file() {
     -e 's#may\.lac1206\@gmail\.com#[redacted-email]#g;' \
     -e 's#gh[opsu]_[A-Za-z0-9_]+#[REDACTED_GITHUB_TOKEN]#g;' \
     -e 's#github_pat_[A-Za-z0-9_]+#[REDACTED_GITHUB_TOKEN]#g;' \
-    -e 's#(Authorization[[:space:]]*=[[:space:]]*["'\'']?Bearer[[:space:]]+)[A-Za-z0-9._-]+#$1[REDACTED_BEARER_TOKEN]#g;' \
-    -e 's#(Authorization:[[:space:]]*Bearer[[:space:]]+)[A-Za-z0-9._-]+#$1[REDACTED_BEARER_TOKEN]#g;' \
+    -e 's#(Authorization[[:space:]]*=[[:space:]]*["'\'']?Bearer[[:space:]]+)[A-Za-z0-9._-]+#${1}[REDACTED_BEARER_TOKEN]#g;' \
+    -e 's#(Authorization:[[:space:]]*Bearer[[:space:]]+)[A-Za-z0-9._-]+#${1}[REDACTED_BEARER_TOKEN]#g;' \
     "$file"
 }
 
@@ -278,7 +278,7 @@ write_inventory() {
     printf '## Excluded sources\n\n'
     printf '%s\n' '- `~/.agents/skills/gstack`: upstream repo; restore from `https://github.com/garrytan/gstack.git`'
     printf '%s\n' '- `~/.agents/skills/capafy-publisher`: contains auth/configuration and publishing workflow code requiring manual review'
-    printf '%s\n' '- `~/.agents/skills/agmsg/db` and `.agmsg`: local message state'
+    printf '%s\n' '- `~/.agents/agmsg/db` and `.agmsg`: local message state'
     printf '%s\n' '- `~/.claude` sessions, projects, tasks, telemetry, cache, channels, auth, and backups'
     printf '%s\n\n' '- `~/.codex` auth, sessions, sqlite DBs, generated images, plugin caches, memories, logs, and app-server state'
     printf '## Skill snapshot\n\n'

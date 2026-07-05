@@ -1,6 +1,6 @@
 ---
 name: apple-shortcuts-builder
-description: Create importable Apple Shortcuts for iOS, iPadOS, and macOS from user requirements by designing the action flow, generating a .shortcut plist, signing it with macOS shortcuts sign, and giving import instructions. Use when the user asks Codex to build, package, sign, export, or troubleshoot Apple Shortcuts, iOS Shortcuts, Siri Shortcuts, .shortcut files, shortcut URL schemes, or shortcut workflows.
+description: Build, sign, export, or troubleshoot importable Apple Shortcuts (.shortcut) for iOS, iPadOS, macOS, Siri, and URL schemes.
 ---
 
 # Apple Shortcuts Builder

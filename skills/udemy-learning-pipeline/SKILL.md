@@ -1,6 +1,6 @@
 ---
 name: udemy-learning-pipeline
-description: "Udemyの受講済み講座から学習資産を自動構築するフルパイプライン。トランスクリプト一括収集→学習資産MD生成→NotebookLMジャンル別ノート作成までを一気通貫で実行する。トリガー: Udemyトランスクリプトを収集したい、学習資産を作りたい、NotebookLMにまとめてアップしたい。"
+description: Run the Udemy learning pipeline: collect transcripts, generate study assets, and create NotebookLM-ready materials.
 ---
 
 # Udemy Learning Pipeline
@@ -17,7 +17,7 @@ Udemy受講済み講座のトランスクリプトを収集し、学習資産と
 ## スクリプトの場所
 
 ```
-~/dev/udemy-transcripts/
+~/workspace/udemy-transcripts/
 ├── collect.py          # トランスクリプト収集（yt-dlp + Udemy API）
 ├── make_assets.py      # 学習資産生成（Codex fugu-ultra）※Codexで代替可
 ├── transcripts/        # 収集したトランスクリプトMD
@@ -39,7 +39,7 @@ yt-dlp --cookies-from-browser=chrome \
 ### 1-2. 受講コース一覧を確認
 
 ```bash
-python3 ~/dev/udemy-transcripts/collect.py --list-only
+python3 ~/workspace/udemy-transcripts/collect.py --list-only
 ```
 
 - Udemy Base URL: `https://toyotajp.udemy.com`（企業アカウントの場合）
@@ -50,7 +50,7 @@ python3 ~/dev/udemy-transcripts/collect.py --list-only
 
 ```bash
 screen -dmS udemy-collect bash -c "
-  PYTHONUNBUFFERED=1 python3 ~/dev/udemy-transcripts/collect.py \
+  PYTHONUNBUFFERED=1 python3 ~/workspace/udemy-transcripts/collect.py \
     >> /tmp/udemy_collect.log 2>&1
 "
 ```
@@ -58,7 +58,7 @@ screen -dmS udemy-collect bash -c "
 進捗確認:
 ```bash
 strings /tmp/udemy_collect.log | grep -E "^\[|Done:" | tail -5
-ls ~/dev/udemy-transcripts/transcripts/*.md | wc -l
+ls ~/workspace/udemy-transcripts/transcripts/*.md | wc -l
 ```
 
 ### 収集スクリプト仕様（collect.py）
@@ -111,8 +111,8 @@ GET https://toyotajp.udemy.com/api-2.0/organizations/199704/search-courses/v2/?q
 
 1. 対象ファイルを列挙
    ```bash
-   ls ~/dev/udemy-transcripts/transcripts/*.md | wc -l
-   ls ~/dev/udemy-transcripts/learning-assets/*.md 2>/dev/null | wc -l
+   ls ~/workspace/udemy-transcripts/transcripts/*.md | wc -l
+   ls ~/workspace/udemy-transcripts/learning-assets/*.md 2>/dev/null | wc -l
    ```
 
 2. 未処理ファイルを特定して1件ずつ処理
@@ -126,7 +126,7 @@ GET https://toyotajp.udemy.com/api-2.0/organizations/199704/search-courses/v2/?q
 ```bash
 screen -dmS make-assets bash -c "
   source ~/.config/secrets/sakana
-  PYTHONUNBUFFERED=1 python3 ~/dev/udemy-transcripts/make_assets.py \
+  PYTHONUNBUFFERED=1 python3 ~/workspace/udemy-transcripts/make_assets.py \
     >> /tmp/make_assets.log 2>&1
 "
 ```

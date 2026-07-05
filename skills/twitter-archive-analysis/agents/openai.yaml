@@ -1,4 +1,0 @@
-interface:
-  display_name: "Twitter Archive Analysis"
-  short_description: "Analyze local Twitter archives"
-  default_prompt: "Use $twitter-archive-analysis to analyze patterns in my local Twitter archive."
