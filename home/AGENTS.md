@@ -45,6 +45,6 @@ Assume many user prompts are dictated by voice and may contain speech-to-text er
 
 ## Local Tools
 
-- **OmniGet**: installed at `/Users/maylac/Applications/omniget.app`; source checkout at `/Users/maylac/workspace/tools/omniget`. Use `omniget` to launch, `omniget --version` to verify, `omniget --source-path` to locate the repo, and `omniget --dev` from any directory to start the Tauri dev app.
+- **OmniGet**: installed at `$HOME/Applications/omniget.app`; source checkout at `$HOME/workspace/tools/omniget`. Use `omniget` to launch, `omniget --version` to verify, `omniget --source-path` to locate the repo, and `omniget --dev` from any directory to start the Tauri dev app.
 
 <!-- Maintenance: AGENTS.md is the source of truth (shared tool-agnostically, e.g. with Codex). ~/CLAUDE.md is a symlink to this file — keep the symlink intact. -->
