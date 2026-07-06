@@ -22,6 +22,15 @@ Choose tests proportional to the change:
 
 Use test-first development when it clarifies the work or prevents regression. It is strongly useful for bug fixes and behavior changes, but it is not mandatory for every edit.
 
+## Acceptance Bar (checkable)
+
+A tested change passes this bar only if all applicable lines hold:
+
+- bug fix: the regression test demonstrably fails on the pre-fix code, and the report states how that was checked (stash/revert run, or explicit reasoning when impractical)
+- new behavior: the test name states the behavior ("rejects expired token"), not the mechanism ("calls validate()")
+- the completion report contains the pasted test command and its output — the bare claim "tests pass" fails this line
+- no test was weakened to go green (assertion removed or loosened, test skipped); if one was, that fact is the headline of the report, not a footnote
+
 ## Troubleshooting Test Failures
 
 When tests fail, check isolation, fixtures, mocks, and assumptions before changing production code. Fix the implementation unless the test is demonstrably wrong or stale.

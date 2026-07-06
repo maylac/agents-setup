@@ -26,9 +26,10 @@ Validate untrusted input at system boundaries. Prefer existing schema or validat
 
 ## Completion Check
 
-Before marking code work complete, confirm the relevant checks for this change:
-- readable names and local style
-- focused functions and modules
-- clear handling of realistic failure paths
-- no unexplained hardcoded secrets or magic values
-- no broad refactors unrelated to the request
+Code work may be called complete only when every applicable line below passes. Each line is pass/fail — if it cannot be demonstrated, it fails:
+
+- Names: a reader can predict what each new function or variable does without opening its body; no new abbreviation that doesn't already appear in the repo.
+- Scope: every hunk in the diff traces back to the request; a hunk that would make a reviewer ask "why is this here?" fails this line.
+- Failure paths: every new I/O, parse, or external call either handles failure or deliberately propagates it, and at least one realistic failure path was actually exercised (test or manual run), not just written.
+- Magic values: every literal that isn't self-explanatory is named or carries a comment stating the constraint it encodes.
+- Proof: "it works" is backed by pasted output (test run, log, or behavior diff) in the completion report. A description of what should happen is not proof.

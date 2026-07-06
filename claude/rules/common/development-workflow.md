@@ -24,6 +24,11 @@ Use tests proportional to risk. For bug fixes, prefer a regression test that fai
 
 Review non-trivial diffs for regressions, scope creep, missing verification, and security-sensitive changes before calling the work complete. Use a reviewer agent only when the extra pass is likely to catch issues the main session might miss.
 
+A review counts as done only when each of these has an explicit written answer:
+- blast radius: what breaks first if this diff is wrong, and who notices
+- riskiest line: which single change is most likely to be wrong, and which check actually exercised it
+- out of scope: what was deliberately not done, stated so the next session doesn't rediscover it
+
 ## Commit And Push
 
 Follow the repository's git workflow and the user's explicit request. Do not create commits or pushes just because this workflow was loaded.
