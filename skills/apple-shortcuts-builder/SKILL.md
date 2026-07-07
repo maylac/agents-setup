@@ -23,7 +23,7 @@ description: Build, sign, export, or troubleshoot importable Apple Shortcuts (.s
 4. Generate the file with `scripts/build_shortcut.py` when the output is an importable shortcut:
 
 ```bash
-python3 $HOME/.codex/skills/apple-shortcuts-builder/scripts/build_shortcut.py \
+python3 ~/.agents/skills/apple-shortcuts-builder/scripts/build_shortcut.py \
   --config shortcut.json \
   --unsigned-output shortcut.unsigned.shortcut \
   --signed-output "My Shortcut.shortcut"

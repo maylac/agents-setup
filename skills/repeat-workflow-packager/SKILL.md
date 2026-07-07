@@ -18,6 +18,7 @@ Turn repeated, costly, or error-prone work into the smallest useful reusable ass
 
 Useful local locations:
 
+- `~/.agents/skills/**/SKILL.md` — canonical shared store (check here FIRST)
 - Codex sessions: `~/.codex/session_index.jsonl`, `~/.codex/sessions/**`
 - Codex memories: `~/.codex/memories/MEMORY.md`, `~/.codex/memories/rollout_summaries/**`
 - Codex skills: `~/.codex/skills/**/SKILL.md`
@@ -63,9 +64,9 @@ Then create only the high-confidence missing items.
 ## Creation Rules
 
 1. Keep assets narrow and source-aware. Do not create broad "do everything" skills.
-2. Put the canonical skill directory in one location, normally `~/.codex/skills/<skill-name>/` when Codex metadata such as `agents/openai.yaml` is useful.
-3. Make the other runtime point at the canonical directory with a symlink, for example `~/.claude/skills/<skill-name> -> ~/.codex/skills/<skill-name>`, to avoid double maintenance.
-4. If symlinks are not supported in a future runtime, keep one clearly named canonical source and document any generated copy as derived.
+2. Put the canonical skill directory in `~/.agents/skills/<skill-name>/` (the shared canonical store).
+3. Run `~/.agents/sync-skills.sh` (or create symlinks `~/.claude/skills/<name> -> ../../.agents/skills/<name>` and the Codex equivalent).
+4. Keep exactly one canonical source; never hand-copy into a harness directory.
 5. For Codex skills, initialize with `~/.codex/skills/.system/skill-creator/scripts/init_skill.py` when creating from scratch.
 6. For Claude Code compatibility, prefer the symlinked skill directory; keep frontmatter to `name` and `description` unless the local format clearly requires more.
 7. Use `apply_patch` for manual file edits.

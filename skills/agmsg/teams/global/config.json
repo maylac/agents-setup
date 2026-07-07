@@ -1,0 +1,1 @@
+{"name":"global","agents":{"codex":{"registrations":[{"type":"codex","project":"$HOME"}]},"claude":{"registrations":[{"type":"claude-code","project":"$HOME"}]},"antigravity":{"registrations":[{"type":"antigravity","project":"$HOME"}]},"hsat-t-001":{"registrations":[{"type":"codex","project":"$HOME"}]}},"created_at":"2026-07-04T23:26:34Z"}

@@ -1,6 +1,6 @@
 ---
 name: note-curator
-description: Curate a note.com creator into myLife wiki: select articles, build reading order, and extract insights without full-text storage.
+description: 'Curate a note.com creator into myLife wiki: select articles, build reading order, and extract insights without full-text storage.'
 ---
 
 # Note Curator
@@ -57,75 +57,12 @@ Extract the creator slug from the URL.
 Use note's creator contents API for catalog metadata. Re-check the endpoint if it fails; note internals may change.
 
 ```bash
-python3 - <<'PY'
-from __future__ import annotations
-import html
-import json
-import re
-import time
-import urllib.request
-from collections import Counter
-
-creator = "yusuke_motoyama"
-headers = {"User-Agent": "Mozilla/5.0 (compatible; myLife-note-curator/1.0)"}
-rows = []
-page = 1
-
-while True:
-    url = f"https://note.com/api/v2/creators/{creator}/contents?kind=note&page={page}"
-    req = urllib.request.Request(url, headers=headers)
-    with urllib.request.urlopen(req, timeout=20) as response:
-        data = json.load(response)
-
-    for item in data["data"]["contents"]:
-        tags = []
-        for tag in item.get("hashtags") or []:
-            name = ((tag or {}).get("hashtag") or {}).get("name") or ""
-            if name:
-                tags.append(name.lstrip("#"))
-
-        body = item.get("body") or item.get("description") or ""
-        body = re.sub(r"<[^>]+>", " ", body)
-        preview = html.unescape(re.sub(r"\s+", " ", body)).strip()[:180]
-
-        rows.append({
-            "title": item.get("name") or "",
-            "key": item.get("key") or "",
-            "url": item.get("noteUrl") or f"https://note.com/{creator}/n/{item.get('key')}",
-            "date": (item.get("publishAt") or "")[:10],
-            "like": item.get("likeCount") or 0,
-            "comments": item.get("commentCount") or 0,
-            "is_limited": bool(item.get("isLimited")),
-            "is_membership": bool(item.get("isMembershipConnected")),
-            "tags": tags,
-            "preview": preview,
-        })
-
-    if data["data"].get("isLastPage"):
-        break
-    page += 1
-    time.sleep(0.05)
-
-print("TOTAL", len(rows), "PAGES", page)
-if rows:
-    dates = [row["date"] for row in rows if row["date"]]
-    print("DATE_RANGE", min(dates), max(dates))
-    print("LIMITED_COUNTS", Counter(row["is_limited"] for row in rows))
-    print("TAG_TOP")
-    for tag, count in Counter(tag for row in rows for tag in row["tags"]).most_common(25):
-        print(f"- {tag}: {count}")
-
-    print("\nTOP_BY_LIKES")
-    for index, row in enumerate(sorted(rows, key=lambda row: row["like"], reverse=True)[:40], 1):
-        scope = "limited" if row["is_limited"] else "open"
-        print(f"{index:02d}. {row['like']:4d} | {row['date']} | {scope} | {row['title']} | {row['url']} | tags={','.join(row['tags'][:4])}")
-
-    print("\nRECENT")
-    for index, row in enumerate(sorted(rows, key=lambda row: row["date"], reverse=True)[:30], 1):
-        scope = "limited" if row["is_limited"] else "open"
-        print(f"{index:02d}. {row['date']} | {row['like']:4d} | {scope} | {row['title']} | {row['url']} | tags={','.join(row['tags'][:4])}")
-PY
+# Extract the creator slug from the URL, then:
+python3 scripts/scan_creator.py <creator_slug>
 ```
+
+If the endpoint 404s or the JSON shape changed, re-check note's `/api/v2/creators/<slug>/contents` response and adjust `scripts/scan_creator.py`.
+
 
 Use this scan to build a compact shortlist:
 
@@ -142,78 +79,11 @@ Read selected article pages or APIs only to produce analysis. Keep extracted tex
 If direct article API access works:
 
 ```bash
-python3 - <<'PY'
-from __future__ import annotations
-import html
-import json
-import re
-import urllib.request
-from html.parser import HTMLParser
-
-keys = ["n541b81e07619"]
-headers = {"User-Agent": "Mozilla/5.0 (compatible; myLife-note-curator/1.0)"}
-
-class TextExtractor(HTMLParser):
-    block_tags = {"p", "li", "h1", "h2", "h3", "h4", "blockquote"}
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.parts = []
-        self.buffer = []
-        self.skip = 0
-
-    def handle_starttag(self, tag, attrs):
-        if tag in {"script", "style", "noscript", "svg", "figure", "iframe"}:
-            self.skip += 1
-        if tag == "br" and self.skip == 0:
-            self.buffer.append("\n")
-
-    def handle_endtag(self, tag):
-        if tag in {"script", "style", "noscript", "svg", "figure", "iframe"} and self.skip:
-            self.skip -= 1
-        if tag in self.block_tags and self.skip == 0:
-            text = re.sub(r"\s+", " ", "".join(self.buffer)).strip()
-            self.buffer = []
-            if text:
-                self.parts.append(html.unescape(text))
-
-    def handle_data(self, data):
-        if self.skip == 0:
-            self.buffer.append(data)
-
-    def close(self):
-        super().close()
-        text = re.sub(r"\s+", " ", "".join(self.buffer)).strip()
-        if text:
-            self.parts.append(html.unescape(text))
-
-for key in keys:
-    url = f"https://note.com/api/v3/notes/{key}"
-    req = urllib.request.Request(url, headers=headers)
-    with urllib.request.urlopen(req, timeout=20) as response:
-        data = json.load(response)["data"]
-
-    parser = TextExtractor()
-    parser.feed(data.get("body") or "")
-    parser.close()
-
-    parts = []
-    seen = set()
-    for part in parser.parts:
-        if part in seen or len(part) < 20:
-            continue
-        if "pic.twitter" in part or "https://t.co" in part:
-            continue
-        seen.add(part)
-        parts.append(part)
-
-    print(f"\n=== {data.get('name')} ===")
-    print(f"URL: https://note.com/{data.get('user', {}).get('urlname', '')}/n/{key}")
-    print(f"chars={sum(len(part) for part in parts)}")
-    for index, part in enumerate(parts[:18], 1):
-        print(f"{index:02d}. {part[:240]}")
-PY
+python3 scripts/read_articles.py <note_key1> [note_key2 ...]
 ```
+
+If `/api/v3/notes/<key>` 404s, fall back to the Chrome plugin (logged-in read) or public RSS/metadata, and label the limitation. Keep extracted text transient.
+
 
 If the user explicitly says their browser account can read the article:
 

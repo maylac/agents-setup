@@ -1,6 +1,6 @@
 ---
 name: udemy-learning-pipeline
-description: Run the Udemy learning pipeline: collect transcripts, generate study assets, and create NotebookLM-ready materials.
+description: 'Run the Udemy learning pipeline: collect transcripts, generate study assets, and create NotebookLM-ready materials.'
 ---
 
 # Udemy Learning Pipeline
@@ -43,6 +43,7 @@ python3 ~/workspace/udemy-transcripts/collect.py --list-only
 ```
 
 - Udemy Base URL: `https://toyotajp.udemy.com`（企業アカウントの場合）
+  - **Toyota 企業テナントは 2026-08-31 まで**。テナント失効後は個人アカウント `https://www.udemy.com` に切り替え、organizations 検索 API（下記）は使用不可。
 - Cookie ファイル: `/tmp/udemy_cookies.txt`
 - API: `GET /api-2.0/users/me/subscribed-courses/?ordering=-last_accessed`
 
@@ -179,7 +180,7 @@ notebook_create(title="生成AI・入門・活用")
 source_add(
   notebook_id=<id>,
   source_type="file",
-  file_path="$HOME/dev/udemy-transcripts/learning-assets/<file>.md"
+  file_path="$HOME/workspace/udemy-transcripts/learning-assets/<file>.md"
 )
 ```
 
@@ -187,6 +188,8 @@ source_add(
 - 並列アップロード可（同一ノートブックへの複数 source_add を同時発行）
 
 ### 既存ノートブック ID（2026-05-29 時点）
+
+> 鮮度注記: 下表は 2026-05-29 時点のスナップショット。再利用前に `notebook_list` で存在を確認すること。
 
 | ジャンル | ノートブック ID |
 |----------|----------------|
@@ -204,8 +207,7 @@ source_add(
 
 ## Step 4: 模擬試験エクスポート（AWS SAA）
 
-スクレイパーは `$HOME/workspace/PMP_mock/` にある。
-詳細は `/udemy-mockexam-exporter` スキルを参照。
+模擬試験のエクスポート手順・スクレイパーの場所は `/udemy-mockexam-exporter` スキルを正とする（このパイプラインから場所をハードコードしない）。
 
 ### 命名規則
 

@@ -1,6 +1,6 @@
 ---
 name: slide-authoring
-description: Technical reference for editing open-slide pages under slides/<id>: canvas, type, layout, palette, assets, and framework contract.
+description: 'Technical reference for editing open-slide pages under slides/<id>: canvas, type, layout, palette, assets, and framework contract.'
 ---
 
 # Authoring open-slide pages

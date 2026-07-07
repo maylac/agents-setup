@@ -8,6 +8,7 @@ description: Produce, edit, preview, render, and verify HyperFrames HTML/CSS/JS 
 ## Workflow
 
 1. **Inspect the project**
+   - Default project: `~/workspace/heygen-codex-video-studio` (hyperframes/, storyboards/, renders/). Verify with `ls`.
    - Locate `package.json`, HyperFrames compositions, `assets/`, `renders/`, and storyboards.
    - If no project exists, create a minimal repo or composition only when the user asked for implementation.
 2. **Map script to scenes**

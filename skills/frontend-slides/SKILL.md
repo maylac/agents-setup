@@ -17,6 +17,8 @@ Inspired by the visual exploration approach showcased in work by zarazhangrui (c
 - Improving an existing HTML presentation's layout, motion, or typography
 - Exploring presentation styles with a user who does not know their design preference yet
 
+Boundary: for the open-slide framework (React/TSX slides under `slides/<id>`) use the open-slide family (create-slide/slide-authoring); when the deliverable must be an actual `.pptx` file use the pptx skill. This skill is for standalone HTML/CSS/JS decks.
+
 ## Non-Negotiables
 
 1. **Zero dependencies**: default to one self-contained HTML file with inline CSS and JS.
@@ -168,10 +170,8 @@ Use these maxima unless the user explicitly asks for denser slides and readabili
 - fixed-height content boxes that break on short screens
 - invalid negated CSS functions like `-clamp(...)`
 
-## Related ECC Skills
+## Related Skills
 
-- `frontend-patterns` for component and interaction patterns around the deck
-- `liquid-glass-design` when a presentation intentionally borrows Apple glass aesthetics
 - `e2e-testing` if you need automated browser verification for the final deck
 
 ## Deliverable Checklist

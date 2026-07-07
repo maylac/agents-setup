@@ -109,7 +109,7 @@ Each skill is evaluated against this checklist:
 - [ ] Content overlap with other skills checked
 - [ ] Overlap with MEMORY.md / AGENTS.md checked
 - [ ] Freshness of technical references verified (use WebSearch if tool names / CLI flags / APIs are present)
-- [ ] Usage frequency considered
+- [ ] Usage frequency considered — CAVEAT: if all skills show 0 uses, treat usage data as broken and judge on quality/overlap only.
 ```
 
 Verdict criteria:

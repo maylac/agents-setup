@@ -24,7 +24,7 @@ Follow this sequence for any mobile screen:
 - What type of app? (fitness, finance, social, productivity, health, crypto, etc.)
 - Who is the user? (new, returning, power user — adapt the experience)
 - What's the primary action on this screen?
-- What industry design conventions apply? (See `references/industry-conventions.md`)
+- What industry design conventions apply?
 
 ### Step 2: Structure First (UX Lens)
 - Map the user flow: what screen comes before and after?
@@ -146,4 +146,4 @@ When building these designs as React artifacts or HTML:
 - Use `rounded-2xl` or `rounded-3xl` for modern card aesthetics
 - Apply `backdrop-blur` for glassmorphism effects where appropriate
 
-For deeper guidance on industry-specific conventions and emotional design patterns, read `references/industry-conventions.md`.
+Boundary: this skill covers mobile app screens, flows, and mockups (React Native / Flutter / SwiftUI-style). For general web/component visual design, use the frontend-design plugin instead.

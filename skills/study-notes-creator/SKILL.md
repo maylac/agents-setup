@@ -90,143 +90,24 @@ Brief explanation.
 
 ---
 
-## Step 4: Mermaid Diagrams (Primary)
+## Step 4-5: Diagrams (Mermaid primary, ASCII fallback)
 
-### Flowchart (Process Flow)
+Pick the diagram type from the content, then write it in Mermaid (fall back to ASCII box-drawing only where Mermaid can't render):
 
-```mermaid
-flowchart LR
-    A[Start] --> B[Process]
-    B --> C{Decision}
-    C -->|Yes| D[Action]
-    C -->|No| E[End]
-```
+| Content type | Diagram |
+|---|---|
+| Process / sequence of steps | Mermaid `flowchart LR` |
+| Hierarchy / taxonomy / tree | Mermaid `flowchart TB` |
+| Interaction / message order over time | Mermaid `sequenceDiagram` |
+| State machine / lifecycle | Mermaid `stateDiagram-v2` |
+| Repeating loop / feedback cycle | Mermaid cycle (`flowchart` with a back-edge) |
+| Chronology / milestones | Mermaid `timeline` |
+| Concept map / brainstorm | Mermaid `mindmap` |
+| Layered stack / architecture | ASCII box stack (└─┘ │ ─) when layers must align visually |
 
-**Use for:** Processes, decision trees, algorithms, workflows
+ASCII box chars: `┌ ┐ └ ┘  ─ │  ├ ┤ ┬ ┴  ▶ ▼ ◀ ▲`. Every note should carry at least one diagram.
 
-### Flowchart TB (Hierarchy/Tree)
-
-```mermaid
-flowchart TB
-    A[Main Topic] --> B[Branch A]
-    A --> C[Branch B]
-    A --> D[Branch C]
-    B --> E[Detail 1]
-    B --> F[Detail 2]
-    C --> G[Detail 3]
-```
-
-**Use for:** Taxonomies, classifications, org charts, topic breakdowns
-
-### Sequence Diagram
-
-```mermaid
-sequenceDiagram
-    participant A as Actor
-    participant S as System
-    A->>S: Request
-    S-->>A: Response
-    A->>S: Follow-up
-```
-
-**Use for:** Interactions, conversations, API calls, cause-effect chains
-
-### State Diagram
-
-```mermaid
-stateDiagram-v2
-    [*] --> Idle
-    Idle --> Active : Start
-    Active --> Success : Complete
-    Active --> Error : Fail
-    Error --> Idle : Retry
-    Success --> [*]
-```
-
-**Use for:** Lifecycles, status changes, phases, state machines
-
-### Cycle Diagram
-
-```mermaid
-flowchart LR
-    A[Stage 1] --> B[Stage 2]
-    B --> C[Stage 3]
-    C --> D[Stage 4]
-    D --> A
-```
-
-**Use for:** Water cycle, feedback loops, iterative processes, life cycles
-
-### Timeline
-
-```mermaid
-timeline
-    title Historical Events
-    1800 : Event A
-    1850 : Event B
-    1900 : Event C
-    1950 : Event D
-```
-
-**Use for:** Historical timelines, project phases, evolution of concepts
-
-### Mind Map
-
-```mermaid
-mindmap
-  root((Topic))
-    Branch A
-      Detail 1
-      Detail 2
-    Branch B
-      Detail 3
-      Detail 4
-```
-
-**Use for:** Brainstorming, topic overviews, concept relationships
-
----
-
-## Step 5: ASCII Diagrams (Edge Cases)
-
-Use ASCII only for:
-- **Overview boxes** with custom text layout
-- **Layer/stack diagrams**
-- **Comparison layouts**
-
-### Overview Box
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                              TOPIC TITLE                                    │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│  Key Point 1    Key Point 2    Key Point 3                                  │
-│      │              │              │                                        │
-│  [details]      [details]      [details]                                    │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
-
-### Layers/Stack
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                              Layer 4 (Top)                                  │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                              Layer 3                                        │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                              Layer 2                                        │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                              Layer 1 (Bottom)                               │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
-
-### Box Characters Reference
-
-```
-Corners: ┌ ┐ └ ┘   Lines: ─ │   T-joints: ├ ┤ ┬ ┴   Arrows: ▶ ▼ ◀ ▲
-```
+> Boundary: this skill produces Obsidian-style study notes with diagrams. To turn transcripts/books into NotebookLM-ready study material, use `udemy-transcript-to-notebooklm` or `book-to-notebooklm` instead.
 
 ---
 

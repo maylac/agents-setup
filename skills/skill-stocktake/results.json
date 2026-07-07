@@ -1,0 +1,737 @@
+{
+  "mode": "full",
+  "batch_progress": {
+    "total": 121,
+    "evaluated": 121,
+    "status": "completed"
+  },
+  "skills": {
+    "android-clean-architecture": {
+      "path": "~/.claude/skills/android-clean-architecture/SKILL.md",
+      "verdict": "Keep",
+      "reason": "Lean (339 lines), well-scoped KMP/Android layering guide with concrete anti-pattern list (L327-334) and cross-refs to compose-multiplatform-patterns and kotlin-coroutines-flows (L336-339) instead of duplicating them. Relevant to planned Android/KMP app (kotoba-boost). Description 160 chars, fine.",
+      "mtime": "2026-06-04T20:21:44Z"
+    },
+    "api-design": {
+      "path": "~/.claude/skills/api-design/SKILL.md",
+      "verdict": "Retire",
+      "reason": "Pure restatement of REST conventions the model knows cold (nouns-plural URLs L22-56, status-code table L72-113, offset/cursor pagination L198+, checklist L508-523). No project-specific conventions. Triple-duplicated: coding-standards L238-313 and backend-patterns L21-127 cover the same ground. 0 uses in 30d.",
+      "mtime": "2026-06-04T20:21:44Z"
+    },
+    "backend-patterns": {
+      "path": "~/.claude/skills/backend-patterns/SKILL.md",
+      "verdict": "Retire",
+      "reason": "Generic Node/Express patterns (repository L38-71, JWT L348-387, RBAC L388-430). Some prescriptions actively bad defaults: hand-rolled in-memory rate limiter (L433-478), hand-rolled queue (L481-533), console.log JSON 'Logger' class (L534-560) — imitating these produces worse code than baseline. Overlaps api-design, owasp-security, coding-standards. 0 uses.",
+      "mtime": "2026-06-04T20:21:44Z"
+    },
+    "coding-standards": {
+      "path": "~/.claude/skills/coding-standards/SKILL.md",
+      "verdict": "Retire",
+      "reason": "Self-described 'universal standards' — KISS/DRY/YAGNI (L20-45), naming (L48-75), async/await (L118-133) — all baseline model knowledge, zero user-specific rules. React section (L155-237) duplicates frontend-patterns; 'API Design Standards' (L238-313) duplicates api-design/backend-patterns with a conflicting ApiResponse envelope vs api-design L151-197. Broad name+description = high mis-trigger surface.",
+      "mtime": "2026-06-04T20:21:44Z"
+    },
+    "compose-multiplatform-patterns": {
+      "path": "~/.claude/skills/compose-multiplatform-patterns/SKILL.md",
+      "verdict": "Keep",
+      "reason": "Lean (299 lines), covers fast-moving surface where model knowledge goes stale (type-safe Navigation 2.8+ L107-130, stability/skippability L213-263), sharp anti-pattern list (L288-294), cross-refs instead of duplication (L296-299). KMP-forward value for planned app.",
+      "mtime": "2026-06-04T20:21:44Z"
+    },
+    "frontend-patterns": {
+      "path": "~/.claude/skills/frontend-patterns/SKILL.md",
+      "verdict": "Retire",
+      "reason": "642 lines of generic React (compound components L51-100, memoization L294-317, error boundary L463-510). Prescribes dated/inferior patterns: render props (L101-134), hand-rolled useFetch with manual race handling (L154-208) instead of TanStack Query — imitating this degrades output. Overlaps coding-standards React section. 0 uses, no user conventions.",
+      "mtime": "2026-06-04T20:21:44Z"
+    },
+    "golang-patterns": {
+      "path": "~/.claude/skills/golang-patterns/SKILL.md",
+      "verdict": "Retire",
+      "reason": "674 lines restating canonical Go idioms from Effective Go (zero values L46-72, accept-interfaces-return-structs L73-92, errors.Is/As L135-157, worker pool L176-196, errgroup L240-267). All model baseline; nothing version-sensitive or user-specific. No Go projects in active work; 0 uses.",
+      "mtime": "2026-06-04T20:21:44Z"
+    },
+    "golang-testing": {
+      "path": "~/.claude/skills/golang-testing/SKILL.md",
+      "verdict": "Retire",
+      "reason": "720 lines of standard Go testing (table-driven L72-156, golden files L288-330, fuzzing L462-521) — model baseline. Duplicates identical RED-GREEN-REFACTOR TDD boilerplate in rust-testing L31 and kotlin-testing L43. 'Coverage Targets' table (L540+) imposes fixed percentages contradicting user's development-workflow.md. 0 uses.",
+      "mtime": "2026-06-04T20:21:44Z"
+    },
+    "java-coding-standards": {
+      "path": "~/.claude/skills/java-coding-standards/SKILL.md",
+      "verdict": "Retire",
+      "reason": "Lean (147 lines) but 100% generic Java 17/Spring conventions (records L44-52, Optional L54-64, package layout L97-111) the model applies unprompted; examples use a 'Market' domain from a template project. No Java/Spring work in user's stack; 0 uses.",
+      "mtime": "2026-06-04T20:21:44Z"
+    },
+    "kotlin-coroutines-flows": {
+      "path": "~/.claude/skills/kotlin-coroutines-flows/SKILL.md",
+      "verdict": "Keep",
+      "reason": "Lean (284 lines), decision-dense: scope hierarchy (L21-43), SharedFlow-for-events tradeoff (L138-168), Turbine testing (L215-236), good anti-pattern list (L272-279, e.g. never catch CancellationException). Cross-refs siblings. Should be the single canonical coroutines source — see kotlin-patterns Retire.",
+      "mtime": "2026-06-04T20:21:44Z"
+    },
+    "kotlin-exposed-patterns": {
+      "path": "~/.claude/skills/kotlin-exposed-patterns/SKILL.md",
+      "verdict": "Improve",
+      "reason": "Exposed ORM is niche and API-drifting — genuinely non-obvious content — but 719 lines in-body violates progressive disclosure. Keep setup/config in body (HikariCP L66-97, Flyway L98-141, suspend transactions L425-473, Gradle deps L677-719); DSL/DAO example walls (L142-424, L474-676) are reference material.",
+      "mtime": "2026-06-04T20:21:44Z"
+    },
+    "kotlin-ktor-patterns": {
+      "path": "~/.claude/skills/kotlin-ktor-patterns/SKILL.md",
+      "verdict": "Improve",
+      "reason": "Ktor plugin/auth APIs are version-sensitive enough that curated patterns add value, but 689 lines in-body is bloat. Core decisions (project layout L20-74, JWT auth L224-301, StatusPages L302-357, Koin L377-442) deserve the body; serialization boilerplate (L152-223), WebSockets (L471-520), testApplication walkthroughs (L521-633) are on-demand reference.",
+      "mtime": "2026-06-04T20:21:44Z"
+    },
+    "kotlin-patterns": {
+      "path": "~/.claude/skills/kotlin-patterns/SKILL.md",
+      "verdict": "Retire",
+      "reason": "Description already narrowed in prior pass, still 0 uses — body has no pull. 711 lines of idioms the model knows (null safety L54-77, scope functions L212-259, delegation L382-424). 'Coroutines' section (L289-381) duplicates kotlin-coroutines-flows nearly verbatim (same fetchUserWithPosts example at L15-51 and L293+). Retiring removes contradiction risk and always-injected description.",
+      "mtime": "2026-07-01T23:06:32Z"
+    },
+    "kotlin-testing": {
+      "path": "~/.claude/skills/kotlin-testing/SKILL.md",
+      "verdict": "Improve",
+      "reason": "Largest file in batch (824 lines) crammed under a single 'Examples' H2 (L29-824) — worst progressive-disclosure offender. Kotest spec-style choice, MockK gotchas, Kover config are legitimate setup decisions for planned KMP app. Hard-coded coverage mandates (L27 'verify 80%+', L680 'minBound(80)') contradict user's development-workflow.md.",
+      "mtime": "2026-07-01T23:06:37Z"
+    },
+    "mcp-server-patterns": {
+      "path": "~/.claude/skills/mcp-server-patterns/SKILL.md",
+      "verdict": "Keep",
+      "reason": "Model skill for this batch: 67 lines, trigger-focused description, explicitly hedges SDK API drift (L19-24, L51) and delegates version-sensitive signatures to Context7/official docs instead of embedding stale code. High relevance — user builds/uses MCP servers constantly. No hardcoded paths, no stale flags.",
+      "mtime": "2026-06-04T20:21:44Z"
+    },
+    "owasp-security": {
+      "path": "~/.claude/skills/owasp-security/SKILL.md",
+      "verdict": "Improve",
+      "reason": "Genuinely current, non-baseline content: OWASP Top 10:2025 table (L10-24), Agentic AI Security 2026 (L138-167), ASVS 5.0 (L168-190), review checklist (L25-58). But 'Language-Specific Security Quirks' (L191-505) is 315 lines covering Perl, Erlang, PowerShell etc. — pure reference material. 'When to Apply This Skill' (L523-536) duplicates frontmatter description.",
+      "mtime": "2026-06-04T20:21:44Z"
+    },
+    "python-patterns": {
+      "path": "~/.claude/skills/python-patterns/SKILL.md",
+      "verdict": "Retire",
+      "reason": "Description already narrowed ('not for routine Python edits'), still 0 uses. 750 lines of PEP 8 / EAFP / comprehensions / context managers / __slots__ trivia (L20-73, L197-296, L560-620) — deep in model baseline, plus 40-line anti-patterns list (L700-750) of things the model never does anyway. User's regular Python work happened without it.",
+      "mtime": "2026-07-01T23:06:20Z"
+    },
+    "python-testing": {
+      "path": "~/.claude/skills/python-testing/SKILL.md",
+      "verdict": "Retire",
+      "reason": "816 lines of standard pytest usage (assertions L75-115, fixture scopes L156-181, parametrization) — model baseline. 'Coverage Requirements' (L41-49) mandates '80%+ / critical paths 100%', directly contradicting user's development-workflow.md. Same duplicated TDD boilerplate as go/rust/kotlin testing skills. 0 uses after prior description rewrite.",
+      "mtime": "2026-07-01T23:06:24Z"
+    },
+    "rust-patterns": {
+      "path": "~/.claude/skills/rust-patterns/SKILL.md",
+      "verdict": "Retire",
+      "reason": "Competently written but entirely canonical Rust (ownership L24-59, thiserror/anyhow split L83-110, newtype L211-228, Arc<Mutex> L292-310) — model baseline, nothing version-sensitive. No Rust projects in user's memory or active work; 0 uses. Costs a description slot every session for a language the user doesn't write.",
+      "mtime": "2026-06-04T20:21:44Z"
+    },
+    "rust-testing": {
+      "path": "~/.claude/skills/rust-testing/SKILL.md",
+      "verdict": "Retire",
+      "reason": "Standard cargo test / rstest / proptest / mockall material (L61-115, L215-310+) — model baseline; repeats batch-wide TDD boilerplate (L31) and 80%+ coverage target (L27) contradicting user rules. No Rust workload, 0 uses.",
+      "mtime": "2026-06-04T20:21:44Z"
+    },
+    "test-fixing": {
+      "path": "~/.claude/skills/test-fixing/SKILL.md",
+      "verdict": "Retire",
+      "reason": "Small (110 lines) but brittle and redundant: hardcodes `make test` (L21, L84, L101) and `uv run pytest` (L57-58) — wrong for any repo without Makefile or uv, a stability failure in the one place it gives concrete commands. Workflow (group failures, fix infra-first, verify per group) is model default; user's CLAUDE.md 'Autonomous bug fixing' rule plus superpowers:systematic-debugging already own this trigger. Description overlaps those triggers, risking mis-selection.",
+      "mtime": "2026-06-04T20:21:44Z"
+    },
+    "databricks-core": {
+      "path": "~/.claude/skills/databricks-core/SKILL.md",
+      "verdict": "Improve",
+      "reason": "Body lean and high-value (positional-args gotchas L106-119, profile rules L39-62, troubleshooting table L136-143). Problems: (a) description 446 chars, over budget, half advertises 'databricks-data-discovery' which is NOT installed; (b) L18-20 route to databricks-apps/databricks-lakebase/databricks-model-serving and L152 to '/databricks-dabs' — none installed, routing table sends sessions to dead ends.",
+      "mtime": "2026-07-06T00:26:48Z"
+    },
+    "databricks-dbsql": {
+      "path": "~/.claude/skills/databricks-dbsql/SKILL.md",
+      "verdict": "Improve",
+      "reason": "Worst description in batch: 762 chars of keyword-stuffing (L3-14, ~25 quoted trigger strings) injected into every session. Body good: quick-reference table L23-42, dense runnable SQL patterns L45-277, clean progressive disclosure to 5 references L281-291. Version-tagged features (DBR 16.3+/17.0+) labeled, acceptable.",
+      "mtime": "2026-07-06T00:26:48Z"
+    },
+    "databricks-aibi-dashboards": {
+      "path": "~/.claude/skills/databricks-aibi-dashboards/SKILL.md",
+      "verdict": "Improve",
+      "reason": "Highest output-correctness value in batch: unique Lakeview JSON structure (L191-221), flag-only vs JSON-only CLI arg traps (L144-165), field-name matching rule (L370-402) — non-obvious and failure-preventing. But 512 lines over budget; ~80 lines of Theme & Color palette-design essay (L223-276) belongs in a reference. Cross-links to uninstalled skills: databricks-apps (L16, L509), databricks-metric-views (L359).",
+      "mtime": "2026-07-06T00:26:48Z"
+    },
+    "databricks-jobs": {
+      "path": "~/.claude/skills/databricks-jobs/SKILL.md",
+      "verdict": "Improve",
+      "reason": "Solid structure, good progressive disclosure (reference table L16-23, task/trigger summaries L165-187). But ~90 lines are basic SDK/CLI list/get/run/delete calls the model knows (Common Operations L276-346); embedded CLAUDE.md template (L35-57) contradicts frontmatter: template says CLI >= v0.288.0 (L44) while frontmatter L4 requires >= v1.0.0; L56 tells agents to run 'databricks aitools install' assuming a distribution this user doesn't use.",
+      "mtime": "2026-07-06T00:26:48Z"
+    },
+    "databricks-pipelines": {
+      "path": "~/.claude/skills/databricks-pipelines/SKILL.md",
+      "verdict": "Keep",
+      "reason": "Best-engineered skill in batch: decision tree L18-47, Common Traps L49-62, error→fix table L64-79 encode non-obvious SDP/DLT knowledge (CREATE OR REFRESH vs REPLACE, __START_AT double underscore, legacy-DLT migration table L169-189); 30+ reference files on demand. Description 199 chars, trigger-focused. No material defects.",
+      "mtime": "2026-07-06T00:26:49Z"
+    },
+    "databricks-spark-structured-streaming": {
+      "path": "~/.claude/skills/databricks-spark-structured-streaming/SKILL.md",
+      "verdict": "Improve",
+      "reason": "Model progressive disclosure: 69-line body, pure navigation to 9 reference files plus production checklist (L61-69). Only defect: 422-char description slightly over budget with redundant feature enumeration. Nothing tells model when to pick this vs databricks-pipelines.",
+      "mtime": "2026-07-06T00:26:49Z"
+    },
+    "databricks-unity-catalog": {
+      "path": "~/.claude/skills/databricks-unity-catalog/SKILL.md",
+      "verdict": "Improve",
+      "reason": "Good body: version-instability warnings (L16-21, L164-208) with stable SDK fallback; positional-order table L87-92 prevents real CLI failures. Defects: description 417 chars (over); 'Related Skills' L225-233 links 9 sibling skills (metric-views, iceberg, ml-training, vector-search, lakeflow-connect, lakebase, ai-functions, synthetic-data-gen) via relative paths that don't exist — dead routing.",
+      "mtime": "2026-07-06T00:26:50Z"
+    },
+    "e2e-medallion-architecture": {
+      "path": "~/.claude/skills/e2e-medallion-architecture/SKILL.md",
+      "verdict": "Update",
+      "reason": "Broken as installed. Microsoft Fabric (not Databricks) skill extracted from a larger pack: 'Prerequisite Knowledge' L28-35 declares four companion docs REQUIRED (../../common/COMMON-CORE.md, COMMON-CLI.md, SPARK-AUTHORING-CORE.md, ../spark-authoring-cli/resources/notebook-api-operations.md) — none exist (verified); ~12 more dead relative links at L58, L80-81, L99, L148, L262, L267, L279-280. L14-18 mandates a per-session 'check-updates' skill not installed. Description 713 chars trigger-stuffed. Surviving content (layer patterns, .ipynb REST pitfalls L67/L93, Livy DDL note L61) genuinely useful for Fabric consulting — repair rather than retire.",
+      "mtime": "2026-07-06T00:26:37Z"
+    },
+    "multi-cloud-architecture": {
+      "path": "~/.claude/skills/multi-cloud-architecture/SKILL.md",
+      "verdict": "Retire",
+      "reason": "Near-zero value-add over base model: AWS/Azure/GCP/OCI service-equivalence tables (L26-51), generic patterns (L54-84), generic 4-phase migration (L131-159), 10 platitude best practices (L161-172) — no command, API call, or non-obvious fact anywhere. Related Skills L175-179 reference three nonexistent skills. references/ files are more static tables that drift.",
+      "mtime": "2026-07-05T23:56:41Z"
+    },
+    "data-analysis": {
+      "path": "~/.claude/skills/data-analysis/SKILL.md",
+      "verdict": "Retire",
+      "reason": "Wrong environment and era: written for a chat product with 'office-mcp' server (frontmatter L34-45) not installed; 88 lines dead YAML metadata (L1-88); body is 'how to prompt me' filler (L103-131) plus report skeletons the model produces natively. L327 asserts 'Cannot directly execute code on your data' — false in Claude Code, actively degrades behavior. Charting better served by dataviz and xlsx skills.",
+      "mtime": "2026-07-05T23:55:56Z"
+    },
+    "consulting-analysis": {
+      "path": "~/.claude/skills/consulting-analysis/SKILL.md",
+      "verdict": "Improve",
+      "reason": "Highest-relevance for BayCurrent move; two-phase framework→report design genuinely good (Phase 1 data-requirement tables L187-213, zero-hallucination protocol L17-22, 'So What' chain L454-465). But longest file in batch (631 lines), 623-char description, 78-line framework catalog the model knows (SWOT/PEST/Porter, L83-141), Phase 1 checklist duplicated verbatim (L290-300 and L580-588), 62-line worked example (L513-575), and China-tuned defaults: output_locale zh_CN (L616), GB/T 7714-2015 citations (L357, L469-470, L509) — wrong defaults for a Japanese consultant.",
+      "mtime": "2026-07-05T23:56:38Z"
+    },
+    "company-research": {
+      "path": "~/.claude/skills/company-research/SKILL.md",
+      "verdict": "Merge into [consulting-analysis]",
+      "reason": "Overlaps consulting-analysis which already covers investment DD and competitive intelligence with stronger methodology. Only distinct asset: fill-in report template L167-347. Rest is office-skill boilerplate: 52 lines dead YAML metadata (L1-52, office-mcp not installed), chat-persona prose (L58), framework summaries (Porter/SWOT L124-162) duplicated in consulting-analysis L83-141.",
+      "mtime": "2026-07-05T23:55:55Z"
+    },
+    "competitive-analysis": {
+      "path": "~/.claude/skills/competitive-analysis/SKILL.md",
+      "verdict": "Merge into [consulting-analysis]",
+      "reason": "Same office-skills family, same overlap: consulting-analysis L77 already owns 'Competitive Intelligence'. Distinct assets worth preserving: sales battle-card format (L333-352), feature/pricing comparison matrices (L149-157, L241-265). Everything else boilerplate: 52-line dead metadata block, chat persona, ASCII positioning maps the model draws unaided.",
+      "mtime": "2026-07-05T23:55:55Z"
+    },
+    "proposal-writer": {
+      "path": "~/.claude/skills/proposal-writer/SKILL.md",
+      "verdict": "Improve",
+      "reason": "Directly relevant to consulting; three paste-ready templates (sales L81-222, quick quote L224-266, partnership L268-333) plus best-practices (L335-365: anchor pricing high, exec summary last) carry real value. Defects: 50 lines dead office-skill metadata (L1-50), 55-line worked example (L396-451) adds nothing, description vague ('win deals') rather than trigger-focused.",
+      "mtime": "2026-07-05T23:55:56Z"
+    },
+    "requirements-engineering": {
+      "path": "~/.claude/skills/requirements-engineering/SKILL.md",
+      "verdict": "Keep",
+      "reason": "Tight, concrete, correctly scoped: EARS patterns L28-67, edge-case checklists L103-125, validation checklist L127-154, anti-pattern pairs L156-176 directly imitable; description 204 chars on budget. Worked examples (L178-217) mildly redundant with L89-101 but not worth churn. No hardcoded paths, no version-sensitive content, no batch overlap.",
+      "mtime": "2026-01-25T09:02:50Z"
+    },
+    "ai-executive-pipeline": {
+      "path": "~/.claude/skills/ai-executive-pipeline/SKILL.md",
+      "verdict": "Keep",
+      "reason": "Self-contained persona-pipeline whose value IS the five system prompts (L37-198) — moving to references would defeat on-demand quality; 250 lines loaded only when triggered is acceptable. Description 120 chars lean. Language-switching rule L246 and context-accumulation rule L28 explicit. Doesn't collide with consulting-analysis triggers.",
+      "mtime": "2026-07-04T09:26:21Z"
+    },
+    "diagram-creator": {
+      "path": "~/.claude/skills/diagram-creator/SKILL.md",
+      "verdict": "Retire",
+      "reason": "428 lines teaching Mermaid/PlantUML syntax the model knows cold (flowchart L100-107, sequence L113-126, ER L163-184, gantt L229-245 — vanilla textbook examples); zero non-obvious content. 45 lines dead office-skill metadata; related_skills (chart-designer, ppt-visual, dev-slides) don't exist. EA-diagram niche owned by archimate; chart/dataviz owned by dataviz plugin skill; keeping creates trigger competition.",
+      "mtime": "2026-07-05T23:55:56Z"
+    },
+    "archimate": {
+      "path": "~/.claude/skills/archimate/SKILL.md",
+      "verdict": "Keep",
+      "reason": "Exactly what a skill should be: exhaustive macro tables (L24-122) for PlantUML ArchiMate stdlib — genuinely non-obvious API surface the model half-remembers — one compact runnable example (L126-153), 8 on-demand examples/*.md indexed at L157-166. Description 206 chars on budget, clearly differentiated. One blemish: frontmatter metadata.author is a docu.md advertisement.",
+      "mtime": "2026-07-05T23:56:43Z"
+    },
+    "json-canvas": {
+      "path": "~/.claude/skills/json-canvas/SKILL.md",
+      "verdict": "Keep",
+      "reason": "Concrete JSON Canvas 1.0 spec reference with real failure-prevention: \\n vs \\\\n Obsidian pitfall (L93), z-index-by-array-order (L61), 16-hex ID convention (L199-205), validation checklist (L222-235), examples in references/EXAMPLES.md. Description 225 chars, trigger-focused. No overlap after diagram-creator retires.",
+      "mtime": "2026-07-05T23:55:43Z"
+    },
+    "flea-market-listing-copy": {
+      "path": "~/.claude/skills/flea-market-listing-copy/SKILL.md",
+      "verdict": "Keep",
+      "reason": "Model skill at 91 lines: one-pass output contract (L12-20), sharp photo-evidence epistemics (L28-33), platform-verification rule (L24), overclaiming-word blacklist (L40) — concrete, none of it base-model default. Description 122 chars, precisely scoped to Mercari/Rakuma/Yahoo. Nothing to cut.",
+      "mtime": "2026-07-04T09:26:21Z"
+    },
+    "docx": {
+      "path": "~/.claude/skills/docx/SKILL.md",
+      "verdict": "Improve",
+      "reason": "Official Anthropic skill with high-value docx-js gotchas (L378-394 Critical Rules genuinely non-obvious), but 787-char frontmatter description (L3) is trigger-stuffing injected every session, and XML Reference (L456-582, tracked changes/comments/images XML) is only needed for edit-existing path — progressive-disclosure candidate. Scripts dir verified present.",
+      "mtime": "2026-07-05T23:55:27Z"
+    },
+    "xlsx": {
+      "path": "~/.claude/skills/xlsx/SKILL.md",
+      "verdict": "Improve",
+      "reason": "Official skill; body solid (recalc.py workflow L132-149, formulas-not-hardcoded rule L99-130 are the real value). Worst description in batch: 945 chars (L3) injected every session. 'Financial models' block (L22-64, IB color-coding, SEC-source citation) niche for this user, belongs in reference.",
+      "mtime": "2026-07-05T23:55:30Z"
+    },
+    "pptx": {
+      "path": "~/.claude/skills/pptx/SKILL.md",
+      "verdict": "Improve",
+      "reason": "Best-structured of office trio: already progressive disclosure (editing.md, pptxgenjs.md on demand), QA loop (L141-203) concrete. Only defect: 696-char description (L3). Design-ideas section (L51-137) opinionated but compact — keep.",
+      "mtime": "2026-07-05T23:55:28Z"
+    },
+    "pdf": {
+      "path": "~/.claude/skills/pdf/SKILL.md",
+      "verdict": "Improve",
+      "reason": "Official skill, sound content, description 437 chars slightly over. Stability nit: SKILL.md references 'REFERENCE.md'/'FORMS.md' uppercase (L11, L307, L311-314) but actual files are lowercase reference.md/forms.md — works on case-insensitive APFS, breaks on case-sensitive volumes/Linux sandbox. reportlab subscript black-box warning (L169-187) is real earned knowledge.",
+      "mtime": "2026-07-05T23:55:27Z"
+    },
+    "doc": {
+      "path": "~/.claude/skills/doc/SKILL.md",
+      "verdict": "Retire",
+      "reason": "Self-declared fallback ('when the documents plugin is unavailable', L3) — but the full official docx skill IS installed, so trigger can never legitimately fire. Contradicts docx: doc prescribes python-docx (L19) while docx prescribes docx-js for creation and 'Use the Edit tool directly... Do not write Python scripts' for edits (docx L414). Two skills matching '.docx' with opposing toolchains is a routing hazard. Repo-relative output conventions (tmp/docs/, output/doc/, L25-27) assume a repo that doesn't apply.",
+      "mtime": "2026-07-04T09:26:21Z"
+    },
+    "md-to-office": {
+      "path": "~/.claude/skills/md-to-office/SKILL.md",
+      "verdict": "Retire",
+      "reason": "Entirely pandoc-based and pandoc is NOT installed (verified). Frontmatter (L1-48) fake decoration: 'Enhanced Metadata v2.0', nonexistent office-mcp server, model-compat lists. L69-549 pandoc CLI basics and generic subprocess wrappers the model knows. Fully overlapped by official docx/pptx skills. Cites hallucinated pypandoc repo URL (L548).",
+      "mtime": "2026-07-05T23:58:02Z"
+    },
+    "doc-coauthoring": {
+      "path": "~/.claude/skills/doc-coauthoring/SKILL.md",
+      "verdict": "Keep",
+      "reason": "Official Anthropic workflow skill; 3-stage process (context gathering → section-wise refinement → fresh-subagent reader testing, L28-332) is genuine process knowledge the model doesn't reliably execute unprompted; reader-testing via sub-agents (L250-287) concrete and imitable. Verbosity IS the workflow. Description 428 chars marginally over.",
+      "mtime": "2026-07-05T23:55:26Z"
+    },
+    "internal-comms": {
+      "path": "~/.claude/skills/internal-comms/SKILL.md",
+      "verdict": "Keep",
+      "reason": "Model citizen for token efficiency: 32-line SKILL.md routing to 4 on-demand example files (verified present); 246-char description; explicit-trigger-only gating (L3) prevents false fires. Marginal for solo user but zero maintenance cost; BayCurrent 2026-09 makes internal comms relevant.",
+      "mtime": "2026-07-05T23:55:27Z"
+    },
+    "meeting-notes": {
+      "path": "~/.claude/skills/meeting-notes/SKILL.md",
+      "verdict": "Retire",
+      "reason": "Same claude-office-skills pack as md-to-office: fake 'Enhanced Metadata v2.0' frontmatter referencing nonexistent office-mcp (L32-36). L76-320 generic meeting-minute templates any current model produces unprompted — pure static knowledge, zero tooling. Chat-product phrasing ('Paste your raw meeting notes...', L63-67) doesn't fit CLI. 234-char description is a per-session tax buying nothing.",
+      "mtime": "2026-07-05T23:58:02Z"
+    },
+    "weekly-report": {
+      "path": "~/.claude/skills/weekly-report/SKILL.md",
+      "verdict": "Retire",
+      "reason": "Twin of meeting-notes: fake office-mcp frontmatter (L33-37), L77-343 four boilerplate status-report templates plus writing tips — all base-model knowledge. No scripts, no user-specific format (no BayCurrent/Toyota template), chat-style framing (L64-69). If user later needs a personal weekly-report format at BayCurrent, a fresh 30-line skill encoding THEIR template beats resurrecting this.",
+      "mtime": "2026-07-05T23:58:02Z"
+    },
+    "markdown-to-epub": {
+      "path": "~/.claude/skills/markdown-to-epub/SKILL.md",
+      "verdict": "Improve",
+      "reason": "Broken as shipped: '## Scripts' (L185-188) references epub_generator.py and markdown_processor.py which do NOT exist (dir contains only SKILL.md, verified); pandoc not installed either. Rest is marketing prose and a support matrix describing phantom scripts, plus 'Future Enhancements' wishlist (L190-197). Real user need exists — Udemy export before 8/31 benefit expiry and Kindle reading — fix rather than retire.",
+      "mtime": "2026-07-01T22:37:03Z"
+    },
+    "obsidian-bases": {
+      "path": "~/.claude/skills/obsidian-bases/SKILL.md",
+      "verdict": "Improve",
+      "reason": "High value: Bases syntax is post-cutoff/niche knowledge the model lacks (Duration-type gotcha L195-207, YAML quoting L427-457, silent-failure formula refs L481-491). Already has references/FUNCTIONS_REFERENCE.md. But 499 lines heavy per invocation; three Complete Examples (L291-425, ~135 lines) are illustrations, belong in references. Description 256 chars fine.",
+      "mtime": "2026-07-05T23:55:44Z"
+    },
+    "obsidian-cli": {
+      "path": "~/.claude/skills/obsidian-cli/SKILL.md",
+      "verdict": "Keep",
+      "reason": "Lean and correct: 106 lines, defers to `obsidian help` as always-current reference (L12), covers non-obvious parameter-vs-flag syntax and file/vault targeting (L14-44), binary verified at /opt/homebrew/bin/obsidian. Only blemish: 467-char description — plugin/theme-development sentence doubles its length.",
+      "mtime": "2026-07-05T23:55:44Z"
+    },
+    "obsidian-markdown": {
+      "path": "~/.claude/skills/obsidian-markdown/SKILL.md",
+      "verdict": "Keep",
+      "reason": "Well-scoped: explicitly excludes standard Markdown (L8), covers only Obsidian extensions (wikilinks, block IDs, embeds, callouts, %%comments%%, ==highlight==), three on-demand references (CALLOUTS/EMBEDS/PROPERTIES verified present). Exactly the progressive-disclosure shape others should copy. Heavy Obsidian/myLife use earns its keep.",
+      "mtime": "2026-07-05T23:55:44Z"
+    },
+    "note-curator": {
+      "path": "~/.claude/skills/note-curator/SKILL.md",
+      "verdict": "Improve",
+      "reason": "Real user-specific myLife workflow with correct repo conventions (wiki/pages/clips/articles/, _index.md, log.md — L30-56), sound copyright boundaries (L25-36). Verified: myLife repo, scripts/run_tests.py, ops/agent-skills validation path (L303) all exist. Main defect: two ~65-line Python scripts inlined in body (L60-127 catalog scan, L145-215 article reader) load every invocation; note.com API internals drift — editable script files safer.",
+      "mtime": "2026-07-04T09:26:21Z"
+    },
+    "anki": {
+      "path": "~/.claude/skills/anki/SKILL.md",
+      "verdict": "Improve",
+      "reason": "Strong: real AnkiConnect wrapper (scripts/anki.sh verified, clean jq/curl), non-obvious cloze syntax incl. `}}}` triple-brace gotcha (L106), custom 'Anki Markdown' note types, firm user-approval gate (L19-29). One stability bug: L11 computes script path from $SKILL_PATH, an env var Claude Code does not set — first invocation fails until model guesses path.",
+      "mtime": "2026-07-06T00:26:32Z"
+    },
+    "flashcards": {
+      "path": "~/.claude/skills/flashcards/SKILL.md",
+      "verdict": "Improve",
+      "reason": "Broken on load: step 1 (L14) and every storage path (L16, L49-51, L61, L78, L84) point at ~/.claude/plugins/config/claude-for-legal/law-student/ which does NOT exist (verified) — extracted from a law-student plugin never installed. Law-specific throughout: 'black-letter memorization', Real-matter legal-advice check (L27-31), routes to nonexistent /law-student:socratic-drill (L135, L140-142). Core mechanic (Leitner buckets, drill flow L122-127, confidence-flag discipline) good and complements anki (in-chat drill vs real SRS) for PMI study — repair.",
+      "mtime": "2026-07-06T00:26:34Z"
+    },
+    "study-plan": {
+      "path": "~/.claude/skills/study-plan/SKILL.md",
+      "verdict": "Improve",
+      "reason": "Same broken dependency as flashcards: loads nonexistent ~/.claude/plugins/config/claude-for-legal/law-student/CLAUDE.md and writes study-plan.yaml there (L13-14, L42-49, L129) — fails at step 1. ~70% bar-exam-specific (NCBE/MBE/MEE L72, Barbri/Themis/Kaplan L90-108, 'NOT LEGAL ADVICE' header L191-207). Transferable core — phase structure, weakness-weighted hours, life-context sanity check (L74-84), session_history adaptation (L209-227) — genuinely good planning discipline worth salvaging for PMI prep.",
+      "mtime": "2026-07-06T00:26:34Z"
+    },
+    "study-notes-creator": {
+      "path": "~/.claude/skills/study-notes-creator/SKILL.md",
+      "verdict": "Improve",
+      "reason": "Generic but serviceable structure (folder plan, note template, index); fills different slot than NotebookLM skills (local Obsidian-style notes vs NotebookLM sources). However L93-230 (~140 lines) teach Mermaid and ASCII-box syntax the model fully knows — pure token waste; only useful part is the 'Use for:' mapping. Description 117 chars fine.",
+      "mtime": "2026-07-04T09:26:21Z"
+    },
+    "exam-forecast": {
+      "path": "~/.claude/skills/exam-forecast/SKILL.md",
+      "verdict": "Improve",
+      "reason": "Third member of broken law-plugin trio: loads nonexistent plugin config (L14, L39), writes forecasts inside it (L20, L146); mandates 'NOT LEGAL ADVICE' header (L90-95), lawyer-facing decision tree (L155-157). Analytical core — per-exam pattern intake, stable/variable/absent rollup (L72-87), sample-size confidence discipline (L30-36) — maps directly onto user's real PMI workflow: pmi-studyhall-export and Udemy mock-exam exports produce exactly the 'past exam' corpus this wants. Repurpose.",
+      "mtime": "2026-07-06T00:26:34Z"
+    },
+    "udemy-learning-pipeline": {
+      "path": "~/.claude/skills/udemy-learning-pipeline/SKILL.md",
+      "verdict": "Update",
+      "reason": "Real load-bearing personal workflow (verified: ~/workspace/udemy-transcripts/ with collect.py, make_assets.py, collect_udemy_downloadables.py exist; nlm installed; notebook IDs enumerated). Three stability defects: (a) L~182 uploads from '$HOME/dev/udemy-transcripts/learning-assets/' — dir does not exist, real path ~/workspace/udemy-transcripts; (b) Step 4 (L~211) points mock-exam scraper at '$HOME/workspace/PMP_mock/' which does not exist; (c) hardcoded 'https://toyotajp.udemy.com' tenant and org ID 199704 (L45, L76) die when user leaves Toyota 2026-09-01 — and Udemy benefit expires ~8/31, time-critical NOW.",
+      "mtime": "2026-07-04T09:26:21Z"
+    },
+    "udemy-transcript-to-notebooklm": {
+      "path": "~/.claude/skills/udemy-transcript-to-notebooklm/SKILL.md",
+      "verdict": "Improve",
+      "reason": "Legitimate companion to udemy-learning-pipeline (single .txt → rich per-chapter study markdown, vs pipeline's bulk collect/upload); mandatory chapter template (L103-218) plus 厳守事項 (L266-293) encode real output-quality rules. At 388 lines carries dead weight: worked input/output example (L326-377), NotebookLM best-practices tips (L380-389) restate template. No cross-reference distinguishes it from pipeline skill, inviting mis-selection.",
+      "mtime": "2026-07-04T09:26:21Z"
+    },
+    "book-to-notebooklm": {
+      "path": "~/.claude/skills/book-to-notebooklm/SKILL.md",
+      "verdict": "Keep",
+      "reason": "Best skill in batch: 65 lines, 118-char anti-collision description (deflects to book-ingest and Udemy skills), verified working script (scripts/clean_split.py exists, FolioCapture Scans dir exists, nlm installed), encodes hard-won operational knowledge (Claude-side nlm login always times out L48-50; 50万語 source limit; chapter-boundary failure table L58-65). Copyright boundary stated (L16). Nothing to fix.",
+      "mtime": "2026-07-04T09:26:21Z"
+    },
+    "video-channel-publisher": {
+      "path": "~/.claude/skills/video-channel-publisher/SKILL.md",
+      "verdict": "Keep",
+      "reason": "Lean workflow skill (54 lines, 266-char description with explicit cross-routing to other video-* skills). Approval gate before external posting (Workflow step 5, Safety) is the right guardrail. references/channel-matrix.md 1.3K. No hardcoded paths, no stale APIs.",
+      "mtime": "2026-07-04T09:22:59Z"
+    },
+    "video-growth-pipeline": {
+      "path": "~/.claude/skills/video-growth-pipeline/SKILL.md",
+      "verdict": "Keep",
+      "reason": "Coherent orchestrator: routes topic-scout → script-builder → hyperframes-producer → channel-publisher with handoff contract (references/workflow-contract.md). Description correctly deflects single-step requests to specialists. Codex-style '$skill' invocation syntax reads as plain names in Claude — harmless.",
+      "mtime": "2026-07-04T09:22:59Z"
+    },
+    "video-processing": {
+      "path": "~/.claude/skills/video-processing/SKILL.md",
+      "verdict": "Retire",
+      "reason": "222 lines of generic OpenCV frame-differencing/contour advice the model knows (L25-222). Extracted from a one-off jump-detection eval task (takeoff/landing examples L121-147, L204-209). Outside the video pipeline the user built; hyperframes-video-producer already covers render verification via ffprobe/frame extraction. No scripts, no references, 0 uses.",
+      "mtime": "2026-07-04T09:22:59Z"
+    },
+    "video-script-builder": {
+      "path": "~/.claude/skills/video-script-builder/SKILL.md",
+      "verdict": "Keep",
+      "reason": "Lean (63 lines), concrete output template, correct routing boundaries (publishing deferred to video-channel-publisher, L62). HeyGen/HyperFrames production notes match user's actual stack (~/workspace/heygen-codex-video-studio). references/script-formats.md 843B.",
+      "mtime": "2026-07-04T09:22:59Z"
+    },
+    "video-topic-scout": {
+      "path": "~/.claude/skills/video-topic-scout/SKILL.md",
+      "verdict": "Keep",
+      "reason": "Lean (50 lines), good anti-hallucination rules ('Do not invent metrics'), Japanese trigger words (伸びる/バズる) fit the user. Scoring rubric externalized to references/scoring-rubric.md. Cross-routing consistent with family.",
+      "mtime": "2026-07-04T09:22:59Z"
+    },
+    "hyperframes-video-producer": {
+      "path": "~/.claude/skills/hyperframes-video-producer/SKILL.md",
+      "verdict": "Improve",
+      "reason": "Lean and correct (lint→render→ffprobe→frame-extraction verification loop L24-29), but Workflow step 1 says 'Inspect the project / Locate package.json' without naming the project. Actual HyperFrames repo is ~/workspace/heygen-codex-video-studio (verified: hyperframes/, renders/, storyboards/, package.json) — a fresh session burns tokens searching for it.",
+      "mtime": "2026-07-04T09:22:59Z"
+    },
+    "remotion-best-practices": {
+      "path": "~/.claude/skills/remotion-best-practices/SKILL.md",
+      "verdict": "Keep",
+      "reason": "Textbook progressive disclosure: 48-line router + 30 rules/*.md on demand; 53-char description costs almost nothing. However no Remotion project exists in ~/workspace (verified) — pipeline uses HyperFrames. Zero-cost insurance; only delete if committing to never using Remotion.",
+      "mtime": "2026-02-08T11:02:46Z"
+    },
+    "transcription-to-content": {
+      "path": "~/.claude/skills/transcription-to-content/SKILL.md",
+      "verdict": "Retire",
+      "reason": "697 lines (18.2K) of generic content-marketing boilerplate: blog/social/show-notes templates (L139-391), 190 lines of fabricated worked examples with invented guests and stats (L395-587), dead 'Related Skills' links to nonexistent ../podcast-production, ../podcast-seo, ../podcast-interview (L674-678), redundant duplicate metadata block (L682-697). Third-party marketing-pack origin. Fully covered by asking the model directly; video family covers the channel use case. 0 uses.",
+      "mtime": "2026-07-04T09:26:21Z"
+    },
+    "youtube-transcript": {
+      "path": "~/.claude/skills/youtube-transcript/SKILL.md",
+      "verdict": "Improve",
+      "reason": "Functionally sound (yt-dlp verified; manual→auto-sub→Whisper fallback order correct; VTT dedup snippet genuinely useful), but 3x redundant: 'Complete Workflow Example' (L238-371) restates steps 1-5 as a 130-line bash script containing interactive `read -r` prompts (L298, L303-306, L325-327) that HANG in non-interactive tool shells; identical Python dedup snippet appears three times (L180-193, L205-217, L346-358). Target ~130 lines.",
+      "mtime": "2026-06-04T20:21:44Z"
+    },
+    "revealjs": {
+      "path": "~/.claude/skills/revealjs/SKILL.md",
+      "verdict": "Retire",
+      "reason": "Broken on disk: directory contains ONLY SKILL.md (verified: scripts/ and references/ do not exist), yet entire workflow depends on scripts/create-presentation.js (Step 2, L92-119), scripts/check-overflow.js (Step 5, L259-269), scripts/edit-html.js (Step 7, L314-330), references/advanced-features.md (L365), references/charts.md declared 'required reading' (L399, L426-431). Every invocation fails at Step 2. Also 4th overlapping deck stack alongside frontend-slides, open-slide family, pptx. If reveal.js wanted back, re-vendor full skill from upstream anthropics/skills repo instead of patching this husk.",
+      "mtime": "2026-07-04T09:26:21Z"
+    },
+    "frontend-slides": {
+      "path": "~/.claude/skills/frontend-slides/SKILL.md",
+      "verdict": "Improve",
+      "reason": "Good: hard viewport-fit gate (section 5, L79-89), visual style exploration via preview files (section 3), density limits table (L149-161), STYLE_PRESETS.md (8.9K) properly externalized. Flaws: 'Related ECC Skills' (L171-175) cites liquid-glass-design which is not installed; no routing boundary vs open-slide family — 'make me slides' could trigger either this or create-slide.",
+      "mtime": "2026-07-04T09:26:21Z"
+    },
+    "create-slide": {
+      "path": "~/.claude/skills/create-slide/SKILL.md",
+      "verdict": "Keep",
+      "reason": "Well-factored workflow owner for open-slide framework (repo verified at ~/workspace/open-slide with slides/ and themes/). Correctly delegates all technical detail to slide-authoring (L8, L77), theme pickup matches create-theme output, AskUserQuestion scoping (Step 2) concrete. No broken paths.",
+      "mtime": "2026-07-04T09:26:21Z"
+    },
+    "create-theme": {
+      "path": "~/.claude/skills/create-theme/SKILL.md",
+      "verdict": "Keep",
+      "reason": "Coherent third member of open-slide family: produces exactly one themes/<id>.md consumed by create-slide Step 1 and slide-authoring Themes section (cross-references verified in all three files). Exact output template (Step 4, L46-164) with paste-ready Title/Footer components is worth its length; self-review checklist and anti-patterns concrete. Distinct from per-slide design const, distinction documented (L10).",
+      "mtime": "2026-07-04T09:26:21Z"
+    },
+    "slide-authoring": {
+      "path": "~/.claude/skills/slide-authoring/SKILL.md",
+      "verdict": "Keep",
+      "reason": "Single source of truth other three open-slide skills link into — exactly the right progressive-disclosure shape. Content is framework-specific API (Page/SlideMeta/DesignSystem types, --osd-* CSS vars, 1920x1080 vertical-budget math L73-85, ImagePlaceholder semantics) the model cannot know from training. 304 lines justified; nothing generic.",
+      "mtime": "2026-07-04T09:26:21Z"
+    },
+    "apply-comments": {
+      "path": "~/.claude/skills/apply-comments/SKILL.md",
+      "verdict": "Keep",
+      "reason": "Precise and mechanical: authoritative detection regex (L25), base64url decode helper, reverse-line-order edit rule (Step 4) preventing line-drift bug, verification gate (pnpm tsc + biome, Step 6), edge cases incl. 'leave marker and report as skipped'. Trigger phrases specific enough to avoid false activation. Depends only on open-slide repo, which exists.",
+      "mtime": "2026-05-04T01:18:32Z"
+    },
+    "theme-factory": {
+      "path": "~/.claude/skills/theme-factory/SKILL.md",
+      "verdict": "Retire",
+      "reason": "Redundant third theming path: create-theme owns open-slide themes, frontend-slides has STYLE_PRESETS.md for HTML decks, model can generate palette+font pairing on demand — 10 canned themes (544B each) plus a 121KB theme-showcase.pdf the skill instructs to display add little. Description has drafting errors ('themes themes', 'that has been creating') and vague triggers, risks firing on any 'style this' request. 0 uses.",
+      "mtime": "2026-07-05T23:55:29Z"
+    },
+    "mobile-app-ui-design": {
+      "path": "~/.claude/skills/mobile-app-ui-design/SKILL.md",
+      "verdict": "Improve",
+      "reason": "Compact actionable heuristics (60/30/10 color, 8pt grid, thumb zone, peak-end design) with concrete anti-patterns — better than generic model output for mobile mockups; frontend-design plugin is web-artifact-oriented so overlap partial. BUT cites references/industry-conventions.md twice (Step 1 L27, final L149) and no references/ dir exists (verified) — dead end.",
+      "mtime": "2026-07-04T09:26:21Z"
+    },
+    "hatch-pet": {
+      "path": "~/.claude/skills/hatch-pet/SKILL.md",
+      "verdict": "Improve",
+      "reason": "Legitimate heavy pipeline: 8 deterministic scripts/ present, references/ present, Codex imagegen dependency verified (~/.codex/skills/.system/imagegen/SKILL.md exists). But 539 lines / 36K over budget because full subagent prompt texts are inlined: brand-discovery worker prompt (L58-91) and Default Workflow + Subagent Delegation (L169-497, ~330 lines) embed verbatim worker prompts that belong in references/.",
+      "mtime": "2026-07-04T09:26:21Z"
+    },
+    "generate-explainer-html": {
+      "path": "~/.claude/skills/generate-explainer-html/SKILL.md",
+      "verdict": "Keep",
+      "reason": "Well-engineered second half of explainer pipeline: scripts verified (scripts/build_html.py 28.6K assembler, scripts/validate_html.py enforcing no-network invariant), 6 references/*.md externalized, additive-view flow and Chrome-file://-iframe gotcha documented (L124-131), troubleshooting maps validator errors to fixes. Clean bidirectional routing with generate-explainer-yaml.",
+      "mtime": "2026-07-04T09:26:21Z"
+    },
+    "generate-explainer-yaml": {
+      "path": "~/.claude/skills/generate-explainer-yaml/SKILL.md",
+      "verdict": "Keep",
+      "reason": "Lean first half of pipeline (95 lines): schemas and samples in references/ (verified present), stable-directory rule (L37-43) protects downstream absolute-path prompt embedding, explicit hand-off block to generate-explainer-html. Exactly the right size.",
+      "mtime": "2026-07-04T09:26:21Z"
+    },
+    "agent-reach": {
+      "path": "~/.claude/skills/agent-reach/SKILL.md",
+      "verdict": "Improve",
+      "reason": "CLI verified at ~/.local/bin/agent-reach, doctor --json works. Structure good: 139-line router with per-category references/*.md. Problem: frontmatter description is 940 chars (L3-20) mixing Chinese into every session, plus a non-standard triggers: block (L21-36) of Chinese keywords not consumed by the harness. Body (L42-139) entirely Chinese.",
+      "mtime": "2026-07-06T09:06:11Z"
+    },
+    "agmsg": {
+      "path": "~/.claude/skills/agmsg/SKILL.md",
+      "verdict": "Improve",
+      "reason": "Scripts exist, depend only on bash+sqlite3 (verified). Description lean (169 chars). But SKILL.md is a generated Codex artifact hard-coding `codex` as agent type and $HOME as project in every script call (L12, L35, L65, L113, L119, L125, L140-161) — in Claude Code this registers agent as type codex, wrong for a canonical shared store. 162-line body front-loads rare flows (monitor-beta paragraph duplicated verbatim L66 and L146; spawn/despawn/actas ceremony L110-137).",
+      "mtime": "2026-07-05T00:12:33Z"
+    },
+    "web-scraping": {
+      "path": "~/.claude/skills/web-scraping/SKILL.md",
+      "verdict": "Improve",
+      "reason": "Best-in-cluster unique content: anti-bot landscape table (L212-226), undocumented-API workflow (L228-292), poison-pill detection (L294-388), legal/ethics (L627-648). But zero progressive disclosure — 648 lines of inline Python every invocation; social-media section (L390-559: YouTube/Instagram/TikTok scrapers) duplicates youtube-transcript and agent-reach. Division of labor: WebFetch/Jina = one-off reads; this = anti-bot/undocumented APIs/bulk; agent-reach = social; playwright/gstack = interactive.",
+      "mtime": "2026-07-04T09:22:59Z"
+    },
+    "page-monitoring": {
+      "path": "~/.claude/skills/page-monitoring/SKILL.md",
+      "verdict": "Merge into [web-scraping]",
+      "reason": "759 lines, ~90% generic boilerplate Python the model writes on demand (PageMonitor L52-184, UptimeRobot client L190-262, RSSGenerator L268-355, Twarc archiver L375-443, AlertManager L449-523). L606 imports MultiArchiver from a 'sibling web-archiving skill' NOT installed — broken. RSS section duplicates rss-digest territory. Only durable value: monitoring-service comparison table (L10-24), use-case frequency guidance (L639-708).",
+      "mtime": "2026-07-04T09:22:59Z"
+    },
+    "article-extractor": {
+      "path": "~/.claude/skills/article-extractor/SKILL.md",
+      "verdict": "Retire",
+      "reason": "Both primary tools missing (verified: reader MISSING, trafilatura MISSING) — every run falls to fragile curl+HTMLParser fallback (L96-128). 370-line body is tutorial filler: same workflow written three times (L61-128, L169-257, L326-348), emoji 'Best Practices', vague upsells (L368). Niche covered better by builtin WebFetch + user's global Jina Reader rule (CLAUDE.md mandates r.jina.ai), web-scraping for hard cases.",
+      "mtime": "2026-07-04T09:22:59Z"
+    },
+    "rss-digest": {
+      "path": "~/.claude/skills/rss-digest/SKILL.md",
+      "verdict": "Update",
+      "reason": "Model skill for token efficiency: 35 lines, 109-char description, concrete workflow, token-conscious notes. But currently BROKEN: required `feed` CLI not installed (verified MISSING; frontmatter L4 declares requires bins: feed). Should become the single RSS skill after absorbing ai-tech-rss-fetch.",
+      "mtime": "2026-07-04T09:26:21Z"
+    },
+    "ai-tech-rss-fetch": {
+      "path": "~/.claude/skills/ai-tech-rss-fetch/SKILL.md",
+      "verdict": "Merge into [rss-digest]",
+      "reason": "Second RSS skill with second incompatible SQLite store (scripts/rss_subscribe.py + feedparser vs rss-digest's feed CLI). Metadata-only persistence, no digest/read step — pipeline fragment, not workflow. Dead weight: mandatory 'Final Output Checklist' with verbatim Chinese block (L109-130) serving no function; hardcoded example DB path 'workspace-rss-bot' (L26) from a defunct multi-agent bot. Two RSS stores guarantee drift.",
+      "mtime": "2026-07-04T09:26:21Z"
+    },
+    "playwright": {
+      "path": "~/.claude/skills/playwright/SKILL.md",
+      "verdict": "Improve",
+      "reason": "Sound: lean 111-char description, CLI-first workflow, progressive disclosure to references/cli.md and references/workflows.md (verified). Wrapper script exists; npx-based fallback handles missing global playwright-cli. Two portability warts: skill path is Codex-centric ($CODEX_HOME, L37-41 — works only via ~/.codex/skills/playwright symlink) and L146 references 'this repo' output conventions that don't apply to a global skill. Division of labor vs neighbors correctly stated.",
+      "mtime": "2026-07-04T09:26:21Z"
+    },
+    "webapp-testing": {
+      "path": "~/.claude/skills/webapp-testing/SKILL.md",
+      "verdict": "Retire",
+      "reason": "Broken and redundant. Core instruction — 'Always run scripts/with_server.py --help first' (L11-14, L35-50) and 'examples/' references (L91-96) — points at files that DO NOT exist: directory contains ONLY SKILL.md (verified). Everything it teaches is covered by gstack browse (QA/dogfooding), playwright (interactive automation), e2e-testing (test authoring). Fourth overlapping description per session for zero working capability.",
+      "mtime": "2026-07-04T09:26:21Z"
+    },
+    "e2e-testing": {
+      "path": "~/.claude/skills/e2e-testing/SKILL.md",
+      "verdict": "Improve",
+      "reason": "Correctly scoped: description (237 chars) explicitly routes authoring here, live automation to playwright/gstack — best disambiguation in cluster. Content (POM, config, flaky patterns L139-191, CI L225-251) solid. Bloat: 'Wallet / Web3 Testing' (L281-300) and 'Financial / Critical Flow Testing' (L302-326) are upstream ECC template leftovers irrelevant to user; report template (L255-278) is filler.",
+      "mtime": "2026-07-01T23:07:49Z"
+    },
+    "gstack": {
+      "path": "~/.claude/skills/gstack/SKILL.md",
+      "verdict": "Retire",
+      "reason": "2026-07-07 user decision, superseding the batch-5 Improve verdict: browse binary never built (browse/dist/ missing) so the skill has never functioned; 10 nested sub-skills (~2500 lines) unreachable by the harness; headless-QA use case covered by playwright skill + claude-in-chrome MCP + e2e-runner agent; no recurring web-app QA workload in current projects. Re-vendor from upstream if frequent QA/dogfooding starts.",
+      "mtime": "2026-07-01T23:07:21Z"
+    },
+    "chronicle": {
+      "path": "~/.claude/skills/chronicle/SKILL.md",
+      "verdict": "Improve",
+      "reason": "Capability real (verified: codex_chronicle process running, $TMPDIR/chronicle frames present, ~/.codex/memories/extensions/chronicle exists), body well-designed (OCR-grep-then-frames workflow, escalate-to-connectors rule L52-55). But Codex-only: preconditions (L15-16) require a Codex Memories developer message that never exists in Claude Code, yet its 552-char description is injected into every Claude session where the skill can never fire. Pure standing token waste on the Claude side.",
+      "mtime": "2026-06-28T12:37:14Z"
+    },
+    "apple-shortcuts-builder": {
+      "path": "~/.claude/skills/apple-shortcuts-builder/SKILL.md",
+      "verdict": "Keep",
+      "reason": "Near-ideal shape: 70 lines, 122-char description, concrete 6-step workflow, honest constraint framing (L15-19, fallback L70), verified local checks (plutil/strings/openssl, L33-37), progressive disclosure to references/action-format.md. Dependencies verified: /usr/bin/shortcuts exists; scripts/build_shortcut.py exists (hardcoded $HOME/.codex/... path at L26 resolves via symlink). Signing caveats (L63-66) exactly the non-obvious knowledge a skill should carry.",
+      "mtime": "2026-07-04T09:26:21Z"
+    },
+    "capafy-publisher": {
+      "path": "~/.claude/skills/capafy-publisher/SKILL.md",
+      "verdict": "Keep",
+      "reason": "Vendor-managed skill with self-update mechanism (self_update.py, L15-29) — hand-edits clobbered on update, so Keep-as-is despite density. Runtime verified: python3, packager.py, api-docs, config.json exist. 263 lines load only on invocation (publishing rare), description lean (130 chars), 'Core Iron Rules' encode real API-state pitfalls (status/auditStatus enums L109, agent_id resubmission trap L112). SECURITY: config.json holds a live access token (am_sk_...) in plaintext inside the skill dir — by design, but the skill dir must never be committed or published.",
+      "mtime": "2026-07-04T09:26:21Z"
+    },
+    "oracle": {
+      "path": "~/.claude/skills/oracle/SKILL.md",
+      "verdict": "Keep",
+      "reason": "Exemplary: 101 lines, 117-char description, load-bearing rule up front (always pass prompt AND --file, L19-22), token-budget preflight (L48-53), session-reattach discipline preventing duplicate metered runs (L55-67), explicit consent gate on metered API usage (L41-44, L79-81), secrets exclusion (L79). CLI verified at ~/.local/bin/oracle. Complements the model-routing table in CLAUDE.md. Watch item: default model names (L70) are version-sensitive and will drift.",
+      "mtime": "2026-07-04T09:26:21Z"
+    },
+    "iterative-retrieval": {
+      "path": "~/.claude/skills/iterative-retrieval/SKILL.md",
+      "verdict": "Retire",
+      "reason": "211 lines of pseudo-code that cannot run (scoreRelevance/explainRelevance/retrieveFiles L72-141 are undefined stubs) wrapping one sentence of actionable advice: 'search broadly, score relevance, refine terms, max 3 cycles, stop at good enough' (L199-205). Harness's Explore agent and user's agents.md orchestration rules already cover subagent context strategy. ECC bundle import (L5) with dangling reference to a continuous-learning variant and an X-thread link as primary citation (L209).",
+      "mtime": "2026-06-04T20:21:44Z"
+    },
+    "humanizer": {
+      "path": "~/.claude/skills/humanizer/SKILL.md",
+      "verdict": "Improve",
+      "reason": "Best of the three de-AI skills (Wikipedia signs-of-AI-writing base, 25 patterns, final anti-AI pass) but 474 lines with ~500-char multi-line description injected every session. L69-377 is 25 before/after pattern examples, L407-467 a full worked example — progressive-disclosure candidates. Should become the single consolidated de-AI skill absorbing humanizer_academic and deai-text.",
+      "mtime": "2026-06-04T20:21:44Z"
+    },
+    "humanizer_academic": {
+      "path": "~/.claude/skills/humanizer_academic/SKILL.md",
+      "verdict": "Merge into [humanizer]",
+      "reason": "~85% duplicate of humanizer: sections 1-15 (L38-234) same Wikipedia patterns with medical examples swapped; only academic framing (no voice injection, preserve statistics, EMPA-REG examples) unique. 14-line description injected every session for near-zero marginal value. Unique content fits one reference file of consolidated humanizer.",
+      "mtime": "2026-06-04T20:21:44Z"
+    },
+    "deai-text": {
+      "path": "~/.claude/skills/deai-text/SKILL.md",
+      "verdict": "Merge into [humanizer]",
+      "reason": "Third de-AI skill; Japanese-specific patterns (記号残留, 文末単調, 事なかれ主義, AIお気に入り比喩 — L19-91) and interactive Step 3 confirmation flow genuinely distinct, but concept, trigger space, workflow shape the same. Three separately-described de-AI skills cost ~3x frontmatter injection; Japanese content survives as humanizer/references/japanese.md with Japanese trigger added to humanizer description.",
+      "mtime": "2026-06-04T20:21:44Z"
+    },
+    "continuous-learning-v2": {
+      "path": "~/.claude/skills/continuous-learning-v2/SKILL.md",
+      "verdict": "Retire",
+      "reason": "Entire system inert — VERIFIED: ~/.claude/settings.json has no observe.sh hooks; ~/.claude/homunculus/ does not exist; none of the 6 commands (/instinct-status, /evolve, /promote — L203-220) exist in ~/.claude/commands/; config.json ships observer.enabled=false. ~90KB dead scripts (instinct-cli.py 56KB, test 32KB). Superseded by user's working loop: ~/tasks/lessons.md + extract-approach + auto-memory. Body says 'Codex sessions' throughout — unadapted ECC import.",
+      "mtime": "2026-07-01T22:29:10Z"
+    },
+    "configure-ecc": {
+      "path": "~/.claude/skills/configure-ecc/SKILL.md",
+      "verdict": "Retire",
+      "reason": "One-shot installer whose job is done (memory: 33 skills installed) and now broken: Step 0 (L31-33) clones https://github.com/affaan-m/everything-Codex.git — corrupted URL from a global Claude→Codex rename (repo is everything-claude-code) — wizard fails at first step. Skill catalog (L104-192) no longer matches installed store; re-running would clobber the curated ~/.agents/skills canonical setup with flat copies.",
+      "mtime": "2026-07-01T23:18:21Z"
+    },
+    "eval-harness": {
+      "path": "~/.claude/skills/eval-harness/SKILL.md",
+      "verdict": "Retire",
+      "reason": "Depends on infrastructure that doesn't exist — VERIFIED: /eval define|check|report commands (L167-183) not in ~/.claude/commands/, no .claude/evals/ anywhere. Remaining content is static knowledge (pass@k/pass^k, 'define evals before coding') the model has, duplicating rules/common/development-workflow.md Testing Approach and superpowers:test-driven-development. Dead framework, per-session description cost.",
+      "mtime": "2026-07-01T23:18:42Z"
+    },
+    "plankton-code-quality": {
+      "path": "~/.claude/skills/plankton-code-quality/SKILL.md",
+      "verdict": "Retire",
+      "reason": "Reference manual for a third-party hook system NOT installed — VERIFIED: ~/.claude/hooks/ contains only agent-terminal-notify.sh, compaction-recovery.py, post-write-check.sh, rtk-rewrite.sh; no multi_linter.sh/protect_linter_configs.sh/stop_config_guardian.sh; no Plankton entries in settings.json. Installation is manual from external repo (L75). Package-manager blocking philosophy (L66-69) conflicts with this environment.",
+      "mtime": "2026-07-01T22:29:10Z"
+    },
+    "strategic-compact": {
+      "path": "~/.claude/skills/strategic-compact/SKILL.md",
+      "verdict": "Merge into [compact-prep]",
+      "reason": "Hook not wired — VERIFIED: settings.json PreToolUse has only rtk-rewrite.sh; PreCompact/PostCompact use compaction-recovery.py. Prescribed Hook Setup (L41-58) is buggy (runs .sh via node). L99-125 reference tools not installed (token-optimizer MCP, context-mode); What-Survives table (L84) cites wrong memory path. Only durable value: Compaction Decision Guide table (L67-77) — belongs in compact-prep, the working counterpart.",
+      "mtime": "2026-07-01T22:29:10Z"
+    },
+    "compact-prep": {
+      "path": "~/.claude/skills/compact-prep/SKILL.md",
+      "verdict": "Keep",
+      "reason": "Model skill: 36 lines, disable-model-invocation:true (user-invoked only), dynamic workspace snapshot via inline commands (L13-18), concrete 7-field handoff format with anti-hallucination rule ('none observed' L34). Referenced in Codex memories as actively used. Only change: absorb merge from strategic-compact.",
+      "mtime": "2026-07-05T01:27:11Z"
+    },
+    "karpathy-guidelines": {
+      "path": "~/.claude/skills/karpathy-guidelines/SKILL.md",
+      "verdict": "Keep",
+      "reason": "Load-bearing: ~/CLAUDE.md Core Principles and Execution Gate explicitly say 'load the karpathy-guidelines skill'. 67 lines, zero external dependencies, 232-char trigger-focused description, four principles with concrete tests (L49). No staleness. Do not touch.",
+      "mtime": "2026-05-23T12:04:48Z"
+    },
+    "extract-approach": {
+      "path": "~/.claude/skills/extract-approach/SKILL.md",
+      "verdict": "Keep",
+      "reason": "Load-bearing: ~/CLAUDE.md Solution Recording mandates invoking before completion reports. 77 lines, Japanese, sharp trigger/non-trigger criteria (L14-21), pass/fail rubric (L59-64), explicit division of labor vs lessons.md and auto-memory (L66-72). Output paths match repo-scaffold and memory records. Description 394 chars — just under budget.",
+      "mtime": "2026-07-06T21:49:29Z"
+    },
+    "fable-escalation": {
+      "path": "~/.claude/skills/fable-escalation/SKILL.md",
+      "verdict": "Keep",
+      "reason": "Load-bearing (~/CLAUDE.md Model Routing) and fully current — VERIFIED: four env aliases (L22) exist in ~/.claude/settings.json and resolve to live Claude 5 family (claude-fable-5[1m], claude-opus-4-8, claude-sonnet-5[1m], claude-haiku-4-5), matching its tier table exactly. 60 lines, clear human-in-the-loop policy. Lives at ~/workspace/agents-setup/skills/fable-escalation (intentional). Re-verify model names when family next changes.",
+      "mtime": "2026-07-06T22:49:50Z"
+    },
+    "opus-task-loop": {
+      "path": "~/.claude/skills/opus-task-loop/SKILL.md",
+      "verdict": "Improve",
+      "reason": "Lean (58 lines); core contribution — independent-verification table (L28-35: 'ran, no crash' vs 'recomputed a different way') — not covered by karpathy-guidelines or Execution Gate. But partially restates karpathy §4 (decompose/verify) and §2 ('Tempted to add more' row L49); Quick Reference table (L51-58) restates 'Deciding What's Next' (L37-42). Correctly wires into superpowers verification/systematic-debugging.",
+      "mtime": "2026-07-06T21:40:41Z"
+    },
+    "know-your-unknowns": {
+      "path": "~/.claude/skills/know-your-unknowns/SKILL.md",
+      "verdict": "Keep",
+      "reason": "97 lines, 141-char description, genuinely distinct artifact-first prompting catalog (11 patterns, situation→pattern routing table L14-26, agent application rules L89-97). Partial overlap with superpowers:brainstorming (patterns 5-6) and superpowers:writing-plans (pattern 8), but those execute workflows while this produces reviewable artifacts to surface the USER'S unknowns — different job.",
+      "mtime": "2026-07-04T09:26:21Z"
+    },
+    "refactor-instructions": {
+      "path": "~/.claude/skills/refactor-instructions/SKILL.md",
+      "verdict": "Keep",
+      "reason": "126 lines, Japanese, unique deliverable: analyze-only role producing refactor-instructions.md for a separate implementation model, evidence-only rule (Step 1 L30), per-debt 7-field template (L49-58), mandatory stop-and-ask conditions (L62-71), Non-Negotiables (L96-107). Distinct from planner agent and superpowers:writing-plans. Actually used per Codex memory. No hardcoded paths.",
+      "mtime": "2026-07-04T09:26:21Z"
+    },
+    "repeat-workflow-packager": {
+      "path": "~/.claude/skills/repeat-workflow-packager/SKILL.md",
+      "verdict": "Update",
+      "reason": "Sound methodology (evidence order, candidate filter, smallest-form ladder) but Creation Rules 2-3 (L66-67) name ~/.codex/skills/<name> as canonical skill location with symlink into ~/.claude/skills — contradicts established system: canonical store is ~/.agents/skills with sync-skills.sh (VERIFIED: ~/.claude/skills/* symlink to ../../.agents/skills/*). A model following this as written creates skills in the wrong store causing drift.",
+      "mtime": "2026-07-04T09:26:21Z"
+    },
+    "repo-scaffold": {
+      "path": "~/.claude/skills/repo-scaffold/SKILL.md",
+      "verdict": "Keep",
+      "reason": "83 lines, Japanese, deliberate Fable-extraction artifact (memory project_fable_extraction_2026-07-07). Encodes house style precisely: AGENTS.md 5-section format with checkable Completion Standards (L66-71), CLAUDE.md-as-symlink convention, docs/learnings wiring to extract-approach, conditional backlog init (backlog CLI VERIFIED installed). Nit: description 419 chars, slightly over.",
+      "mtime": "2026-07-06T22:00:07Z"
+    },
+    "skill-stocktake": {
+      "path": "~/.claude/skills/skill-stocktake/SKILL.md",
+      "verdict": "Keep",
+      "reason": "The audit skill itself; dependencies VERIFIED: scripts/scan.sh, quick-diff.sh, save-results.sh exist, results.json present, scanned path resolves through symlink farm. Reason-quality requirements (L131-144) strongest part. Known caveat: 7d/30d usage columns read 0 for every skill (tracking broken) — evaluations must not weight usage until fixed.",
+      "mtime": "2026-07-01T23:18:59Z"
+    },
+    "stop-gate-review": {
+      "path": "~/.claude/skills/stop-gate-review/SKILL.md",
+      "verdict": "Keep",
+      "reason": "47 lines, tight contract (exact ALLOW:/BLOCK: first line, previous-turn-only scope, evidence-grounding rule L24 forbidding blocks based on assistant claims). Runtime dependency is NOT a settings.json Stop hook but the codex plugin's stop-time review gate (toggled via codex:setup) — ~/.codex/memories/memory_summary.md contains multiple actual ALLOW/BLOCK runs, proving production use. Description (305 chars) trigger-accurate.",
+      "mtime": "2026-06-03T23:20:00Z"
+    },
+    "ai-regression-testing": {
+      "path": "~/.claude/skills/ai-regression-testing/SKILL.md",
+      "verdict": "Improve",
+      "reason": "Core insight real and unique: same-model-writes-and-reviews blind spots, sandbox/production parity failure story (L27-45), 'test where bugs were found' (L343-359) — not covered by rules/common/testing.md or superpowers:TDD. But 385 lines mostly static: vitest config/helpers (L53-121), bug-check command that doesn't exist (L199-223), Patterns 2-4 samples (L284-341) any model writes. L14 unadapted-import typo: 'AI agent (Codex, Cursor, Codex)'.",
+      "mtime": "2026-07-01T22:29:10Z"
+    },
+    "tapestry": {
+      "path": "~/.claude/skills/tapestry/SKILL.md",
+      "verdict": "Improve",
+      "reason": "460 lines for what should be a thin router: L80-215 and L275-337 inline bash reimplementing extraction that article-extractor and youtube-transcript own (skill admits delegation at L107). Dependencies broken — VERIFIED: reader, trafilatura, pdftotext NOT installed (only yt-dlp) — article and PDF paths as written fail. Examples label assistant 'Codex:' (L379, L397); output format emoji-heavy. Unique keepable asset: URL→action-plan concept and Quest/Reps template (L221-243). NOTE: coordinate with article-extractor Retire verdict — route articles via Jina Reader/WebFetch instead.",
+      "mtime": "2026-07-04T09:26:21Z"
+    }
+  },
+  "evaluated_at": "2026-07-07T02:08:56Z"
+}

@@ -34,11 +34,10 @@ Once `npx` is present, proceed with the wrapper script. A global install of `pla
 ## Skill path (set once)
 
 ```bash
-export CODEX_HOME="${CODEX_HOME:-$HOME/.codex}"
-export PWCLI="$CODEX_HOME/skills/playwright/scripts/playwright_cli.sh"
+export PWCLI="$HOME/.agents/skills/playwright/scripts/playwright_cli.sh"
 ```
 
-User-scoped skills install under `$CODEX_HOME/skills` (default: `~/.codex/skills`).
+The canonical skill store is `~/.agents/skills` (symlinked into both `~/.claude/skills` and `~/.codex/skills`).
 
 ## Quick start
 
@@ -143,5 +142,5 @@ Open only what you need:
 - Prefer explicit commands over `eval` and `run-code` unless needed.
 - When you do not have a fresh snapshot, use placeholder refs like `eX` and say why; do not bypass refs with `run-code`.
 - Use `--headed` when a visual check will help.
-- When capturing artifacts in this repo, use `output/playwright/` and avoid introducing new top-level artifact folders.
+- When capturing artifacts, write them to the session scratchpad dir (or `/tmp/playwright/`); avoid introducing new top-level artifact folders in the user's project.
 - Default to CLI commands and workflows, not Playwright test specs.
