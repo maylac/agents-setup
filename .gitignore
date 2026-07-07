@@ -9,4 +9,5 @@
 *.sqlite-wal
 .env
 !.env.example
+__pycache__/
 

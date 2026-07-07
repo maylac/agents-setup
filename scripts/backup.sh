@@ -69,12 +69,13 @@ sanitize_tree() {
 sync_dir() {
   local src="$1"
   local dst="$2"
+  shift 2
   [ -d "$src" ] || return 0
   if [ -d "$dst" ] && [ "$(cd -P "$src" && pwd)" = "$(cd -P "$dst" && pwd)" ]; then
     return 0
   fi
   mkdir -p "$dst"
-  rsync -a --delete \
+  rsync -a --delete "$@" \
     --exclude='.git/' \
     --exclude='.agmsg/' \
     --exclude='.temp/' \
@@ -237,7 +238,7 @@ write_plugin_inventory() {
     printf 'Generated from `claude plugin list`.\n\n'
     if command -v claude >/dev/null 2>&1; then
       printf '```text\n'
-      claude plugin list || true
+      claude plugin list | sed -e 's/[[:space:]]*$//' || true
       printf '```\n'
     else
       printf 'Claude CLI was not available during backup.\n'
@@ -249,7 +250,7 @@ write_plugin_inventory() {
     printf 'Generated from `codex plugin list`, filtered to installed plugins.\n\n'
     if command -v codex >/dev/null 2>&1; then
       printf '```text\n'
-      codex plugin list | awk '/installed, enabled|installed, disabled/ { print }' || true
+      codex plugin list | awk '/installed, enabled|installed, disabled/ { print }' | sed -e 's/[[:space:]]*$//' || true
       printf '```\n'
     else
       printf 'Codex CLI was not available during backup.\n'
@@ -303,17 +304,24 @@ if [ "$INSTRUCTIONS_ONLY" -eq 1 ]; then
   exit 0
 fi
 
-sync_dir "$HOME_DIR/.agents/skills" "$ROOT/skills"
+# --copy-unsafe-links: canonical entries may be symlinks to skills developed
+# elsewhere (e.g. fable-escalation lives in this repo). Copying such a link
+# verbatim would plant a self-referential symlink loop inside the repo, so
+# materialize out-of-tree links while keeping in-tree relative links intact.
+sync_dir "$HOME_DIR/.agents/skills" "$ROOT/skills" --copy-unsafe-links
 rm -rf "$ROOT/skills/gstack" "$ROOT/skills/capafy-publisher" \
   "$ROOT/skills/defense-in-depth" "$ROOT/skills/root-cause-tracing"
 
 sync_dir "$HOME_DIR/.claude/agents" "$ROOT/claude/agents"
 sync_dir "$HOME_DIR/.claude/commands" "$ROOT/claude/commands"
-sync_dir "$HOME_DIR/.claude/hooks" "$ROOT/claude/hooks"
+# --copy-links: live hooks are symlinks into ~/.agents/hooks (canonical store),
+# which this backup does not mirror; snapshot the resolved content instead so
+# the repo copy stays self-contained and audit-sync cmp checks keep working.
+sync_dir "$HOME_DIR/.claude/hooks" "$ROOT/claude/hooks" --copy-links
 rm -f "$ROOT/claude/hooks/.rtk-hook.sha256"
 
 sync_dir "$HOME_DIR/.codex/agents" "$ROOT/codex/agents"
-sync_dir "$HOME_DIR/.codex/hooks" "$ROOT/codex/hooks"
+sync_dir "$HOME_DIR/.codex/hooks" "$ROOT/codex/hooks" --copy-links
 rm -f "$ROOT/codex/hooks/.rtk-hook.sha256"
 
 if [ -f "$HOME_DIR/.agents/sync-skills.sh" ]; then
