@@ -5,7 +5,7 @@
 - When a language-specific rule (`rules/<language>/`) conflicts with `rules/common/`, the language-specific rule takes precedence.
 - TodoWrite and task-tracking mechanics: see `rules/common/hooks.md`.
 - Personal workflow thresholds: plan mode trigger — see `rules/common/performance.md` (Plan Mode); summarize changes per step; prove completion with tests, logs, or behavior diff at a staff-engineer bar.
-- **Self-improvement loop**: After recurring corrections or durable workflow lessons, record the pattern in `~/tasks/lessons.md` as a rule that prevents recurrence. Review relevant lessons when they are likely to apply. Workflow/process lessons go in `~/tasks/lessons.md`; facts about the user or environment go in auto-memory.
+- **Self-improvement loop**: After recurring corrections or durable workflow lessons, record the pattern in `~/tasks/lessons.md` as a rule that prevents recurrence. Review relevant lessons when they are likely to apply. Workflow/process lessons go in `~/tasks/lessons.md`; facts about the user or environment go in auto-memory. Harness-wide upkeep (rot detection, lesson routing, distillation-source ledger) is the `self-improve` skill — design and ledgers live in `~/workspace/agents-setup/selfimprove/`.
 - **Autonomous bug fixing**: Given a bug report, just fix it -- point at logs/errors/failing tests and resolve, without hand-holding.
 
 # Memory System
