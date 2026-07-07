@@ -80,17 +80,19 @@ For each error:
 | HIGH | Single file failing, new code type errors | Fix soon |
 | MEDIUM | Linter warnings, deprecated APIs | Fix when possible |
 
-## Quick Recovery
+## Escalated Recovery
+
+Use these only after the error points to cache/dependency corruption and after checking the repo's package manager/lockfile. Prefer package-manager detection (`pnpm-lock.yaml` → pnpm, `yarn.lock` → yarn, `package-lock.json` → npm, `bun.lockb`/`bun.lock` → bun) and keep the existing lockfile unless the user explicitly approves deleting or regenerating it.
 
 ```bash
-# Nuclear option: clear all caches
+# Cache-only cleanup: keep node_modules and lockfiles intact unless confirmed
 rm -rf .next node_modules/.cache && npm run build
 
-# Reinstall dependencies
-rm -rf node_modules package-lock.json && npm install
+# Reinstall with the detected package manager; do not delete lockfiles by default
+npm install   # or pnpm install / yarn install / bun install based on the repo
 
-# Fix ESLint auto-fixable
-npx eslint . --fix
+# ESLint auto-fix only for targeted files after reviewing the diff/scope
+npx eslint path/to/file.ts --fix
 ```
 
 ## Success Metrics
@@ -100,6 +102,7 @@ npx eslint . --fix
 - No new errors introduced
 - Minimal lines changed (< 5% of affected file)
 - Tests still passing
+- No unintended lockfile or package-manager changes
 
 ## When NOT to Use
 

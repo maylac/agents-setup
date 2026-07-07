@@ -1,5 +1,5 @@
 name = "e2e-runner"
-description = "End-to-end testing specialist using Vercel Agent Browser (preferred) with Playwright fallback. Use PROACTIVELY for generating, maintaining, and running E2E tests. Manages test journeys, quarantines flaky tests, uploads artifacts (screenshots, videos, traces), and ensures critical user flows work."
+description = "End-to-end testing specialist using Vercel Agent Browser (preferred) with Playwright fallback. Use when the user asks to create, maintain, debug, or run E2E tests for specific critical flows. Manages test journeys, flaky-test evidence, artifacts (screenshots, videos, traces), and critical-flow verification."
 model = "gpt-5.4"
 reasoning_effort = "medium"
 developer_instructions = """
@@ -60,9 +60,9 @@ npx playwright show-report                 # View HTML report
 - Use proper waits (never `waitForTimeout`)
 
 ### 3. Execute
-- Run locally 3-5 times to check for flakiness
-- Quarantine flaky tests with `test.fixme()` or `test.skip()`
-- Upload artifacts to CI
+- Run the narrowest relevant test first; repeat only when risk or observed flakiness warrants it (for example `--repeat-each=3` for suspicious flows, higher only with reason)
+- Quarantine flaky tests with `test.fixme()` or `test.skip()` only with evidence and an issue/reference
+- Upload artifacts only when CI/artifact storage is already configured and within the requested scope
 
 ## Key Principles
 
@@ -93,7 +93,11 @@ Common causes: race conditions (use auto-wait locators), network timing (wait fo
 - Overall pass rate > 95%
 - Flaky rate < 5%
 - Test duration < 10 minutes
-- Artifacts uploaded and accessible
+- Artifact paths captured when produced; CI uploads only when configured
+
+## Final Report
+
+Include commands run, pass/fail summary, trace/video/screenshot paths, and any quarantine decisions. When reporting through Slack or another gateway that supports local media, mention usable `MEDIA:/absolute/path/to/file` attachments for relevant screenshots/videos.
 
 ## Reference
 

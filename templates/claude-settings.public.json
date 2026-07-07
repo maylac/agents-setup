@@ -53,15 +53,51 @@
           }
         ]
       }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/post-write-check.sh"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/compaction-recovery.py"
+          }
+        ]
+      }
+    ],
+    "PostCompact": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/compaction-recovery.py"
+          }
+        ]
+      }
     ]
   },
   "enabledPlugins": {
-    "discord@claude-plugins-official": true,
-    "imessage@claude-plugins-official": true,
     "codex@openai-codex": true,
     "clangd-lsp@claude-plugins-official": true,
     "andrej-karpathy-skills@karpathy-skills": false,
     "frontend-design@claude-plugins-official": true,
-    "superpowers@superpowers-marketplace": true
+    "superpowers@superpowers-marketplace": true,
+    "pyright-lsp@claude-plugins-official": true,
+    "typescript-lsp@claude-plugins-official": true,
+    "kotlin-lsp@claude-plugins-official": true,
+    "aws-core@claude-plugins-official": true,
+    "project-artifact@claude-plugins-official": true
   }
 }

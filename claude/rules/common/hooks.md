@@ -16,6 +16,8 @@ Use auto-accept only for trusted, well-defined work. Keep exploratory work expli
 
 **Codex exception**: Codex is intentionally run with `approval_policy = "never"` and `sandbox_mode = "danger-full-access"` (see `~/.codex/config.toml`). This is a deliberate, user-approved exception to the rule above, not an oversight — do not "fix" it back to a restrictive policy.
 
+Full-auto does not mean irreversible: destructive operations, lockfile deletion, force push, publish/upload/send/archive, and payments/trading/account actions still require explicit user request or confirmation. Prefer draft/dry-run first and report commands/actions plus relevant output.
+
 ## TodoWrite
 
 Use TodoWrite for multi-step tasks where progress tracking helps the user steer the work. Skip it for one-step edits or quick answers.

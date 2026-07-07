@@ -22,6 +22,11 @@ Common commands:
 
 Do not add Backlog.md files to tiny one-off edits unless the user asks for durable project tracking or the repo already uses Backlog.md.
 
+
+## Full-Auto Safety Guardrails
+
+Even in trusted or full-auto sessions, treat external side effects as gated work. Destructive operations, lockfile deletion, force pushes, publishing/uploading/sending/archiving, and payments/trading/account actions require an explicit user request or confirmation. Prefer draft/dry-run/preview first, then report the exact command or action taken and its relevant output.
+
 ## Execution Gate
 
 Before non-trivial code edits:
