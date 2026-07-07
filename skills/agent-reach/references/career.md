@@ -22,8 +22,4 @@ mcporter call 'linkedin-scraper.search_jobs(keyword: "software engineer", limit:
 
 ### Fallback 方案
 
-如果 MCP 不可用，可以用 Jina Reader：
-
-```bash
-curl -s "https://r.jina.ai/https://linkedin.com/in/username"
-```
+如果 MCP 不可用，可以用 WebFetch 直接读取该 LinkedIn URL（未登录时多数页面只返回登录墙，需明示该限制）。Jina Reader（`r.jina.ai`）已于 2026-07 弃用，不要再使用。

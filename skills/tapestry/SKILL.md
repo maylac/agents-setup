@@ -18,7 +18,7 @@ Activate when the user says "tapestry [URL]", "weave [URL]", "help me plan [URL]
 
 - **YouTube URL** → use the `youtube-transcript` skill.
 - **`.pdf` URL** → `curl -sL "URL" -o /tmp/tapestry.pdf`, then read it with the Read tool.
-- **Any other article/page** → fetch clean text via Jina Reader (`https://r.jina.ai/<URL>`) or WebFetch.
+- **Any other article/page** → fetch clean text via WebFetch (or Exa `web_fetch_exa`). Do not use Jina Reader (`r.jina.ai`) — deprecated 2026-07, API unreliable.
 
 Keep the extracted text in a working file if it's long.
 

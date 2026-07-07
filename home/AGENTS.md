@@ -45,7 +45,7 @@ Assume many user prompts are dictated by voice and may contain speech-to-text er
 
 ## Tool Use Rules
 
-- When asked to verify an X article or linked article, check it through Jina Reader first (`https://r.jina.ai/<URL>`, where `<URL>` includes its own scheme). If Jina returns only a login wall or metadata, state that limitation explicitly.
+- When asked to verify an X article or linked article, do NOT use Jina Reader (`r.jina.ai`) — deprecated 2026-07 because the API became unreliable. For X posts/articles use `opencli twitter article <URL>`; for other pages use WebFetch (or Exa `web_fetch_exa`). If a login wall or metadata-only result blocks reading, state that limitation explicitly before trying alternatives.
 - **RTK**: a PreToolUse hook silently rewrites common Bash commands to token-lean `rtk` equivalents (e.g. `git status` → `rtk git status`). This applies in both Claude Code and Codex sessions. If a command fails unexpectedly, check whether it was rewritten (`rtk proxy <cmd>` runs the raw command for debugging). Known limits: prefer `rg`/`rg --files` for search; use `/usr/bin/find` directly for compound predicates or `-exec` actions, since `rtk find` doesn't support those forms. See `claude/RTK.md` for the full guide (Claude-only file, but the hook and limits apply to both tools).
 
 ## Local Tools

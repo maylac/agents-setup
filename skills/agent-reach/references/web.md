@@ -2,17 +2,11 @@
 
 通用网页、RSS。
 
-## 通用网页 (Jina Reader)
+## 通用网页 (WebFetch)
 
-```bash
-# 读取任意网页内容
-curl -s "https://r.jina.ai/URL"
+优先使用 harness 自带的 WebFetch 工具（或 Exa 的 `web_fetch_exa` MCP）读取任意网页。
 
-# 示例
-curl -s "https://r.jina.ai/https://example.com/article"
-```
-
-**适用场景**: 大多数网页可以直接用 Jina Reader 读取。
+> **注意**: Jina Reader（`r.jina.ai`）已于 2026-07 弃用（API 不稳定），不要再使用。
 
 ## Web Reader (MCP)
 
@@ -45,6 +39,6 @@ for e in feedparser.parse('FEED_URL').entries[:5]:
 
 | 场景 | 推荐工具 |
 |-----|---------|
-| 通用网页 | Jina Reader (`curl r.jina.ai`) |
+| 通用网页 | WebFetch / `web_fetch_exa` |
 | 需要图片/格式控制 | web-reader MCP |
 | RSS 订阅 | feedparser |

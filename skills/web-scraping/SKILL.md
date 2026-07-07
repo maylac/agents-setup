@@ -1,6 +1,6 @@
 ---
 name: web-scraping
-description: Web scraping with anti-bot bypass, content extraction, undocumented APIs, poison pill detection, and page-change monitoring. Not for clean article-only extraction (use Jina Reader/WebFetch) or myLife clipping (use clip).
+description: Web scraping with anti-bot bypass, content extraction, undocumented APIs, poison pill detection, and page-change monitoring. Not for clean article-only extraction (use WebFetch) or myLife clipping (use clip).
 ---
 
 # Web scraping methodology
