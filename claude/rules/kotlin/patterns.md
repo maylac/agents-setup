@@ -17,4 +17,4 @@ paths:
 
 ## Reference
 
-See skill: `kotlin-patterns` for comprehensive idioms and code examples, `kotlin-coroutines-flows` for coroutine/Flow patterns, and `android-clean-architecture` for module and layer patterns.
+See skill: `kotlin-coroutines-flows` for coroutine/Flow patterns and `android-clean-architecture` for module and layer patterns.

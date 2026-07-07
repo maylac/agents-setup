@@ -14,7 +14,3 @@ paths:
 - Use sealed classes/interfaces for closed state hierarchies, with exhaustive `when` (no `else` branch).
 - Use `Result<T>` or a sealed error type over exceptions for control flow; never swallow `CancellationException`.
 - Keep extension functions discoverable (file named after the receiver type) and scoped — avoid extending `Any`.
-
-## Reference
-
-See skill: `kotlin-patterns` for comprehensive Kotlin idioms and code examples.
