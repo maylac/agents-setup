@@ -20,7 +20,7 @@ AGENT_DIRS=("$HOME/.claude/skills" "$HOME/.codex/skills")
 HERMES_LOCAL="$HOME/.hermes/skills"
 HERMES_SHARED="$HOME/.hermes/shared-skills"
 REL_PREFIX="../../.agents/skills"   # <agent>/skills/<name> から見た正本への相対パス
-HERMES_REL_PREFIX="../.agents/skills" # ~/.hermes/shared-skills/<name> から見た正本への相対パス
+HERMES_REL_PREFIX="../../.agents/skills" # ~/.hermes/shared-skills/<name> から見た正本への相対パス
 
 # Claude 側のみ除外するスキル名パターン (Codex 側には引き続き symlink する)
 # chronicle: Codex専用 (2026-07-07 skills監査) — Claudeでは発火不能なのに長い
