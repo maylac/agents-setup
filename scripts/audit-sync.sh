@@ -146,7 +146,9 @@ CANON_SKILLS="$HOME_DIR/.agents/skills"
 CLAUDE_SKILLS="$HOME_DIR/.claude/skills"
 CODEX_SKILLS="$HOME_DIR/.codex/skills"
 # source-command-* is deliberately excluded from the Claude mirror (D5).
-CLAUDE_EXCLUDE_PATTERN='^source-command-'
+# chronicle is Codex-only (2026-07-07 skills audit): it cannot fire on Claude
+# yet its long description would be injected into every session.
+CLAUDE_EXCLUDE_PATTERN='^source-command-|^chronicle$'
 
 skill_parity_check() {
   local agent_dir="$1"
