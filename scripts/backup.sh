@@ -308,7 +308,8 @@ fi
 # elsewhere (e.g. fable-escalation lives in this repo). Copying such a link
 # verbatim would plant a self-referential symlink loop inside the repo, so
 # materialize out-of-tree links while keeping in-tree relative links intact.
-sync_dir "$HOME_DIR/.agents/skills" "$ROOT/skills" --copy-unsafe-links
+# /agmsg/run/ holds per-session watcher pids/watermarks — runtime state, not config.
+sync_dir "$HOME_DIR/.agents/skills" "$ROOT/skills" --copy-unsafe-links --exclude=/agmsg/run/
 rm -rf "$ROOT/skills/gstack" "$ROOT/skills/capafy-publisher" \
   "$ROOT/skills/defense-in-depth" "$ROOT/skills/root-cause-tracing"
 
