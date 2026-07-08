@@ -8,6 +8,10 @@
 - **Self-improvement loop**: After recurring corrections or durable workflow lessons, record the pattern in `~/tasks/lessons.md` as a rule that prevents recurrence. Review relevant lessons when they are likely to apply. Workflow/process lessons go in `~/tasks/lessons.md`; facts about the user or environment go in auto-memory. Harness-wide upkeep (rot detection, lesson routing, distillation-source ledger) is the `self-improve` skill — design and ledgers live in `~/workspace/agents-setup/selfimprove/`.
 - **Autonomous bug fixing**: Given a bug report, just fix it -- point at logs/errors/failing tests and resolve, without hand-holding.
 
+# Design Quality
+
+Before designing or implementing any user-facing UI (web/mobile/dashboard/landing), load `~/.claude/DESIGN.md` and follow its process: pick one aesthetic direction, lock tokens, build, then run its pre-ship checklist.
+
 # Memory System
 
 Auto-memory lives under `~/.claude/projects/<current-project>/memory/` (types: user, feedback, project, reference). Use it proactively, and **always verify memory against current files before acting** -- paths, names, and state drift.
