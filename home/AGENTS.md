@@ -51,5 +51,6 @@ Assume many user prompts are dictated by voice and may contain speech-to-text er
 ## Local Tools
 
 - **OmniGet**: installed at `$HOME/Applications/omniget.app`; source checkout at `$HOME/workspace/tools/omniget`. Use `omniget` to launch, `omniget --version` to verify, `omniget --source-path` to locate the repo, and `omniget --dev` from any directory to start the Tauri dev app.
+- **Maestro**: installed via Homebrew (`mobile-dev-inc/tap/maestro`) with Java 17 from `openjdk@17`. Use `maestro` for mobile app smoke tests and UI flow checks when a repository has Maestro flows or when a change affects mobile navigation, onboarding, forms, auth, payments, or other critical user journeys. Prefer the narrowest relevant flow first, e.g. `maestro test <flow.yaml>`, and use `maestro list-devices` to verify available Web/iOS/Android targets before running device-specific checks. If iOS Simulator or Android Emulator support is missing, state the missing runtime explicitly instead of treating Maestro itself as unavailable.
 
 <!-- Maintenance: AGENTS.md is the source of truth (shared tool-agnostically, e.g. with Codex). ~/CLAUDE.md is a symlink to this file — keep the symlink intact. -->
