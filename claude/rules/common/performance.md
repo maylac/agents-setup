@@ -1,4 +1,9 @@
 ---
+paths:
+  - "**/.claude/**"
+  - "**/.codex/**"
+  - "**/AGENTS.md"
+  - "**/CLAUDE.md"
 description: Context, model, and troubleshooting guidance that should stay conditional and current-state based.
 ---
 

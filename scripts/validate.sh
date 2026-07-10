@@ -109,7 +109,11 @@ check_json
 check_shell
 check_rules_lint
 
-bash "$ROOT/scripts/audit-sync.sh" || failed=1
+if [ -d "$HOME/.claude" ] && [ -d "$HOME/.codex" ] && [ -d "$HOME/.agents" ]; then
+  bash "$ROOT/scripts/audit-sync.sh" || failed=1
+else
+  printf 'SKIP: live harness sync audit (Claude/Codex/agents homes unavailable)\n'
+fi
 
 check_no_matches 'Private home paths remain:' '(/Users/(maylac|gotasa+ki)|-Users-(maylac|gotasa+ki))'
 check_no_matches 'Email address remains:' 'may\.lac1206@gmail\.com'

@@ -1,6 +1,6 @@
 ---
 name: agent-reach
-description: 'Multi-platform internet research router (15 platforms: web search, Twitter/X, Reddit, Xiaohongshu, Bilibili, V2EX, Facebook, Instagram, LinkedIn, GitHub, YouTube, podcasts, finance). Use for explicit research/lookup tasks needing current external content. Not for single URL reads (use WebFetch), posting/writing, or platforms with a dedicated skill. Run `agent-reach doctor --json` to see active backends.'
+description: Multi-platform research router for web, social, video, podcasts, GitHub, and finance. Use for explicit current-information research spanning platforms. Not for a single readable URL, posting, or a platform covered by a dedicated skill.
 metadata:
   openclaw:
     homepage: https://github.com/Panniantong/Agent-Reach

@@ -1,4 +1,6 @@
 ---
+paths:
+  - "**/*.{js,jsx,ts,tsx,mjs,cjs,py,go,rs,java,kt,kts,swift,c,cc,cpp,h,hpp,cs,php,rb,scala,dart,sql,sh,bash,zsh,fish,html,css,scss,json,yaml,yml,toml,xml}"
 description: Conditional workflow guidance for non-trivial implementation work.
 ---
 

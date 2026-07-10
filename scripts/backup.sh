@@ -270,8 +270,8 @@ write_inventory() {
     printf '%s\n' '- `~/AGENTS.md` and `~/CLAUDE.md` symlink state'
     printf '%s\n' '- `~/.claude/CLAUDE.md`, `~/.claude/AGENTS.md`, `~/.claude/RTK.md`, and `~/.claude/rules/common`'
     printf '%s\n' '- `~/.claude/agents`'
-    printf '%s\n' '- `~/.claude/commands`'
     printf '%s\n' '- `~/.claude/hooks` excluding trust-hash state'
+    printf '%s\n' '- `~/.claude/output-styles`'
     printf '%s\n' '- `~/.codex/AGENTS.md` normalized to point at the repo home snapshot'
     printf '%s\n' '- `~/.codex/hooks.json` with local home paths sanitized'
     printf '%s\n' '- `~/.codex/agents`'
@@ -292,7 +292,7 @@ require_command rsync
 require_command perl
 require_command grep
 
-mkdir -p "$ROOT/home" "$ROOT/skills" "$ROOT/claude/agents" "$ROOT/claude/commands" "$ROOT/claude/hooks" \
+mkdir -p "$ROOT/home" "$ROOT/skills" "$ROOT/claude/agents" "$ROOT/claude/hooks" "$ROOT/claude/output-styles" \
   "$ROOT/claude/plugins" "$ROOT/codex/agents" "$ROOT/codex/hooks" "$ROOT/codex/plugins" \
   "$ROOT/manifests" "$ROOT/templates"
 
@@ -314,12 +314,12 @@ rm -rf "$ROOT/skills/gstack" "$ROOT/skills/capafy-publisher" \
   "$ROOT/skills/defense-in-depth" "$ROOT/skills/root-cause-tracing"
 
 sync_dir "$HOME_DIR/.claude/agents" "$ROOT/claude/agents"
-sync_dir "$HOME_DIR/.claude/commands" "$ROOT/claude/commands"
 # --copy-links: live hooks are symlinks into ~/.agents/hooks (canonical store),
 # which this backup does not mirror; snapshot the resolved content instead so
 # the repo copy stays self-contained and audit-sync cmp checks keep working.
 sync_dir "$HOME_DIR/.claude/hooks" "$ROOT/claude/hooks" --copy-links
 rm -f "$ROOT/claude/hooks/.rtk-hook.sha256"
+sync_dir "$HOME_DIR/.claude/output-styles" "$ROOT/claude/output-styles" --copy-links
 
 sync_dir "$HOME_DIR/.codex/agents" "$ROOT/codex/agents"
 sync_dir "$HOME_DIR/.codex/hooks" "$ROOT/codex/hooks" --copy-links

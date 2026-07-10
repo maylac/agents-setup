@@ -145,9 +145,7 @@ json_has_no_stop_ghostty "$HOME_DIR/.codex/hooks.json" "Codex Ghostty Stop hook"
 CANON_SKILLS="$HOME_DIR/.agents/skills"
 CLAUDE_SKILLS="$HOME_DIR/.claude/skills"
 CODEX_SKILLS="$HOME_DIR/.codex/skills"
-# source-command-* is deliberately excluded from the Claude mirror (D5).
-# chronicle is Codex-only (2026-07-07 skills audit): it cannot fire on Claude
-# yet its long description would be injected into every session.
+# Legacy source-command names remain excluded; chronicle is Codex-only.
 CLAUDE_EXCLUDE_PATTERN='^source-command-|^chronicle$'
 
 skill_parity_check() {
@@ -230,7 +228,7 @@ skill_frontmatter_check
 # harness-optimizer is a documented Claude-only exception. Codex also keeps a
 # pinned TOML superset for language/runtime specialists that Claude no longer
 # loads globally (see manifests/ai-config-sync.json intentional_differences).
-AGENTS_CODEX_EXCEPTIONS='^[[:space:]]*(architect|cpp-build-resolver|cpp-reviewer|doc-updater|docs-lookup|flutter-reviewer|go-build-resolver|go-reviewer|harness-optimizer|java-build-resolver|java-reviewer|kotlin-build-resolver|kotlin-reviewer|loop-operator|python-reviewer|pytorch-build-resolver|refactor-cleaner|rust-build-resolver|rust-reviewer|tdd-guide|typescript-reviewer)$'
+AGENTS_CODEX_EXCEPTIONS='^[[:space:]]*(architect|chief-of-staff|cpp-build-resolver|cpp-reviewer|database-reviewer|doc-updater|docs-lookup|e2e-runner|flutter-reviewer|go-build-resolver|go-reviewer|harness-optimizer|java-build-resolver|java-reviewer|kotlin-build-resolver|kotlin-reviewer|loop-operator|planner|python-reviewer|pytorch-build-resolver|refactor-cleaner|rust-build-resolver|rust-reviewer|tdd-guide|typescript-reviewer)$'
 
 agents_repo_live_parity_check() {
   local repo_dir="$ROOT/claude/agents"

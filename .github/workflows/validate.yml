@@ -1,0 +1,21 @@
+name: Validate agent setup
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install validation dependencies
+        run: sudo apt-get update && sudo apt-get install -y jq rsync ruby
+      - name: Validate snapshot
+        run: bash scripts/validate.sh
+      - name: Run harness tests
+        run: |
+          for test in tests/*.test.sh; do
+            bash "$test"
+          done

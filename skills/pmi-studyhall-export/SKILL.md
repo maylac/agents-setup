@@ -1,13 +1,12 @@
 ---
-name: "source-command-pmi-studyhall-export"
+name: pmi-studyhall-export
 description: "PMI Study Hall のミニ試験・フルレングス試験の解答済みセッションから、全問題のデータをブラウザ経由で取得し、マークダウンファイルに保存する。"
+disable-model-invocation: true
 ---
 
-# source-command-pmi-studyhall-export
+# /pmi-studyhall-export
 
-Use this skill when the user asks to run the migrated source command `pmi-studyhall-export`.
-
-## Command Template
+Run only when the user invokes `/pmi-studyhall-export` directly.
 
 # /pmi-studyhall-export
 

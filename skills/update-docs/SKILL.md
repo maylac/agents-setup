@@ -1,6 +1,7 @@
 ---
 name: update-docs
 description: Sync documentation (READMEs, guides) with the codebase, generating from source-of-truth files.
+disable-model-invocation: true
 ---
 
 # Update Documentation

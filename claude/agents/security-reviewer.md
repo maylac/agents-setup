@@ -1,8 +1,13 @@
 ---
 name: security-reviewer
-description: Security vulnerability detection and remediation specialist. Use PROACTIVELY after writing code that handles user input, authentication, API endpoints, or sensitive data. Flags secrets, SSRF, injection, unsafe crypto, and OWASP Top 10 vulnerabilities.
+description: Read-only security reviewer for changes involving authentication, permissions, untrusted input, secrets, payments, or network boundaries.
 tools: ["Read", "Grep", "Glob", "Bash"]
 model: opus
+effort: high
+permissionMode: plan
+maxTurns: 15
+memory: project
+skills: ["owasp-security"]
 ---
 
 # Security Reviewer

@@ -1,4 +1,8 @@
 ---
+paths:
+  - "**/.claude/agents/**"
+  - "**/.codex/agents/**"
+  - "**/AGENTS.md"
 description: Guidance for using Claude subagents only when their extra context and cost are justified.
 ---
 

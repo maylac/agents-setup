@@ -1,8 +1,12 @@
 ---
 name: build-error-resolver
-description: Build and TypeScript error resolution specialist. Use PROACTIVELY when build fails or type errors occur. Fixes build/type errors only with minimal diffs, no architectural edits. Focuses on getting the build green quickly.
+description: Minimal-diff build and type-error resolver. Use when a real build failure is present and isolated implementation in a temporary worktree is appropriate.
 tools: ["Read", "Write", "Edit", "Bash", "Grep", "Glob"]
 model: sonnet
+effort: medium
+permissionMode: auto
+maxTurns: 20
+isolation: worktree
 ---
 
 # Build Error Resolver

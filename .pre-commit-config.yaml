@@ -1,0 +1,8 @@
+repos:
+  - repo: local
+    hooks:
+      - id: agents-setup-validate
+        name: Validate agent harness snapshot
+        entry: bash scripts/validate.sh
+        language: system
+        pass_filenames: false

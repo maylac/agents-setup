@@ -43,6 +43,27 @@ if [ -z "$CMD" ]; then
   exit 0
 fi
 
+# External Git writes must never inherit RTK's generic auto-allow result.
+# Normal pushes are left to the caller's explicit approval policy; force
+# pushes are denied here as a second guard.
+IS_GIT_PUSH=0
+if [[ "$CMD" =~ (^|[\;\&\|][[:space:]]*)git([[:space:]]+-C[[:space:]]+[^[:space:]]+)?[[:space:]]+push([[:space:]]|$) ]]; then
+  IS_GIT_PUSH=1
+fi
+
+if [ "$IS_GIT_PUSH" -eq 1 ] && [[ "$CMD" =~ [[:space:]](-f|--force|--force-with-lease)(=|[[:space:]]|$) ]]; then
+  jq -n \
+    --arg reason "Force push is blocked by the global agent safety policy." \
+    '{
+      "hookSpecificOutput": {
+        "hookEventName": "PreToolUse",
+        "permissionDecision": "deny",
+        "permissionDecisionReason": $reason
+      }
+    }'
+  exit 0
+fi
+
 # Delegate all rewrite + permission logic to the Rust binary.
 REWRITTEN=$(rtk rewrite "$CMD" 2>/dev/null)
 EXIT_CODE=$?
@@ -73,7 +94,7 @@ esac
 ORIGINAL_INPUT=$(echo "$INPUT" | jq -c '.tool_input')
 UPDATED_INPUT=$(echo "$ORIGINAL_INPUT" | jq --arg cmd "$REWRITTEN" '.command = $cmd')
 
-if [ "$EXIT_CODE" -eq 3 ]; then
+if [ "$EXIT_CODE" -eq 3 ] || [ "$IS_GIT_PUSH" -eq 1 ]; then
   # Ask: rewrite the command, omit permissionDecision so Claude Code prompts.
   jq -n \
     --argjson updated "$UPDATED_INPUT" \

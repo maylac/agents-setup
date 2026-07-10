@@ -3,6 +3,47 @@
   "theme": "dark-daltonized",
   "includeCoAuthoredBy": false,
   "remoteControlAtStartup": true,
+  "permissions": {
+    "defaultMode": "auto",
+    "allow": [
+      "Bash(ls *)",
+      "Bash(rg *)",
+      "Bash(command -v *)",
+      "Bash(which *)",
+      "Bash(git status *)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git show *)",
+      "Bash(git rev-parse *)",
+      "Bash(git branch --show-current *)",
+      "Bash(git worktree list *)"
+    ],
+    "ask": [
+      "Bash(git push *)",
+      "Bash(git -C * push *)",
+      "Bash(gh pr create *)",
+      "Bash(gh release *)",
+      "Bash(brew install *)",
+      "Bash(brew uninstall *)",
+      "Bash(npm publish *)",
+      "Bash(pnpm publish *)",
+      "Bash(yarn publish *)"
+    ],
+    "deny": [
+      "Bash(rm -rf *)",
+      "Bash(curl *)",
+      "Bash(sudo *)",
+      "Read(**/.env)",
+      "Bash(git push --force *)",
+      "Bash(git push -f *)",
+      "Bash(git push --force-with-lease *)",
+      "Bash(git -C * push --force *)",
+      "Bash(git -C * push -f *)",
+      "Bash(git -C * push --force-with-lease *)",
+      "Bash(git reset --hard *)",
+      "Bash(git -C * reset --hard *)"
+    ]
+  },
   "statusLine": {
     "type": "command",
     "command": "$HOME/.claude/statusline.py"
@@ -54,17 +95,6 @@
         ]
       }
     ],
-    "PostToolUse": [
-      {
-        "matcher": "Edit|Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "$HOME/.claude/hooks/post-write-check.sh"
-          }
-        ]
-      }
-    ],
     "PreCompact": [
       {
         "matcher": "",
@@ -86,8 +116,21 @@
           }
         ]
       }
+    ],
+    "InstructionsLoaded": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/instructions-loaded-audit.py",
+            "async": true
+          }
+        ]
+      }
     ]
   },
+  "outputStyle": "Maylac Operator",
   "enabledPlugins": {
     "codex@openai-codex": true,
     "clangd-lsp@claude-plugins-official": true,
@@ -97,7 +140,7 @@
     "pyright-lsp@claude-plugins-official": true,
     "typescript-lsp@claude-plugins-official": true,
     "kotlin-lsp@claude-plugins-official": true,
-    "aws-core@claude-plugins-official": true,
-    "project-artifact@claude-plugins-official": true
+    "aws-core@claude-plugins-official": false,
+    "project-artifact@claude-plugins-official": false
   }
 }

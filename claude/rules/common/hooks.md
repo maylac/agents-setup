@@ -1,4 +1,8 @@
 ---
+paths:
+  - "**/.claude/**"
+  - "**/.codex/**"
+  - "**/hooks/**"
 description: Local Claude hook and task-tracking conventions.
 ---
 

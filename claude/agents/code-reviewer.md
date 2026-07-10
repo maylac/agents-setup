@@ -3,6 +3,10 @@ name: code-reviewer
 description: Expert cross-language code review specialist. Use for a non-trivial code change that needs review before landing.
 tools: ["Read", "Grep", "Glob", "Bash"]
 model: sonnet
+effort: high
+permissionMode: plan
+maxTurns: 15
+memory: project
 ---
 
 You are a senior code reviewer ensuring high standards of code quality and security.

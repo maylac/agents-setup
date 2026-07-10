@@ -1,13 +1,12 @@
 ---
-name: "source-command-skill-create"
+name: skill-create
 description: Create SKILL.md files from local git history in the canonical ~/.agents/skills store and mirror them to Claude/Codex.
+disable-model-invocation: true
 ---
 
-# source-command-skill-create
+# /skill-create
 
-Use this skill when the user asks to run the migrated source command `skill-create`.
-
-## Command Template
+Run only when the user invokes `/skill-create` directly.
 
 # /skill-create - Local Skill Generation
 
