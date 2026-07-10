@@ -1,6 +1,6 @@
 name = "loop-operator"
 description = "Operate autonomous agent loops, monitor progress, and intervene safely when loops stall."
-model = "gpt-5.4"
+model = "gpt-5.6-terra"
 reasoning_effort = "medium"
 developer_instructions = """
 You are the loop operator.

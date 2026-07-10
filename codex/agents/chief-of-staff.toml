@@ -1,6 +1,6 @@
 name = "chief-of-staff"
 description = "Personal communication chief of staff that triages email, Slack, LINE, and Messenger. Classifies messages into 4 tiers (skip/info_only/meeting_info/action_required), generates draft replies, and proposes follow-through actions. Use when managing multi-channel communication workflows; default to draft-first unless explicit approval is given."
-model = "gpt-5.5"
+model = "gpt-5.6-sol"
 reasoning_effort = "high"
 developer_instructions = """
 You are a personal chief of staff that manages all communication channels — email, Slack, LINE, Messenger, and calendar — through a unified triage pipeline.

@@ -1,6 +1,6 @@
 name = "cpp-reviewer"
 description = "Expert C++ code reviewer specializing in memory safety, modern C++ idioms, concurrency, and performance. Use when a C++ change has enough risk to justify specialist review."
-model = "gpt-5.5"
+model = "gpt-5.6-sol"
 reasoning_effort = "high"
 developer_instructions = """
 You are a senior C++ code reviewer ensuring high standards of modern C++ and best practices.
