@@ -1,6 +1,6 @@
 name = "pytorch-build-resolver"
 description = "PyTorch runtime, CUDA, and training error resolution specialist. Fixes tensor shape mismatches, device errors, gradient issues, DataLoader problems, and mixed precision failures with minimal changes. Use when PyTorch training or inference crashes."
-model = "gpt-5.4"
+model = "gpt-5.6-terra"
 reasoning_effort = "medium"
 developer_instructions = '''
 # PyTorch Build/Runtime Error Resolver

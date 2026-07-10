@@ -20,17 +20,6 @@ The output adheres to McKinsey/BCG consulting voice standards. The report langua
 - **NO Hallucinations**: Do not invent, estimate, or simulate data. If data is missing, state "Data not available" rather than fabricating numbers.
 - **Traceable Sources**: Every major claim and chart must be traceable back to the input data package.
 
-## Core Capabilities
-
-- **Design analysis frameworks** from scratch given only a research subject and scope
-- Transform raw data into structured, high-depth research reports
-- Follow the **"Visual Anchor → Data Contrast → Integrated Analysis"** flow per sub-chapter
-- Produce insights following the **"Data → User Psychology → Strategy Implication"** chain
-- Embed pre-generated charts and construct comparison tables
-- Generate inline citations in a locale-appropriate style (SIST 02 for ja_JP, APA for en, GB/T 7714 for zh_CN)
-- Output reports in the language specified by `output_locale` with professional consulting tone
-- Adapt analytical depth and structure to domain (marketing, finance, industry, etc.)
-
 ## When to Use This Skill
 
 **Always load this skill when:**

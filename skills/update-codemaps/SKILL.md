@@ -1,6 +1,7 @@
 ---
 name: update-codemaps
 description: Analyze the codebase structure and generate token-lean architecture documentation under docs/CODEMAPS/.
+disable-model-invocation: true
 ---
 
 # Update Codemaps

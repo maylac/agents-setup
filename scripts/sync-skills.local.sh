@@ -10,8 +10,7 @@
 #       実体dir → 削除して symlink 化 / 既存symlink → 張り直し / 無し → 新規作成。
 #   - 各エージェントdir直下のリンク切れsymlinkは prune。
 #   - 名前が "." で始まるエントリ (.system 等) と非dirは無視。
-#   - source-command-* は Codex 専用の移植成果物のため Claude 側ミラーからは除外する
-#     (対応コマンドが ~/.claude/commands/ に実在し、二重登録になるため)。
+#   - 旧 source-command 名はClaude側だけ除外する。
 
 set -euo pipefail
 

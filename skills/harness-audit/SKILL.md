@@ -1,6 +1,6 @@
 ---
 name: harness-audit
-description: Use when auditing an agent harness — installed skills, hooks, settings, MCP servers, agents, or memory — for token efficiency, output quality, and stability; or when skills seem broken, sessions feel context-bloated, or after bulk-installing skill packs. For a skills-only quality re-scan, prefer skill-stocktake; this skill is the full methodology including evidence verification and fix-instruction handoff.
+description: Audit an agent harness across skills, hooks, settings, MCP, agents, and memory for efficiency and stability. Use for cross-cutting setup audits, broken dependencies, or context bloat. For a skills-only rescan, use skill-stocktake.
 ---
 
 # Harness Audit

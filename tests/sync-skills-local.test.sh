@@ -27,6 +27,7 @@ HOME_FIXTURE="$TEST_TMP/home"
 mkdir -p \
   "$HOME_FIXTURE/.agents/skills/alpha" \
   "$HOME_FIXTURE/.agents/skills/source-command-demo" \
+  "$HOME_FIXTURE/.agents/skills/update-docs" \
   "$HOME_FIXTURE/.agents/skills/replace-me" \
   "$HOME_FIXTURE/.agents/skills/.system" \
   "$HOME_FIXTURE/.claude/skills/source-command-demo" \
@@ -47,6 +48,8 @@ assert_contains "$output" "dry_run=0"
 [ -L "$HOME_FIXTURE/.claude/skills/alpha" ] || fail "Claude alpha skill link missing"
 [ "$(readlink "$HOME_FIXTURE/.claude/skills/alpha")" = "../../.agents/skills/alpha" ] || fail "Claude alpha link target mismatch"
 [ ! -e "$HOME_FIXTURE/.claude/skills/source-command-demo" ] || fail "source-command skill should be excluded from Claude mirror"
+[ -L "$HOME_FIXTURE/.claude/skills/update-docs" ] || fail "migrated skill should be linked into Claude mirror"
+[ -L "$HOME_FIXTURE/.codex/skills/update-docs" ] || fail "command-backed skill should be linked into Codex mirror"
 [ -L "$HOME_FIXTURE/.codex/skills/source-command-demo" ] || fail "source-command skill should be linked into Codex mirror"
 [ -L "$HOME_FIXTURE/.codex/skills/replace-me" ] || fail "real Codex skill directory should be replaced with symlink"
 [ "$(readlink "$HOME_FIXTURE/.codex/skills/replace-me")" = "../../.agents/skills/replace-me" ] || fail "replacement symlink target mismatch"

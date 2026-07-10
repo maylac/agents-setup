@@ -21,6 +21,12 @@
       "mode": "symlink"
     },
     {
+      "id": "claude-output-styles",
+      "live": "~/.claude/output-styles",
+      "source": "claude/output-styles",
+      "mode": "symlink"
+    },
+    {
       "id": "codex-entrypoint",
       "live": "~/.codex/AGENTS.md",
       "source": "../AGENTS.md",
@@ -77,8 +83,8 @@
       "reason": "rules/common/*.md (development workflow, testing, coding style, etc.) is loaded only via ~/.claude/rules/common; Codex has no equivalent rules directory and relies on home/AGENTS.md alone. Intentional for now — revisit if Codex sessions need the same standards."
     },
     {
-      "id": "harness-optimizer-agent",
-      "reason": "harness-optimizer exists only as a Claude agent (claude/agents/harness-optimizer.md); there is no ~/.codex/agents/harness-optimizer.toml counterpart. Intentional — this agent edits ~/.claude/agents/*.md directly, which is a Claude-specific concern."
+      "id": "claude-agent-roster",
+      "reason": "Claude keeps only code-reviewer, security-reviewer, and build-error-resolver active. Built-in Plan/Explore and skills cover the retired planner, database, E2E, and communication roles."
     },
     {
       "id": "codex-agent-superset",

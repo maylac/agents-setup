@@ -12,28 +12,12 @@ For the full rationale and worked examples, load the `karpathy-guidelines` skill
 
 ## Development Workflow Standard: Backlog.md
 
-Use Backlog.md as the default task ledger for non-trivial development work in Git repositories. When a repo already has Backlog.md initialized, start by running `backlog instructions overview` and follow its local workflow. For multi-step features, bug fixes, or refactors, prefer a Backlog task with a clear description, acceptance criteria, and implementation notes before changing code. Keep work scoped to one task at a time and update the task status/notes as the implementation is verified.
-
-Common commands:
-- `backlog init "Project Name"` — initialize a repo-local Markdown task board when the project does not already have one and the user wants durable task tracking.
-- `backlog instructions overview` — read project-specific Backlog/agent instructions after initialization.
-- `backlog board` — inspect current task state.
-- `backlog task create ...` / `backlog task edit ...` — create or update task specs and acceptance criteria.
-
-Do not add Backlog.md files to tiny one-off edits unless the user asks for durable project tracking or the repo already uses Backlog.md.
+When a repository already uses Backlog.md, start with `backlog instructions overview` and follow its local workflow. Use a Backlog task for multi-step work that benefits from durable acceptance criteria; do not initialize it for tiny edits unless the user asks.
 
 
 ## Full-Auto Safety Guardrails
 
 Even in trusted or full-auto sessions, treat external side effects as gated work. Destructive operations, lockfile deletion, force pushes, publishing/uploading/sending/archiving, and payments/trading/account actions require an explicit user request or confirmation. Prefer draft/dry-run/preview first, then report the exact command or action taken and its relevant output.
-
-## Execution Gate
-
-Before non-trivial code edits:
-- Identify the smallest change that satisfies the request.
-- State assumptions only when they affect implementation.
-- Do not touch unrelated files or refactor adjacent code.
-- Verify with the narrowest relevant command before finishing.
 
 ## Solution Recording (extract-approach)
 
@@ -45,12 +29,14 @@ Assume many user prompts are dictated by voice and may contain speech-to-text er
 
 ## Tool Use Rules
 
+- Prefer `ax` over `curl` for web fetching and extraction; run `ax agent-context` for detailed syntax. Use curl only for protocol-level work ax cannot perform, and state the exception.
 - When asked to verify an X article or linked article, do NOT use Jina Reader (`r.jina.ai`) — deprecated 2026-07 because the API became unreliable. For X posts/articles use `opencli twitter article <URL>`; for other pages use WebFetch (or Exa `web_fetch_exa`). If a login wall or metadata-only result blocks reading, state that limitation explicitly before trying alternatives.
-- **RTK**: a PreToolUse hook silently rewrites common Bash commands to token-lean `rtk` equivalents (e.g. `git status` → `rtk git status`). This applies in both Claude Code and Codex sessions. If a command fails unexpectedly, check whether it was rewritten (`rtk proxy <cmd>` runs the raw command for debugging). Known limits: prefer `rg`/`rg --files` for search; use `/usr/bin/find` directly for compound predicates or `-exec` actions, since `rtk find` doesn't support those forms. See `claude/RTK.md` for the full guide (Claude-only file, but the hook and limits apply to both tools).
+- RTK rewrites common shell commands. If behavior is surprising, use `rtk proxy <cmd>`; prefer `rg` for search and `/usr/bin/find` for compound predicates. See `claude/RTK.md`.
 
 ## Local Tools
 
-- **OmniGet**: installed at `$HOME/Applications/omniget.app`; source checkout at `$HOME/workspace/tools/omniget`. Use `omniget` to launch, `omniget --version` to verify, `omniget --source-path` to locate the repo, and `omniget --dev` from any directory to start the Tauri dev app.
-- **Maestro**: installed via Homebrew (`mobile-dev-inc/tap/maestro`) with Java 17 from `openjdk@17`. Use `maestro` for mobile app smoke tests and UI flow checks when a repository has Maestro flows or when a change affects mobile navigation, onboarding, forms, auth, payments, or other critical user journeys. Prefer the narrowest relevant flow first, e.g. `maestro test <flow.yaml>`, and use `maestro list-devices` to verify available Web/iOS/Android targets before running device-specific checks. If iOS Simulator or Android Emulator support is missing, state the missing runtime explicitly instead of treating Maestro itself as unavailable.
+- `ax`: `$HOME/.local/bin/ax`, source at `~/workspace/tools/ax`.
+- `OmniGet`: `~/Applications/omniget.app`, source at `~/workspace/tools/omniget`; use `omniget --source-path` or `omniget --dev` when needed.
+- `Maestro`: use the narrowest existing mobile smoke flow first; report a missing simulator/emulator runtime explicitly.
 
 <!-- Maintenance: AGENTS.md is the source of truth (shared tool-agnostically, e.g. with Codex). ~/CLAUDE.md is a symlink to this file — keep the symlink intact. -->

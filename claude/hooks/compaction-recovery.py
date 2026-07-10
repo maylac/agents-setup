@@ -9,15 +9,17 @@ from __future__ import annotations
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
 
 BASE_DIR = Path.home() / ".claude" / "compact-state"
-MAX_TRANSCRIPT_TAIL_BYTES = 200_000
+RETENTION_DAYS = 30
+MAX_SESSION_DIRS = 10
 
 
 def now_iso() -> str:
@@ -35,6 +37,7 @@ def run(cmd: list[str], cwd: str | None) -> str:
         completed = subprocess.run(
             cmd,
             cwd=cwd if cwd and os.path.isdir(cwd) else None,
+            env={**os.environ, "GIT_OPTIONAL_LOCKS": "0"},
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
@@ -44,22 +47,6 @@ def run(cmd: list[str], cwd: str | None) -> str:
     except Exception as exc:
         return f"[unavailable: {exc}]"
     return completed.stdout.strip()
-
-
-def transcript_tail(path: str | None) -> str:
-    if not path:
-        return ""
-    try:
-        transcript = Path(path)
-        with transcript.open("rb") as fh:
-            try:
-                fh.seek(-MAX_TRANSCRIPT_TAIL_BYTES, os.SEEK_END)
-                fh.readline()
-            except OSError:
-                fh.seek(0)
-            return fh.read().decode("utf-8", errors="replace")
-    except Exception as exc:
-        return f"[transcript unavailable: {exc}]"
 
 
 def read_input() -> dict[str, Any]:
@@ -76,6 +63,22 @@ def write_text(path: Path, text: str) -> None:
 
 def event_dir(data: dict[str, Any]) -> Path:
     return BASE_DIR / safe_name(data.get("session_id"))
+
+
+def prune_state() -> None:
+    """Keep compact metadata bounded without retaining conversation text."""
+    if not BASE_DIR.exists():
+        return
+    cutoff = datetime.now(timezone.utc) - timedelta(days=RETENTION_DAYS)
+    session_dirs = sorted(
+        (path for path in BASE_DIR.iterdir() if path.is_dir()),
+        key=lambda path: path.stat().st_mtime,
+        reverse=True,
+    )
+    for index, path in enumerate(session_dirs):
+        modified = datetime.fromtimestamp(path.stat().st_mtime, timezone.utc)
+        if index >= MAX_SESSION_DIRS or modified < cutoff:
+            shutil.rmtree(path, ignore_errors=True)
 
 
 def workspace_snapshot(data: dict[str, Any]) -> str:
@@ -99,7 +102,6 @@ def handle_precompact(data: dict[str, Any]) -> None:
     root = event_dir(data)
     timestamp = now_iso()
     trigger = data.get("trigger") or "unknown"
-    transcript_path = data.get("transcript_path")
 
     write_text(
         root / "latest-precompact.md",
@@ -110,18 +112,11 @@ def handle_precompact(data: dict[str, Any]) -> None:
                 f"- captured_at: {timestamp}",
                 f"- trigger: {trigger}",
                 f"- session_id: {data.get('session_id', 'unknown')}",
-                f"- transcript_path: {transcript_path or 'unknown'}",
                 "",
                 "## Workspace",
                 "",
                 "```text",
                 workspace_snapshot(data).rstrip(),
-                "```",
-                "",
-                "## Transcript Tail",
-                "",
-                "```jsonl",
-                transcript_tail(transcript_path).rstrip(),
                 "```",
                 "",
             ]
@@ -175,6 +170,7 @@ def main() -> int:
     data = read_input()
     event = data.get("hook_event_name")
     try:
+        prune_state()
         if event == "PreCompact":
             handle_precompact(data)
         elif event == "PostCompact":

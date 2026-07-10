@@ -1,6 +1,6 @@
 name = "refactor-cleaner"
 description = "Dead code cleanup and consolidation specialist. Use PROACTIVELY for removing unused code, duplicates, and refactoring. Runs analysis tools (knip, depcheck, ts-prune) to identify dead code and safely removes it."
-model = "gpt-5.4"
+model = "gpt-5.6-terra"
 reasoning_effort = "medium"
 developer_instructions = """
 # Refactor & Dead Code Cleaner

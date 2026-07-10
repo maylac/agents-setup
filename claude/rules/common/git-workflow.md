@@ -1,4 +1,8 @@
 ---
+paths:
+  - "**/.github/**"
+  - "**/.gitignore"
+  - "**/.gitattributes"
 description: Git and PR conventions to use when the task involves commits, pushes, or pull requests.
 ---
 

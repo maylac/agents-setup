@@ -362,7 +362,7 @@ Final visual QA worker responsibilities:
 Model choice for workers:
 
 - Prefer a smaller capable model for brand discovery, since it returns a compact research brief rather than doing orchestration.
-- Prefer a smaller capable model for visual workers, such as `gpt-5.4-mini` with medium reasoning, when model override is available.
+- Prefer a smaller capable model for visual workers, such as `gpt-5.6-luna` with medium reasoning, when model override is available.
 - Use the parent/default model only for orchestration or when a smaller worker model is unavailable.
 - Keep at most two generation workers active at once unless the user explicitly asks for higher parallelism. Run final visual QA as a single worker after deterministic image processing. Close workers after their result has been consumed.
 

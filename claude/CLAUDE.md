@@ -1,36 +1,22 @@
-# Workflow Orchestration
+# Workflow
 
-- Planning, verification, and code-quality workflow: see `rules/common/development-workflow.md`, `rules/common/performance.md`, `rules/common/testing.md`, and `rules/common/coding-style.md`.
-- Agent and subagent orchestration: see `rules/common/agents.md`.
-- When a language-specific rule (`rules/<language>/`) conflicts with `rules/common/`, the language-specific rule takes precedence.
-- TodoWrite and task-tracking mechanics: see `rules/common/hooks.md`.
-- Personal workflow thresholds: plan mode trigger — see `rules/common/performance.md` (Plan Mode); summarize changes per step; prove completion with tests, logs, or behavior diff at a staff-engineer bar.
-- **Self-improvement loop**: After recurring corrections or durable workflow lessons, record the pattern in `~/tasks/lessons.md` as a rule that prevents recurrence. Review relevant lessons when they are likely to apply. Workflow/process lessons go in `~/tasks/lessons.md`; facts about the user or environment go in auto-memory. Harness-wide upkeep (rot detection, lesson routing, distillation-source ledger) is the `self-improve` skill — design and ledgers live in `~/workspace/agents-setup/selfimprove/`.
-- **Autonomous bug fixing**: Given a bug report, just fix it -- point at logs/errors/failing tests and resolve, without hand-holding.
+- Home-wide principles and safety rules are single-sourced in `~/AGENTS.md`; scoped rules under `rules/` load when matching files are touched.
+- Use plan mode for ambiguous, architectural, or 3+ step work. For bug reports, inspect evidence, fix the root cause, and verify without unnecessary hand-holding.
+- Route recurring workflow lessons through the `self-improve` skill. Technical solutions that required a real pivot go through `extract-approach`.
+- Use built-in Explore/Plan for read-only discovery. Use custom subagents only when isolation, specialist review, or parallel work materially helps.
 
 # Design Quality
 
-Before designing or implementing any user-facing UI (web/mobile/dashboard/landing), load `~/.claude/DESIGN.md` and follow its process: pick one aesthetic direction, lock tokens, build, then run its pre-ship checklist.
+Before user-facing UI work, load `~/.claude/DESIGN.md` and follow its pre-ship process.
 
 # Memory System
 
-Auto-memory lives under `~/.claude/projects/<current-project>/memory/` (types: user, feedback, project, reference). Use it proactively, and **always verify memory against current files before acting** -- paths, names, and state drift.
-
-# Home Defaults
-
-Core Principles, Execution Gate, and Voice Input Assumption are single-sourced in `home/AGENTS.md` (loaded as `~/AGENTS.md` / `~/CLAUDE.md`). Load skill `karpathy-guidelines` for the full coding, review, and refactoring gate.
+Use auto-memory proactively, but verify paths, names, and state against current files before acting.
 
 # Model Routing
 
-| Tier | Alias | Use for |
-|------|-------|---------|
-| Fable5 | `fable` | Rare, high-stakes final judgment after lower-tier desk prep. |
-| Opus4.8 | `opus` | Daily judgment, review, ambiguous debugging, security, writing. |
-| Sonnet5 | `sonnet` | Templated execution, migrations, build fixes, E2E generation. |
-| Haiku4.5 | `haiku` | Mechanical inspection, formatting, extraction, doc lookup. |
-
-For `/model fable` escalation decisions, desk prep, and return rules, use skill `fable-escalation`.
+The default is `opusplan`: Opus for planning and Sonnet for execution. Use `fable-escalation` before proposing Fable; reserve Fable for high-cost-to-reverse final judgment.
 
 # Codex Collaboration
 
-For heavy tasks -- long research, multi-file refactors, complex implementation -- consider delegating to `mcp__codex__codex` when it would materially preserve context. Continue sessions with `mcp__codex__codex-reply` + sessionId.
+For heavy research or implementation, delegate to Codex when it materially preserves Claude context; continue with the returned session ID.

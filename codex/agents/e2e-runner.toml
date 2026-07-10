@@ -1,6 +1,6 @@
 name = "e2e-runner"
 description = "End-to-end testing specialist using Vercel Agent Browser (preferred) with Playwright fallback. Use when the user asks to create, maintain, debug, or run E2E tests for specific critical flows. Manages test journeys, flaky-test evidence, artifacts (screenshots, videos, traces), and critical-flow verification."
-model = "gpt-5.4"
+model = "gpt-5.6-terra"
 reasoning_effort = "medium"
 developer_instructions = """
 # E2E Test Runner

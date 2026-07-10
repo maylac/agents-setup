@@ -39,6 +39,14 @@ case "${1:-}" in
         printf 'rtk git status\n'
         exit 0
         ;;
+      "git push origin main")
+        printf 'rtk git push origin main\n'
+        exit 0
+        ;;
+      "git push --force origin main")
+        printf 'rtk git push --force origin main\n'
+        exit 0
+        ;;
       "needs approval")
         printf 'rtk needs approval\n'
         exit 3
@@ -63,6 +71,19 @@ JSON
 jq -e '.hookSpecificOutput.permissionDecision == "allow"' <<<"$allow_output" >/dev/null || fail "allow rewrite did not auto-allow"
 jq -e '.hookSpecificOutput.updatedInput.command == "rtk git status"' <<<"$allow_output" >/dev/null || fail "allow rewrite command mismatch"
 jq -e '.hookSpecificOutput.updatedInput.description == "keep me"' <<<"$allow_output" >/dev/null || fail "updated input did not preserve sibling fields"
+
+push_output="$(PATH="$BIN:$PATH" bash "$ROOT/codex/hooks/rtk-rewrite.sh" <<'JSON'
+{"tool_input":{"command":"git push origin main"}}
+JSON
+)"
+jq -e '.hookSpecificOutput.updatedInput.command == "rtk git push origin main"' <<<"$push_output" >/dev/null || fail "push rewrite command mismatch"
+jq -e '.hookSpecificOutput | has("permissionDecision") | not' <<<"$push_output" >/dev/null || fail "push rewrite should require caller approval"
+
+force_output="$(PATH="$BIN:$PATH" bash "$ROOT/codex/hooks/rtk-rewrite.sh" <<'JSON'
+{"tool_input":{"command":"git push --force origin main"}}
+JSON
+)"
+jq -e '.hookSpecificOutput.permissionDecision == "deny"' <<<"$force_output" >/dev/null || fail "force push should be denied"
 
 ask_output="$(PATH="$BIN:$PATH" bash "$ROOT/codex/hooks/rtk-rewrite.sh" <<'JSON'
 {"tool_input":{"command":"needs approval"}}

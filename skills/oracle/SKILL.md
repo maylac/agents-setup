@@ -7,7 +7,7 @@ origin: steipete/oracle
 # Oracle — one-shot consult of a stronger model with file context
 
 Oracle bundles a prompt **plus the actual source files** and sends them to a
-heavyweight model (default `gpt-5.4-pro`) for a single, deep answer. Reach for it
+heavyweight model (default `gpt-5.5-pro`) for a single, deep answer. Reach for it
 when you are stuck, need a second opinion, or face a problem that benefits from
 large file context and server-side reasoning — root-cause hunts, cross-repo
 comparisons, architecture/security review, "why is this subtly wrong" questions.
@@ -54,7 +54,7 @@ the clipboard for manual paste.
 
 ## Sessions — never blindly re-run
 
-Non-preview runs (especially `gpt-5.4-pro` API) spawn **detached** sessions and
+Non-preview runs (especially `gpt-5.5-pro` API) spawn **detached** sessions and
 can take a long time. If the CLI times out, **do not re-run** — reattach:
 
 ```bash
@@ -67,12 +67,15 @@ unless you pass `--force`; prefer reattaching. Give a tidy `--slug "3-5 words"`.
 
 ## Useful flags
 
-- `-m, --model <name>` — e.g. `gpt-5.4-pro` (default), `gpt-5.4`, `gpt-5.2-pro`,
-  `gemini-3-pro`, `claude-4.5-sonnet`.
+- `-m, --model <name>` — e.g. `gpt-5.5-pro` (default), `gpt-5.5`, `gpt-5.4-pro`,
+  `gpt-5.4`, `gemini-3-pro`, `claude-4.5-sonnet`.
+  **GPT-5.6 (sol/terra/luna, 2026-07-09 GA) は oracle 0.15.2 時点で未対応** —
+  未知のモデル名はエラーにならずフォールバックする(browser モードでは
+  `gpt-5.2` に落ちる)ので、CLI が対応するまで 5.6 系の名前を渡さないこと。
 - `--models a,b` — query several API models in parallel and aggregate.
 - `--followup <sessionId|responseId>` — chain a follow-up (API runs).
 - `--write-output <path>` — write only the final assistant message to a file.
-- `--timeout <s|auto>` — auto = 60m for gpt-5.4-pro, 120s otherwise.
+- `--timeout <s|auto>` — auto = 60m for Pro models, 120s otherwise.
 
 ## Safety
 

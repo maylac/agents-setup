@@ -1,12 +1,6 @@
 ---
 name: flashcards
-description: >
-  Generate or drill flashcards for exam-fact memorization (PMI, AWS, and other
-  certifications) — Leitner-style buckets, per-subject markdown storage, drill
-  mode with self-assessment. Use when the user says "drill flashcards", "make
-  flashcards from", "quiz me on cards", or wants to memorize exam facts. For real
-  spaced repetition in the Anki app, use the anki skill instead; this is for quick
-  in-chat drills.
+description: Generate or drill in-chat certification flashcards with lightweight Leitner buckets. Use for quick card creation, quizzes, review, or exam-fact memorization. For persistent spaced repetition in Anki, use the anki skill.
 argument-hint: "[subject] [--generate | --drill | --review | --stats | --session <n>]"
 ---
 

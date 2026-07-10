@@ -14,7 +14,3 @@ paths:
 - Prefer hand-written fakes over mocking frameworks for repositories and other collaborators.
 - Use `Room.inMemoryDatabaseBuilder()` (Room) or `JdbcSqliteDriver(IN_MEMORY)` (SQLDelight) for database tests.
 - Use backtick-quoted descriptive test names (`` `delete item emits updated list` ``).
-
-## Reference
-
-See skill: `kotlin-testing` for comprehensive test patterns and code examples.

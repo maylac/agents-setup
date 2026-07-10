@@ -14,7 +14,3 @@ paths:
 - Repositories: `suspend` functions return `Result<T>` (or a custom error type), `Flow` for reactive streams.
 - UseCases: single responsibility, `operator fun invoke`.
 - Use `expect`/`actual` only for genuine platform-specific implementations in KMP code.
-
-## Reference
-
-See skill: `kotlin-coroutines-flows` for coroutine/Flow patterns and `android-clean-architecture` for module and layer patterns.

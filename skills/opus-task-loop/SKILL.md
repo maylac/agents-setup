@@ -1,6 +1,6 @@
 ---
 name: opus-task-loop
-description: Use when tackling a multi-step, ambiguous, or judgment-heavy task — before decomposing it into steps, before treating any step as verified, or before deciding whether to stop or keep going. Especially relevant under time pressure, vague/underspecified requirements, or "just confirm it works" framing.
+description: Apply a stop-or-continue verification loop after a failed approach, repeated tool failure, uncertain completion claim, or high-cost stopping decision. Do not trigger for ordinary multi-step work with clear acceptance criteria.
 license: MIT
 ---
 

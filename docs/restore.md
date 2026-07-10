@@ -86,7 +86,7 @@ Review these directories before applying:
 - `claude/AGENTS.md`
 - `claude/rules/common`
 - `claude/agents`
-- `claude/commands`
+- `claude/output-styles`
 - `claude/hooks`
 - `templates/claude-settings.public.json`
 
