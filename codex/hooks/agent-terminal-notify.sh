@@ -3,6 +3,11 @@
 # Emits a terminal bell and a throttled macOS notification without stealing focus.
 set -u
 
+# Orca-hosted sessions: Orca's own UI surfaces agent state; skip to avoid double notification.
+if [ -n "${ORCA_PANE_KEY:-}" ] || [ "${TERM_PROGRAM:-}" = "Orca" ]; then
+  exit 0
+fi
+
 agent="${1:-Agent}"
 input="$(cat || true)"
 cwd=""
