@@ -15,10 +15,20 @@ fail() {
   failed=1
 }
 
+require_rg() {
+  if ! command -v rg >/dev/null 2>&1; then
+    printf 'FAIL: ripgrep (rg) is required but not found on PATH — leak-detection checks cannot run\n' >&2
+    failed=1
+    return 1
+  fi
+  return 0
+}
+
 check_no_matches() {
   local label="$1"
   local pattern="$2"
   local out="$VALIDATE_TMP/rg.out"
+  require_rg || return
   if rg -n --hidden --glob '!.git/**' --glob '!**/.git/**' --glob '!*.png' --glob '!*.jpg' --glob '!*.webp' "$pattern" "$ROOT" >"$out" 2>/dev/null; then
     printf '%s\n' "$label" >&2
     sed -n '1,80p' "$out" >&2
@@ -28,6 +38,7 @@ check_no_matches() {
 
 check_no_paths() {
   local out="$VALIDATE_TMP/paths.out"
+  require_rg || return
   if /usr/bin/find "$ROOT" -path "$ROOT/.git" -prune -o \
     \( -name '*.db' -o -name '*.sqlite' -o -name '*.sqlite3' -o -name '*.sqlite-shm' -o -name '*.sqlite-wal' -o -name '.env' \) -print |
     rg . >"$out"; then

@@ -33,6 +33,13 @@ Assume many user prompts are dictated by voice and may contain speech-to-text er
 - When asked to verify an X article or linked article, do NOT use Jina Reader (`r.jina.ai`) — deprecated 2026-07 because the API became unreliable. For X posts/articles use `opencli twitter article <URL>`; for other pages use WebFetch (or Exa `web_fetch_exa`). If a login wall or metadata-only result blocks reading, state that limitation explicitly before trying alternatives.
 - RTK rewrites common shell commands. If behavior is surprising, use `rtk proxy <cmd>`; prefer `rg` for search and `/usr/bin/find` for compound predicates. See `claude/RTK.md`.
 
+## Orca IDE Integration
+
+- For tasks touching Orca-managed state (worktrees, terminals, embedded browser, automations), use the `orca-cli` or `orchestration` skill. Use `orchestration` for structured multi-agent coordination (task DAGs, ask/reply, worker_done waits); use `orca-cli` for full ownership handoffs and plain terminal/worktree control.
+- Outside Orca, cross-agent 1:1 messaging still goes through `agmsg`, and scheduled autonomous jobs still go through Hermes (launchd). Don't double-register the same job as both an Orca automation and a Hermes job.
+- For desktop UI control from a Claude Code session, prefer the computer-use MCP first (tiered permissions); use `orca computer` / orca-cli browser only for automating the browser embedded inside the Orca app. For the web in general, prefer claude-in-chrome.
+- Codex inside Orca's terminal runs against a separate `CODEX_HOME` (`~/Library/Application Support/orca/codex-runtime-home/home`) — skills/hooks/plugins are symlinked, but `config.toml` is an independent copy. After editing `~/.codex/config.toml`, check whether Orca's copy also needs the change.
+
 ## Local Tools
 
 - `ax`: `$HOME/.local/bin/ax`, source at `~/workspace/tools/ax`.
