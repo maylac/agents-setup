@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install validation dependencies
-        run: sudo apt-get update && sudo apt-get install -y jq rsync ruby
+        run: sudo apt-get update && sudo apt-get install -y jq rsync ruby ripgrep
       - name: Validate snapshot
         run: bash scripts/validate.sh
       - name: Run harness tests
