@@ -1,6 +1,6 @@
 ---
 name: fable-escalation
-description: /model fable escalation decisions, desk prep checks, and return rules. Triggers on model selection, escalation, Fable, fable, or high-stakes final judgment.
+description: /model fable escalation decisions, desk prep checks, and return rules. Triggers on proposing /model fable, escalating to a top-tier model (Fable, or Codex max/ultra effort), desk prep before a high-stakes final judgment, or returning from Fable. Not for routine per-subagent model picks.
 license: MIT
 ---
 
@@ -32,7 +32,8 @@ Aliases resolve via `~/.claude/settings.json` env such as `ANTHROPIC_DEFAULT_FAB
   3. The one-time foundational design of a direction that later drops to mass production.
 - After the Fable judgment is fixed, immediately propose returning to `opus`.
 - Never propose Fable for everyday writing, review, debugging, maintenance, cheap reversible changes, or locally scoped changes.
-- If prep is incomplete, refuse the switch and finish the desk first.
+- If prep is incomplete, recommend against the switch and finish the desk first. The final call stays with the human — state what is missing rather than blocking.
+- After a Fable judgment is fixed, record the reasoning with `extract-approach` before returning to `opus` — that note is what lets lower tiers reuse the judgment.
 
 ## Desk Prep Before Fable
 
@@ -45,20 +46,30 @@ Before proposing `/model fable`, lower tiers should finish this checklist:
 - Make lint, tests, and type checks green when relevant.
 - Reduce the ask to a single decision.
 
+For the blindspot/option-generation steps, use `know-your-unknowns` patterns 1 (blindspot pass), 3 (design directions), and 5 (intervention spectrum) instead of improvising the same artifacts here.
+
 ## Codex Side: Max / Ultra (GPT-5.6)
 
 The same "rare, top-tier" discipline applies to Codex escalation knobs
 (official guidance: "most tasks don't need Max or Ultra"):
 
-- `gpt-5.6-sol` + `max` effort — a **single** hardest problem where quality
-  beats speed (deep root-cause, one-shot design lock-in). The Codex analog of
-  a Fable escalation; prepare the desk the same way first.
-- `ultra` (parallel subagents; local analog: `fugu-ultra` profile) — only when
-  the work splits into **meaningfully independent units** to run in parallel.
-  Not a quality upgrade for a single-threaded problem; it trades tokens for
-  time-to-result.
-- Default remains `gpt-5.6-sol` + `medium` (official Codex "Power" default);
+Effort levels for `gpt-5.6-sol` (verified via `codex debug models`, 2026-07-12):
+`low` / `medium` / `high` / `xhigh` / `max` / `ultra`.
+
+- `max` effort — "maximum reasoning depth for the hardest problems": a
+  **single** hardest problem where quality beats speed (deep root-cause,
+  one-shot design lock-in). The Codex analog of a Fable escalation; prepare
+  the desk the same way first.
+- `ultra` effort — "maximum reasoning with automatic task delegation": max
+  depth **plus** parallel sub-work. Reach for it only when the task genuinely
+  splits into independent units; for a single-threaded problem, `max` gives
+  the same depth for fewer tokens.
+- Default remains `gpt-5.6-sol` + `medium` (the model's verified default);
   raise effort stepwise (`high` → `xhigh`) before reaching for `max`.
+
+Legacy note: `~/.codex/fugu-mini.config.toml` / `fugu-ultra.config.toml` and
+the `[model_providers.fugu]` block are GPT-5.5-era leftovers, superseded by
+the native `ultra` effort level. Do not route escalations through them.
 
 ## Workflow Scripts
 

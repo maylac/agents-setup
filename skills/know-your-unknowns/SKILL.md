@@ -1,6 +1,6 @@
 ---
 name: know-your-unknowns
-description: Surface blind spots before/during/after implementation using review artifacts, interviews, alternative plans, and merge quizzes.
+description: Surface blind spots via reviewable artifacts. Use when touching an unfamiliar module, when requirements are ambiguous inside an already-scoped task, when the user can't articulate the design they want, before porting a reference implementation, or before merging a skimmed diff. Not for routine implementation with clear requirements, and not for open-ended idea exploration (that's brainstorming).
 ---
 
 # Know Your Unknowns
@@ -9,7 +9,7 @@ Prompting patterns for discovering what you don't know you don't know, so you ca
 
 **Core idea:** Instead of asking the model to just *do* the work, first ask it to produce a **reviewable artifact** that externalizes the gaps in your understanding. React to the artifact, then prompt with what you learned. The original guide renders each artifact as a single self-contained HTML page; a well-structured markdown document works too — prefer HTML when interactivity (toggles, checklists, quizzes, variant switching) helps the human react.
 
-**Boundary:** this skill is about *surfacing unknowns* through artifacts. For open-ended requirement/idea exploration use `superpowers:brainstorming`; for turning a settled spec into an implementation plan use `superpowers:writing-plans`.
+**Boundary:** this skill is about *surfacing unknowns* through artifacts. For open-ended requirement/idea exploration use `superpowers:brainstorming`; for turning a settled spec into an implementation plan use `superpowers:writing-plans`. The dividing line for interview-style questioning: if the *shape of the deliverable itself* is undecided, that's brainstorming; if the task is approved and scoped but specific behaviors are ambiguous, that's pattern 6 here. `fable-escalation`'s desk-prep checklist delegates its blindspot/option-generation steps to patterns 1/3/5 of this skill.
 
 ## When to reach for which pattern
 
@@ -74,6 +74,8 @@ Sort the plan by **likelihood you'll change it**, not by execution order — dec
 ### 9. Implementation notes
 > "Keep an implementation-notes file as you build the export feature. If you hit an edge case that forces you to deviate from the plan, pick the conservative option, log it under 'Deviations', and keep going."
 
+"Pick the conservative option and keep going" applies only to reversible deviations that don't change external behavior or contracts; for anything irreversible or user-visible, stop and ask instead of logging.
+
 A running file (e.g. `docs/notes/<feature>-implementation.md`) where every deviation from the plan is logged as it happens — surprises become inputs to your next attempt instead of vanishing into the scrollback.
 
 ## Phase 3 — Post-implementation (patterns 10–11)
@@ -96,4 +98,4 @@ When the user invokes this skill (or a prompt clearly matches one of the situati
 2. Substitute the user's actual project/module/feature into the template prompt.
 3. Produce the artifact **before** doing the main work. Default to markdown; produce a single self-contained HTML file when interactivity materially helps (design directions, mocks, quizzes) or when the user asks.
 4. End every pre-implementation artifact the way pattern 1 does: with a concrete **improved prompt** the user can fire next, including an explicit work order and stop points.
-5. Wait for the user's reaction before proceeding to implementation.
+5. For Phase 1 (patterns 1–8): wait for the user's reaction before proceeding to implementation. Pattern 9 logs and keeps going (see its reversibility rule); Phase 3 artifacts are deliverables — produce and hand over, nothing to wait for.

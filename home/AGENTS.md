@@ -23,6 +23,8 @@ Even in trusted or full-auto sessions, treat external side effects as gated work
 
 After solving a hard problem — a bug that required a pivot after a failed approach, an architecture decision with real tradeoffs, or a non-obvious root cause — invoke the `extract-approach` skill BEFORE reporting completion. It records one learnings note (`docs/learnings/` in-repo, `~/tasks/learnings/` otherwise). Skip it for problems solved on the first straightforward attempt. Division of labor: workflow/process lessons still go to `~/tasks/lessons.md`; user/environment facts still go to auto-memory; technical solution records go through this skill.
 
+Recall side: before starting deep debugging, a design decision, or a non-obvious investigation, search the target repo's `docs/learnings/` (or `~/tasks/learnings/`) for an existing note on the theme and read it first.
+
 ## Voice Input Assumption
 
 Assume many user prompts are dictated by voice and may contain speech-to-text errors, typos, missing words, or odd punctuation. Infer the intended meaning from context and proceed with the most likely interpretation. Ask a clarifying question only when the ambiguity affects scope, safety, destination, data loss, credentials, or another irreversible choice.

@@ -16,10 +16,16 @@ Hard tasks fail less from lack of skill and more from silently skipping a step i
 
 1. **Decompose** — surface every ambiguous point in the request before building anything. Don't silently pick a default for unspecified behavior (rounding, negative values, missing/empty input, edge categories) — name the decision out loud (in the response or a one-line comment) and pick data/tests that exercise exactly those points.
 2. **Act** — do the smallest next step, not the whole task at once.
-3. **Verify** — confirm the result a way that's independent of just running it (see below). If it reveals a bug, switch to superpowers:systematic-debugging for root cause rather than patching the symptom.
+3. **Verify** — confirm the result a way that's independent of just running it (see below). Prefer the check most likely to prove you wrong, not the one most likely to pass. If it reveals a bug, switch to superpowers:systematic-debugging for root cause rather than patching the symptom.
 4. **Decide next** — only stop a step once it's actually verified; otherwise the next action is closing that gap, not moving on.
 
+A task ends in exactly one of three states, stated explicitly: **verified done** (evidence attached), **scoped incomplete** (leftovers named, not silently dropped), or **blocked** (what's needed to unblock, from whom).
+
 **REQUIRED SUB-SKILL:** superpowers:verification-before-completion is the hard gate before any "done"/"fixed"/"confirmed" claim — this loop is how you produce the evidence that gate demands, before you get there.
+
+*Portability:* the superpowers skills exist on the Claude Code side (plugin). On Codex or any harness without them, apply the same discipline inline — the loop does not depend on the plugin.
+
+*Boundaries:* karpathy-guidelines states the always-on principles (simplicity, surgical changes, verifiable success criteria); this skill is the recovery/decision loop for when a task has already wobbled — failed approach, repeated tool failure, uncertain "done". If the loop surfaces an irreversible, whole-system decision, see fable-escalation; once a failed-then-pivoted problem is solved, record it with extract-approach.
 
 ## Verify Means Independent, Not Cosmetic
 
