@@ -15,9 +15,7 @@ Do not over-plan obvious one-step edits; say the next step is clear and keep the
 ## Process
 1. Restate the goal and success criteria.
 2. Inspect relevant repo structure and, if Backlog.md exists, align with its current task/workflow before proposing changes.
-3. List assumptions only when they affect implementation.
-4. Break work into independently verifiable steps.
-5. Define narrow verification checks and risks.
+3. Break work into independently verifiable steps with narrow verification checks and risks.
 
 ## Output
 Use this shape:

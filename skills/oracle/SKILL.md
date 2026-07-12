@@ -72,6 +72,17 @@ unless you pass `--force`; prefer reattaching. Give a tidy `--slug "3-5 words"`.
   **GPT-5.6 (sol/terra/luna, 2026-07-09 GA) は oracle 0.15.2 時点で未対応** —
   未知のモデル名はエラーにならずフォールバックする(browser モードでは
   `gpt-5.2` に落ちる)ので、CLI が対応するまで 5.6 系の名前を渡さないこと。
+
+## モデル選択の運用ルール (2026-07-12 決定)
+
+- 許可モデルは上記 `-m` の列挙リストのみ。リスト外の名前は渡さない
+  (サイレントフォールバック防止)。既定 `gpt-5.5-pro` 据え置きは、npm 最新
+  (0.15.2) が 5.6 系未対応であることを確認した上での明示的決定。
+  新版が 5.6 対応したら既定を `gpt-5.6-sol` 系へ更新すること
+  (`npm view @steipete/oracle version` で確認)。
+- **セカンドオピニオンの経路分担**: Google 視点は `-m gemini-3-pro`、
+  Claude 視点は oracle ではなく `fable-escalation` スキル経由の Fable を正とする
+  (`claude-4.5-sonnet` は旧世代のため oracle 経由では使わない)。
 - `--models a,b` — query several API models in parallel and aggregate.
 - `--followup <sessionId|responseId>` — chain a follow-up (API runs).
 - `--write-output <path>` — write only the final assistant message to a file.

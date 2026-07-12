@@ -45,6 +45,21 @@ Before proposing `/model fable`, lower tiers should finish this checklist:
 - Make lint, tests, and type checks green when relevant.
 - Reduce the ask to a single decision.
 
+## Codex Side: Max / Ultra (GPT-5.6)
+
+The same "rare, top-tier" discipline applies to Codex escalation knobs
+(official guidance: "most tasks don't need Max or Ultra"):
+
+- `gpt-5.6-sol` + `max` effort — a **single** hardest problem where quality
+  beats speed (deep root-cause, one-shot design lock-in). The Codex analog of
+  a Fable escalation; prepare the desk the same way first.
+- `ultra` (parallel subagents; local analog: `fugu-ultra` profile) — only when
+  the work splits into **meaningfully independent units** to run in parallel.
+  Not a quality upgrade for a single-threaded problem; it trades tokens for
+  time-to-result.
+- Default remains `gpt-5.6-sol` + `medium` (official Codex "Power" default);
+  raise effort stepwise (`high` → `xhigh`) before reaching for `max`.
+
 ## Workflow Scripts
 
 Set `agent(..., { model, effort })` per stage:
