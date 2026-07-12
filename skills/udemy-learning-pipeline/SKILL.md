@@ -19,7 +19,7 @@ Udemy受講済み講座のトランスクリプトを収集し、学習資産と
 ```
 ~/workspace/udemy-transcripts/
 ├── collect.py          # トランスクリプト収集（yt-dlp + Udemy API）
-├── make_assets.py      # 学習資産生成（Codex fugu-ultra）※Codexで代替可
+├── make_assets.py      # 学習資産生成（Codex）
 ├── transcripts/        # 収集したトランスクリプトMD
 └── learning-assets/    # 生成した学習資産MD
 ```
@@ -247,6 +247,5 @@ def condense(content):
 
 ## 環境変数・認証情報
 
-- `SAKANA_FUGU_API_KEY`: `~/.config/secrets/sakana`（Codex fugu-ultra 使用時）
 - Udemy Cookie: `/tmp/udemy_cookies.txt`（有効期間 数日〜数週間）
 - NotebookLM 認証: `~/.notebooklm-mcp-cli/profiles/default`
