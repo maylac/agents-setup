@@ -24,6 +24,9 @@
 ## なぜ効いたか
 サブエージェントの所見は「観測時点+観測方法」に依存し、報告文には方法の盲点が現れない(#1はユーザーレベルApplicationsを見て、設計側は/Applicationsを見ていた等)。矛盾は「どちらかが嘘」ではなく「観測方法が違う」シグナルなので、方法を固定した最小の直接観測が最も安い決着手段になる。裏づけ: 2件とも1バッチのBashで確定し、是正計画から誤タスク2系統(Orca掃除/危険側回帰)を除去できた。
 
+## 追記(同日): agmsgウォッチャー即死の根治
+症状: Claude Desktop管理セッションでagmsg watch.shが起動直後に静死。根因: `compat_get_comm` の `ps -o comm= | xargs basename` が空白入りパス(`.../Application Support/.../claude`)を複数引数に割り、basenameのsuffix解釈で "Application" を返す → pid解決失敗 → bare session_id → cc-instance台帳に載らず後続session-startのreaperに刈られる。修正: comm行を変数に受けて `basename -- "$line"` (agmsg/scripts/lib/compat.sh、ローカルパッチ)。回帰テスト: 修正後にsession-start再fire(reaperパス)を通してもwatcher生存を確認。**注意: agmsgとgeminiドライバのローカルパッチ2件(compat.sh / gemini type.conf spawnable=no)はagmsg本体更新で上書きされ得る — 更新時に再適用。**
+
 ## 一般化できる原則
 - 複数サブエージェントの所見が矛盾したら、多数決や再委譲でなく「矛盾点だけを親が直接再検証」してから下流(設計・承認・実行)に流すこと
 - サブエージェント所見を根拠にユーザー承認を取った後で前提が覆った場合、承認を有効として実行せず、訂正付きで再提示すること
