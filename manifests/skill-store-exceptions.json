@@ -1,0 +1,71 @@
+{
+  "version": 1,
+  "exceptions": [
+    {
+      "name": "agents-sdk",
+      "source": "hermes-local",
+      "mirrors": ["claude", "codex"],
+      "reason": "Hermes-managed Cloudflare skill mirrored byte-for-byte into Claude and Codex."
+    },
+    {
+      "name": "cloudflare",
+      "source": "hermes-local",
+      "mirrors": ["claude", "codex"],
+      "reason": "Hermes-managed Cloudflare skill mirrored byte-for-byte into Claude and Codex."
+    },
+    {
+      "name": "cloudflare-email-service",
+      "source": "hermes-local",
+      "mirrors": ["claude", "codex"],
+      "reason": "Hermes-managed Cloudflare skill mirrored byte-for-byte into Claude and Codex."
+    },
+    {
+      "name": "cloudflare-one",
+      "source": "hermes-local",
+      "mirrors": ["claude", "codex"],
+      "reason": "Hermes-managed Cloudflare skill mirrored byte-for-byte into Claude and Codex."
+    },
+    {
+      "name": "cloudflare-one-migrations",
+      "source": "hermes-local",
+      "mirrors": ["claude", "codex"],
+      "reason": "Hermes-managed Cloudflare skill mirrored byte-for-byte into Claude and Codex."
+    },
+    {
+      "name": "durable-objects",
+      "source": "hermes-local",
+      "mirrors": ["claude", "codex"],
+      "reason": "Hermes-managed Cloudflare skill mirrored byte-for-byte into Claude and Codex."
+    },
+    {
+      "name": "sandbox-sdk",
+      "source": "hermes-local",
+      "mirrors": ["claude", "codex"],
+      "reason": "Hermes-managed Cloudflare skill mirrored byte-for-byte into Claude and Codex."
+    },
+    {
+      "name": "turnstile-spin",
+      "source": "hermes-local",
+      "mirrors": ["claude", "codex"],
+      "reason": "Hermes-managed Cloudflare skill mirrored byte-for-byte into Claude and Codex."
+    },
+    {
+      "name": "web-perf",
+      "source": "hermes-local",
+      "mirrors": ["claude", "codex"],
+      "reason": "Hermes-managed Cloudflare skill mirrored byte-for-byte into Claude and Codex."
+    },
+    {
+      "name": "workers-best-practices",
+      "source": "hermes-local",
+      "mirrors": ["claude", "codex"],
+      "reason": "Hermes-managed Cloudflare skill mirrored byte-for-byte into Claude and Codex."
+    },
+    {
+      "name": "wrangler",
+      "source": "hermes-local",
+      "mirrors": ["claude", "codex"],
+      "reason": "Hermes-managed Cloudflare skill mirrored byte-for-byte into Claude and Codex."
+    }
+  ]
+}

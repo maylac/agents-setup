@@ -11,3 +11,7 @@
 !.env.example
 __pycache__/
 
+
+# japanese-tech-writing はスタンドアロンgitリポジトリ(github.com/hikimay/japanese-tech-writing)の
+# 作業クローン。~/.agents/skills からのsymlink先だが、このリポジトリでは追跡しない。
+skills/japanese-tech-writing/
