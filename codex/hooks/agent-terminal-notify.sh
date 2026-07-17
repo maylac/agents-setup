@@ -11,9 +11,11 @@ fi
 agent="${1:-Agent}"
 input="$(cat || true)"
 cwd=""
+transcript=""
 
 if command -v jq >/dev/null 2>&1; then
   cwd="$(printf '%s' "$input" | jq -r '.cwd // .workspace.cwd // .workspace_dir // .project_dir // empty' 2>/dev/null | head -n 1)"
+  transcript="$(printf '%s' "$input" | jq -r '.transcript_path // empty' 2>/dev/null | head -n 1)"
 fi
 
 if [ -z "$cwd" ] || [ "$cwd" = "null" ]; then
@@ -56,10 +58,20 @@ fi
 
 if [ "$((now - last))" -ge 45 ]; then
   if command -v terminal-notifier >/dev/null 2>&1; then
+    # 直前のassistantメッセージ抜粋を本文に載せ、何が起きて何を求められているかを通知だけで判別可能にする
+    excerpt=""
+    if [ -n "$transcript" ] && [ -r "$transcript" ] && command -v jq >/dev/null 2>&1; then
+      excerpt="$(tail -n 400 "$transcript" 2>/dev/null | jq -rs '
+        map(select(.type=="assistant" or .role=="assistant"))
+        | map((.message.content? // .content? // empty)
+          | if type=="array" then (map(.text? // empty)|join(" ")) else tostring end)
+        | map(select(length>0 and . != "null")) | last // empty' 2>/dev/null)"
+      [ "$excerpt" = "null" ] && excerpt=""
+      excerpt="$(printf '%s' "$excerpt" | tr '\n' ' ' | cut -c1-180)"
+    fi
     terminal-notifier \
-      -title "$agent waiting" \
-      -subtitle "$project" \
-      -message "$cwd$unpushed" \
+      -title "$agent 応答完了 · $project" \
+      -message "${excerpt:-$cwd}$unpushed" \
       -group "agent-terminal-notify-$hash" >/dev/null 2>&1 || true
   fi
   printf '%s\n' "$now" >"$state_file" 2>/dev/null || true
