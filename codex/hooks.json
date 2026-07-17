@@ -27,6 +27,16 @@
         ]
       }
     ],
+    "PermissionRequest": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "'$HOME/.agents/hooks/notify-mobile.sh' approval Codex"
+          }
+        ]
+      }
+    ],
     "Stop": [
       {
         "matcher": "",
