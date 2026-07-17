@@ -45,6 +45,7 @@ mkdir -p \
   "$HOME_FIXTURE/.codex/hooks" \
   "$HOME_FIXTURE/.codex/agents" \
   "$HOME_FIXTURE/.codex/skills" \
+  "$HOME_FIXTURE/.hermes/skills/hermes-local" \
   "$HOME_FIXTURE/.agents/skills/alpha" \
   "$HOME_FIXTURE/.agents/skills/source-command-demo" \
   "$TEST_TMP/tmp"
@@ -52,6 +53,9 @@ mkdir -p \
 cp "$ROOT/scripts/audit-sync.sh" "$REPO/scripts/audit-sync.sh"
 
 printf '{"version":1}\n' > "$REPO/manifests/ai-config-sync.json"
+cat > "$REPO/manifests/skill-store-exceptions.json" <<'JSON'
+{"version":1,"exceptions":[{"name":"hermes-local","source":"hermes-local","mirrors":["claude","codex"],"reason":"Fixture for a harness-managed local skill."}]}
+JSON
 printf '{"hooks":{}}\n' > "$REPO/templates/claude-settings.public.json"
 printf 'home agents\n' > "$REPO/home/AGENTS.md"
 printf 'claude\n' > "$REPO/claude/CLAUDE.md"
@@ -97,11 +101,23 @@ SKILL
 ln -s "../../.agents/skills/alpha" "$HOME_FIXTURE/.claude/skills/alpha"
 ln -s "../../.agents/skills/alpha" "$HOME_FIXTURE/.codex/skills/alpha"
 ln -s "../../.agents/skills/source-command-demo" "$HOME_FIXTURE/.codex/skills/source-command-demo"
+printf 'hermes managed\n' > "$HOME_FIXTURE/.hermes/skills/hermes-local/SKILL.md"
+cp -R "$HOME_FIXTURE/.hermes/skills/hermes-local" "$HOME_FIXTURE/.claude/skills/hermes-local"
+cp -R "$HOME_FIXTURE/.hermes/skills/hermes-local" "$HOME_FIXTURE/.codex/skills/hermes-local"
 
 success_output="$(HOME="$HOME_FIXTURE" TMPDIR="$TEST_TMP/tmp/" bash "$REPO/scripts/audit-sync.sh" 2>&1)"
 assert_contains "$success_output" "ok: live Codex hook registration"
 assert_contains "$success_output" "ok: canonical <-> Claude skills parity"
 assert_contains "$success_output" "AI config sync audit passed."
+
+printf 'drift\n' >> "$HOME_FIXTURE/.claude/skills/hermes-local/SKILL.md"
+set +e
+drift_output="$(HOME="$HOME_FIXTURE" TMPDIR="$TEST_TMP/tmp/" bash "$REPO/scripts/audit-sync.sh" 2>&1)"
+drift_status=$?
+set -e
+[ "$drift_status" -eq 1 ] || fail "expected Hermes-local exception drift audit to fail, got $drift_status"
+assert_contains "$drift_output" "FAIL: ~/.claude/skills exception drift"
+cp "$HOME_FIXTURE/.hermes/skills/hermes-local/SKILL.md" "$HOME_FIXTURE/.claude/skills/hermes-local/SKILL.md"
 
 printf '{"hooks":{"PreToolUse":[{"matcher":"Bash","hooks":[{"command":"%s/.codex/hooks/rtk-rewrite.sh"}]}],"Stop":[{"hooks":[{"command":"open -a Ghostty"}]}]}}\n' "$HOME_FIXTURE" > "$HOME_FIXTURE/.codex/hooks.json"
 

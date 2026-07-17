@@ -18,6 +18,8 @@ Agents live in `~/.claude/agents/`. Use them for work that benefits from isolati
 | code-reviewer | A non-trivial code change needs review before landing. |
 | build-error-resolver | A build failure is not obvious after reading the error and local context. |
 | security-reviewer | The task touches auth, secrets, permissions, payments, user input, or network boundaries. |
+| fable-advisor | A long exploratory task hits a planned checkpoint or 3+ consecutive marginal-gain iterations and needs its remaining directions re-ranked (bar and hard cap in `fable-escalation`). |
+| fable-verifier | A completion claim precedes an expensive-to-reverse landing and needs a final verification gate (bar in `fable-escalation`). |
 
 ## Parallel Work
 

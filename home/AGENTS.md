@@ -35,12 +35,15 @@ Assume many user prompts are dictated by voice and may contain speech-to-text er
 - When asked to verify an X article or linked article, do NOT use Jina Reader (`r.jina.ai`) — deprecated 2026-07 because the API became unreliable. For X posts/articles use `opencli twitter article <URL>`; for other pages use WebFetch (or Exa `web_fetch_exa`). If a login wall or metadata-only result blocks reading, state that limitation explicitly before trying alternatives.
 - RTK rewrites common shell commands. If behavior is surprising, use `rtk proxy <cmd>`; prefer `rg` for search and `/usr/bin/find` for compound predicates. See `claude/RTK.md`.
 
-## Orca IDE Integration
+## Cross-Harness Model Routing (Hermes, Codex, and Antigravity)
 
-- For tasks touching Orca-managed state (worktrees, terminals, embedded browser, automations), use the `orca-cli` or `orchestration` skill. Use `orchestration` for structured multi-agent coordination (task DAGs, ask/reply, worker_done waits); use `orca-cli` for full ownership handoffs and plain terminal/worktree control.
-- Outside Orca, cross-agent 1:1 messaging still goes through `agmsg`, and scheduled autonomous jobs still go through Hermes (launchd). Don't double-register the same job as both an Orca automation and a Hermes job.
-- For desktop UI control from a Claude Code session, prefer the computer-use MCP first (tiered permissions); use `orca computer` / orca-cli browser only for automating the browser embedded inside the Orca app. For the web in general, prefer claude-in-chrome.
-- Codex inside Orca's terminal runs against a separate `CODEX_HOME` (`~/Library/Application Support/orca/codex-runtime-home/home`) — skills/hooks/plugins are symlinked, but `config.toml` is an independent copy. After editing `~/.codex/config.toml`, check whether Orca's copy also needs the change.
+- Treat `gpt-5.6-sol` as the coordinator, architect, and bounded advisor—not the default executor for every subtask in either Hermes or Codex.
+- Aggressively offload eligible lightweight work to Antigravity/Gemini by default instead of waiting for an explicit delegation request. Route lookup, file/location discovery, inventory, summarization, extraction, classification, formatting, documentation drafts, test-case enumeration, deterministic review checklists, and other bounded mechanical work to `Gemini 3.5 Flash (Low)`; use `Gemini 3.5 Flash (Medium/High)` for scoped implementation, test generation, and routine fixes; and `Gemini 3.1 Pro (High)` only when a stronger non-Codex worker is justified. Keep work in SOL/Codex only when it is too small to amortize launch overhead, requires Codex-specific state/tools, or needs coordinator judgment.
+- For one-shot read-only or self-contained tasks, invoke `agy --print "<task contract>" --model "<model>" --print-timeout 5m`. In Hermes, prefer the enabled `antigravity_delegate` tool, which performs the same explicit model-pinned dispatch and records a routing audit receipt. For longer interactive work, use the `agmsg` Antigravity driver (`~/.agents/skills/agmsg/scripts/spawn.sh antigravity <name> --project <repo> --team hermes --model "<model>" --boot-prompt "<task contract>"`) so completion evidence can return through the shared team.
+- In Hermes, keep the main session on SOL for decomposition, acceptance criteria, synthesis, and final judgment. Route eligible work to Antigravity first; use Hermes delegation pinned in `~/.hermes/config.yaml` to `gpt-5.6-terra` when Antigravity is unsuitable or unavailable. Do not perform delegated implementation in the SOL parent. Before reporting completion, cite at least one successful non-SOL routing receipt for every non-trivial task, or state the concrete exception that kept execution in SOL.
+- In Codex, route eligible work to Antigravity before spawning Codex workers. Use installed `gpt-5.6-terra` agents for work requiring Codex-specific tools or context, and `gpt-5.6-luna` agents for lightweight fallback work.
+- Do not spawn SOL workers by inheritance when an Antigravity, Terra, or Luna worker can perform the task. SOL may execute only trivial, bounded work where delegation overhead would exceed the work itself, or when workers are unavailable; state that exception briefly.
+- Fan out only independent subtasks, give every worker explicit acceptance criteria and output boundaries, and independently verify material outputs before synthesis. The daily harness report flags SOL above 50% of token usage as routing drift.
 
 ## Local Tools
 
@@ -49,3 +52,11 @@ Assume many user prompts are dictated by voice and may contain speech-to-text er
 - `Maestro`: use the narrowest existing mobile smoke flow first; report a missing simulator/emulator runtime explicitly.
 
 <!-- Maintenance: AGENTS.md is the source of truth (shared tool-agnostically, e.g. with Codex). ~/CLAUDE.md is a symlink to this file — keep the symlink intact. -->
+
+## Plan Infographic Approval Gate
+
+Plan mode の plan が ExitPlanMode で承認されたら、実装着手前に必ず `plan-infographic`
+スキルを実行する（plan保存 → NotebookLMでインフォグラフィック生成 → PNG/モバイル通知/URL配信 →
+AskUserQuestionで承認確認）。インフォグラフィックの承認が返るまで実装コードを編集しない。
+パイプラインが失敗した場合はエラーを報告し、テキスト plan のまま AskUserQuestion 承認に
+降格して進める。

@@ -84,7 +84,7 @@
     },
     {
       "id": "claude-agent-roster",
-      "reason": "Claude keeps only code-reviewer, security-reviewer, and build-error-resolver active. Built-in Plan/Explore and skills cover the retired planner, database, E2E, and communication roles."
+      "reason": "Claude keeps a small always-available roster: code-reviewer, security-reviewer, build-error-resolver, plus the two Claude-only Fable consultation roles fable-advisor and fable-verifier (model: fable has no Codex equivalent; the Codex analog is max/ultra effort per the fable-escalation skill). Built-in Plan/Explore and skills cover the retired planner, database, E2E, and communication roles."
     },
     {
       "id": "codex-agent-superset",

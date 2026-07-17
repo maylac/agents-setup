@@ -109,12 +109,14 @@ json_has_no_stop_ghostty() {
 }
 
 require_file "$ROOT/manifests/ai-config-sync.json"
+require_file "$ROOT/manifests/skill-store-exceptions.json"
 require_file "$ROOT/codex/hooks.json"
 require_file "$ROOT/templates/claude-settings.public.json"
 require_file "$HOME_DIR/.claude/settings.json"
 require_file "$HOME_DIR/.codex/hooks.json"
 
 json_ok "$ROOT/manifests/ai-config-sync.json"
+json_ok "$ROOT/manifests/skill-store-exceptions.json"
 json_ok "$ROOT/codex/hooks.json"
 json_ok "$ROOT/templates/claude-settings.public.json"
 json_ok "$HOME_DIR/.claude/settings.json"
@@ -147,13 +149,35 @@ CLAUDE_SKILLS="$HOME_DIR/.claude/skills"
 CODEX_SKILLS="$HOME_DIR/.codex/skills"
 # Legacy source-command names remain excluded; chronicle is Codex-only.
 CLAUDE_EXCLUDE_PATTERN='^source-command-|^chronicle$'
+SKILL_EXCEPTIONS="$ROOT/manifests/skill-store-exceptions.json"
+
+is_skill_exception() {
+  local name="$1"
+  local mirror="$2"
+  jq -e --arg name "$name" --arg mirror "$mirror" '
+    .exceptions
+    | any(.name == $name and .source == "hermes-local" and (.reason | length > 0) and (.mirrors | index($mirror)))
+  ' "$SKILL_EXCEPTIONS" >/dev/null
+}
+
+skill_names() {
+  local dir="$1"
+  local mirror="$2"
+  local name
+  for name in $(ls "$dir" 2>/dev/null); do
+    [[ "$name" = .* ]] && continue
+    is_skill_exception "$name" "$mirror" && continue
+    printf '%s\n' "$name"
+  done
+}
 
 skill_parity_check() {
   local agent_dir="$1"
   local label="$2"
   local exclude_pattern="${3:-}"
+  local mirror="$4"
   local diff
-  diff="$(comm -3 <(ls "$CANON_SKILLS" | sort) <(ls "$agent_dir" 2>/dev/null | /usr/bin/grep -v '^\.' | sort) \
+  diff="$(comm -3 <(skill_names "$CANON_SKILLS" "$mirror" | sort) <(skill_names "$agent_dir" "$mirror" | sort) \
     | { [ -n "$exclude_pattern" ] && /usr/bin/grep -v -E "$exclude_pattern" || cat; })"
   if [ -n "$diff" ]; then
     fail "$label parity mismatch:"$'\n'"$diff"
@@ -162,14 +186,28 @@ skill_parity_check() {
   fi
 }
 
-skill_parity_check "$CLAUDE_SKILLS" "canonical <-> Claude skills" "$CLAUDE_EXCLUDE_PATTERN"
-skill_parity_check "$CODEX_SKILLS" "canonical <-> Codex skills"
+skill_parity_check "$CLAUDE_SKILLS" "canonical <-> Claude skills" "$CLAUDE_EXCLUDE_PATTERN" "claude"
+skill_parity_check "$CODEX_SKILLS" "canonical <-> Codex skills" "" "codex"
 
 orphan_real_dirs_check() {
   local agent_dir="$1"
   local label="$2"
-  local orphans
-  orphans="$(/usr/bin/find "$agent_dir" -mindepth 1 -maxdepth 1 -type d ! -name '.*' -print 2>/dev/null)"
+  local mirror="$3"
+  local orphans=""
+  local path name source
+  while IFS= read -r path; do
+    [ -n "$path" ] || continue
+    name="$(basename "$path")"
+    source="$HOME_DIR/.hermes/skills/$name"
+    if is_skill_exception "$name" "$mirror"; then
+      if [ -d "$source" ] && diff -qr "$source" "$path" >/dev/null; then
+        continue
+      fi
+      fail "$label exception drift: $path differs from $source"
+      continue
+    fi
+    orphans+="${orphans:+$'\n'}$path"
+  done < <(/usr/bin/find "$agent_dir" -mindepth 1 -maxdepth 1 -type d ! -name '.*' -print 2>/dev/null)
   if [ -n "$orphans" ]; then
     fail "$label has real (non-symlink) skill directories bypassing the canonical store:"$'\n'"$orphans"
   else
@@ -177,8 +215,8 @@ orphan_real_dirs_check() {
   fi
 }
 
-orphan_real_dirs_check "$CLAUDE_SKILLS" "~/.claude/skills"
-orphan_real_dirs_check "$CODEX_SKILLS" "~/.codex/skills"
+orphan_real_dirs_check "$CLAUDE_SKILLS" "~/.claude/skills" "claude"
+orphan_real_dirs_check "$CODEX_SKILLS" "~/.codex/skills" "codex"
 
 dangling_symlinks_check() {
   local base="$1"
@@ -225,10 +263,13 @@ skill_frontmatter_check() {
 skill_frontmatter_check
 
 # --- Agents directory parity (AG-3) ---
-# harness-optimizer is a documented Claude-only exception. Codex also keeps a
-# pinned TOML superset for language/runtime specialists that Claude no longer
-# loads globally (see manifests/ai-config-sync.json intentional_differences).
-AGENTS_CODEX_EXCEPTIONS='^[[:space:]]*(architect|chief-of-staff|cpp-build-resolver|cpp-reviewer|database-reviewer|doc-updater|docs-lookup|e2e-runner|flutter-reviewer|go-build-resolver|go-reviewer|harness-optimizer|java-build-resolver|java-reviewer|kotlin-build-resolver|kotlin-reviewer|loop-operator|planner|python-reviewer|pytorch-build-resolver|refactor-cleaner|rust-build-resolver|rust-reviewer|tdd-guide|typescript-reviewer)$'
+# harness-optimizer, fable-advisor, and fable-verifier are documented
+# Claude-only exceptions (the fable roles pin a Claude-only model; the Codex
+# analog is max/ultra effort, covered in the fable-escalation skill). Codex
+# also keeps a pinned TOML superset for language/runtime specialists that
+# Claude no longer loads globally (see manifests/ai-config-sync.json
+# intentional_differences).
+AGENTS_CODEX_EXCEPTIONS='^[[:space:]]*(architect|chief-of-staff|cpp-build-resolver|cpp-reviewer|database-reviewer|doc-updater|docs-lookup|e2e-runner|fable-advisor|fable-verifier|flutter-reviewer|go-build-resolver|go-reviewer|harness-optimizer|java-build-resolver|java-reviewer|kotlin-build-resolver|kotlin-reviewer|loop-operator|planner|python-reviewer|pytorch-build-resolver|refactor-cleaner|rust-build-resolver|rust-reviewer|tdd-guide|typescript-reviewer)$'
 
 agents_repo_live_parity_check() {
   local repo_dir="$ROOT/claude/agents"
