@@ -58,7 +58,7 @@ fi
 if curl -sf --max-time 30 "https://api.telegram.org/bot${tg_token}/sendPhoto" \
     -F "chat_id=${tg_chat}" \
     -F "photo=@${PNG}" \
-    -F "caption=${CAPTION}" >/dev/null; then
+    --form-string "caption=${CAPTION}" >/dev/null; then
   exit 0
 fi
 echo "sendPhoto failed" >&2; exit 1
