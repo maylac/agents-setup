@@ -145,12 +145,16 @@ def main() -> None:
     text = plan_path.read_text(encoding="utf-8")
 
     try:
+        import click
         from notebooklm_tools.cli.utils import get_client
         from notebooklm_tools.services import downloads as dl_svc
         from notebooklm_tools.services import studio as studio_svc
 
         client = get_client()
     except SystemExit:
+        die(2, "認証エラー: `nlm login` で再認証してください")
+    except click.exceptions.Exit:
+        # typer.Exit は SystemExit のサブクラスではない (click.exceptions.Exit 継承)
         die(2, "認証エラー: `nlm login` で再認証してください")
     except Exception as e:
         die(2, f"client init failed: {e}")
@@ -205,7 +209,7 @@ def main() -> None:
                 )
                 if mine and mine.get("status") == "completed":
                     break
-                if mine and mine.get("status") == "error":
+                if mine and mine.get("status") in ("failed", "error"):
                     die(4, f"generation failed: {mine}")
                 if time.time() > deadline:
                     die(3, f"generation timed out after {args.timeout}s (artifact {artifact_id})")
