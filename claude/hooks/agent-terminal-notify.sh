@@ -58,16 +58,23 @@ fi
 
 if [ "$((now - last))" -ge 45 ]; then
   if command -v terminal-notifier >/dev/null 2>&1; then
-    # 直前のassistantメッセージ抜粋を本文に載せ、何が起きて何を求められているかを通知だけで判別可能にする
+    # 直前のassistantメッセージ抜粋を本文に載せ、何が起きて何を求められているかを通知だけで判別可能にする。
+    # Claude transcript(.type=="assistant")とCodex rollout(.type=="response_item")の両形式に対応。
+    # 切り詰めはjq内(文字単位)。cut -cはバイト切りでUTF-8を壊す。
     excerpt=""
     if [ -n "$transcript" ] && [ -r "$transcript" ] && command -v jq >/dev/null 2>&1; then
       excerpt="$(tail -n 400 "$transcript" 2>/dev/null | jq -rs '
-        map(select(.type=="assistant" or .role=="assistant"))
-        | map((.message.content? // .content? // empty)
-          | if type=="array" then (map(.text? // empty)|join(" ")) else tostring end)
-        | map(select(length>0 and . != "null")) | last // empty' 2>/dev/null)"
+        map(
+          if .type=="response_item"
+          then (.payload | select(.type=="message" and .role=="assistant")
+            | (.content // [] | map(.text? // empty) | join(" ")))
+          elif (.type=="assistant" or .role=="assistant")
+          then ((.message.content? // .content? // empty)
+            | if type=="array" then (map(.text? // empty)|join(" ")) else tostring end)
+          else empty end)
+        | map(select(length>0 and . != "null")) | last // empty
+        | gsub("\n"; " ") | .[0:180]' 2>/dev/null)"
       [ "$excerpt" = "null" ] && excerpt=""
-      excerpt="$(printf '%s' "$excerpt" | tr '\n' ' ' | cut -c1-180)"
     fi
     terminal-notifier \
       -title "$agent 応答完了 · $project" \
