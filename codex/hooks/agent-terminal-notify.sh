@@ -77,6 +77,17 @@ if [ -n "$transcript" ] && [ -r "$transcript" ] && command -v jq >/dev/null 2>&1
   esac
 fi
 
+# 在席中はMac通知を出さない(2026-07-18「途中経過通知は不要」対応)。画面の前にいる間の
+# ターン完了は途中経過。ベルは上で鳴らし済み。0指定で無効化。取得不能時は通知する側に倒す。
+USER_IDLE_MIN="${NOTIFY_USER_IDLE_SECONDS:-120}"
+if [ "$USER_IDLE_MIN" -gt 0 ]; then
+  idle_ns="$(ioreg -c IOHIDSystem 2>/dev/null | awk '/HIDIdleTime/ {print $NF; exit}')"
+  case "$idle_ns" in
+    ''|*[!0-9]*) : ;;
+    *) [ "$((idle_ns / 1000000000))" -lt "$USER_IDLE_MIN" ] && exit 0 ;;
+  esac
+fi
+
 if [ "$((now - last))" -ge 45 ]; then
   if command -v terminal-notifier >/dev/null 2>&1; then
     # 直前のassistantメッセージ抜粋を本文に載せ、何が起きて何を求められているかを通知だけで判別可能にする。
