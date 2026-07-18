@@ -56,6 +56,27 @@ if git -C "$cwd" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   fi
 fi
 
+# 通知粒度: 「タスク完了」のみMac通知する(2026-07-18ユーザー指示)。最後のユーザー入力から
+# 短時間で終わったターンは対話応答なのでスキップ(ベルはターミナル内の即時合図として維持)。
+# タイムスタンプが取れないときは通知する(無人タスクの完了を逃さない側に倒す)。
+MIN_TASK_SECONDS="${NOTIFY_MIN_TASK_SECONDS:-120}"
+if [ -n "$transcript" ] && [ -r "$transcript" ] && command -v jq >/dev/null 2>&1; then
+  last_user_ts="$(tail -n 400 "$transcript" 2>/dev/null | jq -rs '
+    map(
+      if .type=="user" then
+        (select((.message.content|type)=="string"
+          or ([.message.content[]?.type // empty] | index("tool_result") | not))
+         | .timestamp)
+      elif .type=="event_msg" and (.payload.type // "")=="user_message" then .timestamp
+      else empty end)
+    | map(select(type=="string")) | last // empty
+    | sub("\\.[0-9]+Z$"; "Z") | fromdateiso8601' 2>/dev/null)"
+  case "$last_user_ts" in
+    ''|*[!0-9]*) : ;;
+    *) [ "$((now - last_user_ts))" -lt "$MIN_TASK_SECONDS" ] && exit 0 ;;
+  esac
+fi
+
 if [ "$((now - last))" -ge 45 ]; then
   if command -v terminal-notifier >/dev/null 2>&1; then
     # 直前のassistantメッセージ抜粋を本文に載せ、何が起きて何を求められているかを通知だけで判別可能にする。
