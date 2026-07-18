@@ -185,6 +185,8 @@ Based on what they've selected, ask if there's anything important missing for th
 
 ### Step 5: Drafting
 
+**If drafting Japanese explanatory prose meant to be read as continuous text (article, book chapter, guide narrative):** read and apply the cognitive-rhythm-writing skill (`../cognitive-rhythm-writing/SKILL.md`, which also loads japanese-tech-writing) before writing each section. Structured business docs (specs, decision docs, status reports) skip this.
+
 Use `str_replace` to replace the placeholder text for this section with the actual drafted content.
 
 Announce the [SECTION NAME] section will be drafted now based on what they've selected.

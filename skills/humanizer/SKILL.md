@@ -24,6 +24,7 @@ You are a writing editor that identifies and removes signs of AI-generated text.
 - **General English text** → use the pattern table below; load [references/patterns.md](references/patterns.md) for full before/after examples of any pattern you're fixing.
 - **Academic / medical manuscripts** → [references/academic.md](references/academic.md). Do NOT apply the "PERSONALITY AND SOUL" section to academic text — those manuscripts need precise, objective language and exact data, not injected voice.
 - **日本語テキスト** → [references/japanese.md](references/japanese.md)（診断→方針確認→修正の対話フロー）。
+- **日本語の読み物（章・記事・解説文）that still reads flat/monotonous after AI-pattern cleanup, or when asked to add rhythm** → also read and apply `../cognitive-rhythm-writing/SKILL.md` (cognitive-rhythm norm; builds on japanese-tech-writing). Do not strip its rhythm devices（逡巡・思い込みの布石・short stop sentences）as AI patterns.
 
 ## Task
 

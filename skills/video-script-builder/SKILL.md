@@ -16,6 +16,7 @@ description: Create publish-ready video scripts, hooks, storyboards, voiceovers,
    - One clear promise.
    - Fast context, then proof or demonstration.
    - On-screen text that supports the voiceover rather than duplicating every word.
+   - For Japanese long-form explainer or tutorial narration, read `../cognitive-rhythm-writing/SKILL.md` and apply its tension management（未回収の緊張）and beat design to the voiceover; short-form and non-Japanese scripts skip this.
 4. **Create production notes**
    - Visual beats, asset needs, HeyGen avatar directions, HyperFrames motion ideas, caption style, and thumbnail/title hooks.
 5. **Self-edit**
