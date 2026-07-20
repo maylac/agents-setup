@@ -147,9 +147,12 @@ write_codex_template() {
 # Do not paste live bearer tokens, auth files, sqlite state, or local cache paths.
 
 approval_policy = "never"
-sandbox_mode = "danger-full-access"
-model = "gpt-5.5"
-model_reasoning_effort = "xhigh"
+sandbox_mode = "workspace-write"
+model = "gpt-5.6-sol"
+model_reasoning_effort = "high"
+
+[sandbox_workspace_write]
+network_access = true
 
 [tui]
 status_line = [
