@@ -1,10 +1,13 @@
 # Public-safe Codex config template.
 # Do not paste live bearer tokens, auth files, sqlite state, or local cache paths.
 
-approval_policy = "on-request"
+approval_policy = "never"
 sandbox_mode = "workspace-write"
 model = "gpt-5.6-sol"
 model_reasoning_effort = "high"
+
+[sandbox_workspace_write]
+network_access = true
 
 [tui]
 status_line = [
