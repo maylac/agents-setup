@@ -15,11 +15,11 @@ Use auto-memory proactively, but verify paths, names, and state against current 
 
 # Model Routing
 
-The default is `opusplan`: Opus for planning and Sonnet for execution. Use `fable-escalation` before proposing Fable; reserve Fable for high-cost-to-reverse final judgment. Two sanctioned Fable subagents cover mid-task judgment without a session switch: `fable-advisor` checkpoints during long exploratory tasks, and the `fable-verifier` gate before expensive-to-reverse completion claims (bars and cadence in `fable-escalation`).
+The default is `fable` (Fable 5 — permanent on Max since 2026-07-20, capped at 50% of weekly limits): the main session does judgment, planning, review, and user-facing reporting. Protect the cap by keeping implementation and high-volume tool loops off the main session — execution orchestration (workflow scripts, parallel subagent fleets, review agents) runs on `opus` (Opus 5), and implementation defaults to Codex `gpt-5.6-terra`. If the cap runs out mid-week, drop to `opusplan` and continue. The `fable-verifier` gate (independent-context verification) still guards expensive-to-reverse completion claims; `fable-advisor` applies only while the main session is off Fable. Bars and cadence in `fable-escalation`.
 
 # Codex Collaboration
 
-For heavy research or implementation, delegate to Codex when it materially preserves Claude context; continue with the returned session ID.
+Implementation defaults to Codex (`gpt-5.6-terra`): delegate rather than implementing on the main session, and continue with the returned session ID. Heavy research also goes to Codex when it materially preserves Claude context.
 
 # Mobile Completion Reporting
 

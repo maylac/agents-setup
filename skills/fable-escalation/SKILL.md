@@ -1,58 +1,65 @@
 ---
 name: fable-escalation
-description: Fable-tier judgment routing - /model fable escalation, desk prep, return rules, and the two sanctioned Fable subagent roles. Triggers on proposing /model fable, escalating to a top-tier model (Fable, or Codex max/ultra effort), desk prep before a high-stakes final judgment, returning from Fable, planning a long exploratory task or hitting 3+ consecutive marginal-gain iterations (advisor checkpoints), or claiming done on expensive-to-reverse work (verifier gate). Not for routine per-subagent model picks.
+description: Fable-standing model routing - budget discipline for the Fable 5 main session (permanent on Max at 50% of weekly limits), what stays off Fable, the fable-verifier gate, and fallback routing when the cap is exhausted. Triggers on deciding where implementation or high-volume tool loops should run, desk prep before a high-stakes final judgment, claiming done on expensive-to-reverse work (verifier gate), suspected cap exhaustion or silent fallback to a lower tier, long exploratory tasks while off Fable (advisor checkpoints), or escalating Codex to max/ultra effort. Not for routine per-subagent model picks.
 license: MIT
 ---
 
-# Fable Escalation
+# Fable Routing (Standing-Fable Regime)
 
-Use this skill when deciding whether to propose `/model fable`, when planning advisor checkpoints or a verifier gate for Fable-tier judgment, when preparing the desk before a Fable review, or when returning from Fable to normal work.
+Since 2026-07-20 Fable 5 is permanent on the Max plan at 50% of weekly usage
+limits, and it is the main-session default (`~/.claude/settings.json` →
+`"model": "fable"`). The discipline inverted from the escalation era: the
+question is no longer "when may we go up to Fable" but "what must stay OFF
+Fable" so the weekly cap covers a full week of judgment.
 
 ## Routing Tiers
 
-Reserve Fable5 for rare, high-stakes final judgment. Do everyday judgment, review, and writing on Opus4.8; templated execution on Sonnet5; mechanical inspection on Haiku4.5.
-
 | Tier | Alias | Use for |
 |------|-------|---------|
-| Fable5 | `fable` | Type-less, high-failure-cost, whole-system final judgment. Human-in-the-loop only. |
-| Opus4.8 | `opus` | Daily judgment, code review, ambiguous debugging, security, multi-file changes, human-facing writing. |
-| Sonnet5 | `sonnet` | Templated mass production and execution: build/type-error fixing, boilerplate, established migrations, E2E generation, loop operation. |
+| Fable5 | `fable` | Main session only: judgment, planning, review, user-facing reporting. |
+| Opus5 | `opus` | Execution orchestration: workflow scripts, parallel-subagent fleets, review/verification subagents. Session fallback tier (`opusplan`) when the Fable cap is exhausted. |
+| Sonnet5 | `sonnet` | Claude-side templated execution when external delegation overhead isn't justified. |
 | Haiku4.5 | `haiku` | Mechanical conversion and inspection: format, lint, rename, log/extract, pure doc retrieval. |
 
-Aliases resolve via `~/.claude/settings.json` env such as `ANTHROPIC_DEFAULT_FABLE_MODEL`, `ANTHROPIC_DEFAULT_OPUS_MODEL`, `ANTHROPIC_DEFAULT_SONNET_MODEL`, and `ANTHROPIC_DEFAULT_HAIKU_MODEL`.
+Implementation defaults to Codex `gpt-5.6-terra`; Antigravity Gemini takes
+bounded mechanical work only (Cross-Harness Model Routing in `~/AGENTS.md`).
+Opus5 sits within ~0.5% of Fable5 on agentic-coding benchmarks at half the
+per-token cost, so the fallback tier loses little.
 
-## Three Ways Into Fable
+Aliases resolve via `~/.claude/settings.json` env such as
+`ANTHROPIC_DEFAULT_FABLE_MODEL`, `ANTHROPIC_DEFAULT_OPUS_MODEL`,
+`ANTHROPIC_DEFAULT_SONNET_MODEL`, and `ANTHROPIC_DEFAULT_HAIKU_MODEL`.
 
-Match the mode to where the task needs its judgment (task-shape asymmetry):
+## Budget Discipline (protect the 50% cap)
 
-| Mode | Mechanism | Task shape |
-|------|-----------|------------|
-| Escalation | `/model fable` main-session switch, human approves | Judgment IS the task: irreversible, whole-system decision |
-| Advisor | `fable-advisor` subagent at planned checkpoints | Judgment scattered across the task: exploratory work where each result reshapes what to try next |
-| Verifier | `fable-verifier` subagent before "done" | Judgment at the end: expensive-to-reverse completion claim |
+- The main session spends Fable tokens on judgment, planning, review, and
+  reporting. Implementation, long tool loops, mass file edits, and repetitive
+  verification runs do not belong on the main session — delegate to Codex
+  `gpt-5.6-terra` (implementation), `opus` workflows/subagents (execution
+  orchestration), or `haiku`/Gemini (mechanical).
+- No executor or worker subagent runs on `fable`. In the standing regime
+  exactly one Fable subagent stays sanctioned: `fable-verifier`.
+  (`fable-advisor` is an off-Fable fallback tool — see below.)
+- Workflow scripts never run stages on `fable`; the lone exception is
+  `agentType: 'fable-verifier'`, once per distinct high-stakes claim (several
+  gated claims in one run is a smell — surface it).
+- Watch for silent fallback: at the cap the session may drop to a lower tier
+  without ceremony, so you may be running as Opus while believing you are
+  Fable. Treat that possibility as standing — it is why the main loop's own
+  "verified" claim never substitutes for the verifier gate (worked case
+  below).
+- When the cap is exhausted mid-week: drop the session to `opusplan` and
+  continue. In that state the old escalation rules apply — propose `/model
+  fable` only for an irreversible, whole-system final judgment, prepare the
+  desk first, and return to `opus` immediately after the judgment is fixed.
+- After any Fable-tier judgment on a hard problem, record the reasoning with
+  `extract-approach` — that note is what lets lower tiers reuse the judgment.
 
-Only escalation moves the main session. The two subagent roles are bounded,
-read-only consultations that leave the main session on its normal tier — they
-exist so unattended or mid-task work can get Fable-tier judgment without
-paging the human or paying for a full session switch.
+## Desk Prep Before High-Stakes Judgment
 
-## Strict Fable Policy
-
-- No executor or worker subagent runs on `fable`. Exactly two read-only consultation subagents are sanctioned: `fable-advisor` and `fable-verifier` (sections below). Mass production never runs on Fable.
-- Main-session Fable is entered only by switching with `/model fable`, so the human stays in the loop.
-- The agent cannot change the main-session model itself. The agent may only propose the switch.
-- Propose `/model fable` only when the desk is prepared by lower tiers and the task is one of:
-  1. Locking in an irreversible or broadly cascading structural decision, such as a public API, data model, or framework choice.
-  2. A type-less, high-failure-cost major decision that needs a whole-system view.
-  3. The one-time foundational design of a direction that later drops to mass production.
-- After the Fable judgment is fixed, immediately propose returning to `opus`.
-- Never propose Fable for everyday writing, review, debugging, maintenance, cheap reversible changes, or locally scoped changes.
-- If prep is incomplete, recommend against the switch and finish the desk first. The final call stays with the human — state what is missing rather than blocking.
-- After a Fable judgment is fixed, record the reasoning with `extract-approach` before returning to `opus` — that note is what lets lower tiers reuse the judgment.
-
-## Desk Prep Before Fable
-
-Before proposing `/model fable`, lower tiers should finish this checklist:
+Before locking in an irreversible or broadly cascading decision (public API,
+data model, framework choice) on the main session, have lower tiers finish
+this checklist first — Fable time is for the judgment, not the paperwork:
 
 - Enumerate the full blast radius by machine extraction.
 - Visualize dependencies and irreversible points.
@@ -61,17 +68,63 @@ Before proposing `/model fable`, lower tiers should finish this checklist:
 - Make lint, tests, and type checks green when relevant.
 - Reduce the ask to a single decision.
 
-For the blindspot/option-generation steps, use `know-your-unknowns` patterns 1 (blindspot pass), 3 (design directions), and 5 (intervention spectrum) instead of improvising the same artifacts here.
+For the blindspot/option-generation steps, use `know-your-unknowns` patterns 1
+(blindspot pass), 3 (design directions), and 5 (intervention spectrum) instead
+of improvising the same artifacts here.
 
-## Advisor Checkpoints (fable-advisor)
+## Verifier Gate (fable-verifier)
 
-On a long exploratory task, direction re-ranking is NOT the executor's own
-call. Executors hill-climb: they keep tuning the current line long after its
-expected value has fallen below untried alternatives, and their own "step
-back" re-ranking shares the blind spots that got them stuck. Upfront planning
-does not fix this — rankings made before data are frequently wrong, sometimes
-anti-correlated with what works. Judgment has to be scattered across the
-task, not front-loaded.
+Everyday completion claims keep the normal path: opus code review and
+verification-before-completion. The gate applies when the claim precedes an
+expensive-to-reverse landing — merges whose post-deploy rollback is costly,
+data migrations, security-relevant changes, and outward-facing deliverables
+that are hard to retract once shipped (published artifacts, customer-visible
+releases, external submissions — not internal drafts or anything a follow-up
+message can correct).
+"It's still on a branch, so it's reversible" is not an exemption: the gate
+exists precisely because pre-merge is the last cheap moment to be wrong, and
+"verification maps to the opus tier" does not cover this class — opus review
+is desk prep for the gate, not a substitute for it.
+
+With Fable as the standing main-session model, the gate's value is
+**independent context**, not tier superiority: a fresh `model: fable` subagent
+judges the evidence without the main loop's accumulated blind spots, and it
+still judges at true Fable tier even when the main session has silently fallen
+back to a lower model.
+
+- Assemble the brief per `fable-verifier`'s input contract: original ask,
+  explicit acceptance criteria, diff scope, and per-criterion evidence.
+- The verdict gates the claim. `scoped-incomplete` or `not-done` means the
+  next action is closing the named gap (opus-task-loop), not reporting done.
+- One verifier call per distinct claim. Re-verification of the same claim is
+  allowed only after closing the specific named defects, and both attempts
+  count: a second failing verdict goes to the human. Do not tune the artifact
+  to satisfy the verifier.
+- When the deliverable has machine-checkable properties — character-limit
+  counts, cross-reference integrity (underline/blank ↔ question ↔ answer),
+  link liveness, schema conformance — require script verification, never eye
+  or self-report. Worked case (2026-07-18): the main loop, running as Opus but
+  believing it was Fable, asserted "integrity self-verified" on five exam
+  questions that in fact carried 13 character-limit overruns and blanks absent
+  from the body; every defect surfaced only at the fable-verifier gate, and
+  the fixes were then delegated to Codex. Treat a confident self-review on
+  exact-count/exact-correspondence work as unverified until a script or the
+  gate confirms it.
+
+## Advisor Checkpoints (fable-advisor) — off-Fable only
+
+While the main session runs on Fable, do not consult `fable-advisor`: it is a
+same-tier consultation that pays the handoff cost for no judgment upgrade —
+the Fable main loop re-ranks its own directions. The role applies when the
+main session is running below Fable (cap exhausted, `opusplan` fallback, or a
+non-Fable harness) on a long exploratory task.
+
+In that state, direction re-ranking is NOT the executor's own call. Executors
+hill-climb: they keep tuning the current line long after its expected value
+has fallen below untried alternatives, and their own "step back" re-ranking
+shares the blind spots that got them stuck. Upfront planning does not fix
+this — rankings made before data are frequently wrong, sometimes
+anti-correlated with what works.
 
 Use when the task is exploratory (each result reshapes what's worth trying
 next) AND long enough that a wrong direction wastes hours of budget:
@@ -97,38 +150,10 @@ experiment sweeps, parameter tuning, research loops, iterative optimization.
   prompt cache makes each later consult cheaper and sharper.
 - Weight the advisor's mid-task re-rankings over its initial-plan advice; the
   role's value is re-prioritization against observed results.
-- The consult does not interrupt the human — this is how an unattended run
-  gets Fable-tier judgment without paging anyone.
 
-When NOT to use: short tasks, templated execution, single-pass work. The
-handoff cost (see Consultation Cost Discipline) needs enough at stake to pay
-for itself.
-
-## Verifier Gate (fable-verifier)
-
-Everyday completion claims keep the normal path: opus code review and
-verification-before-completion. The gate applies when the claim precedes an
-expensive-to-reverse landing — merges whose post-deploy rollback is costly,
-data migrations, security-relevant changes, and outward-facing deliverables
-that are hard to retract once shipped (published artifacts, customer-visible
-releases, external submissions — not internal drafts or anything a follow-up
-message can correct).
-"It's still on a branch, so it's reversible" is not an exemption: the gate
-exists precisely because pre-merge is the last cheap moment to be wrong, and
-"verification maps to the opus tier" does not cover this class — opus review
-is desk prep for the gate, not a substitute for it.
-
-- Assemble the brief per `fable-verifier`'s input contract: original ask,
-  explicit acceptance criteria, diff scope, and per-criterion evidence.
-- The verdict gates the claim. `scoped-incomplete` or `not-done` means the
-  next action is closing the named gap (opus-task-loop), not reporting done.
-- One verifier call per distinct claim. Re-verification of the same claim is
-  allowed only after closing the specific named defects, and both attempts
-  count: a second failing verdict goes to the human. Do not tune the artifact
-  to satisfy the verifier.
-- The gate covers high-stakes claims that do not meet the `/model fable` bar.
-  If the work itself qualifies for escalation, do the escalation; the gate is
-  not a way around it.
+When NOT to use: the main session is already on Fable, short tasks, templated
+execution, single-pass work. The handoff cost (see Consultation Cost
+Discipline) needs enough at stake to pay for itself.
 
 ## Consultation Cost Discipline
 
@@ -139,46 +164,40 @@ is desk prep for the gate, not a substitute for it.
   files; attached files beat a transcript dump.
 - Route repeat consults to the same instance so its prompt cache accumulates;
   a fresh spawn re-pays the entire context write.
-- For a task that already meets the advisor or verifier bar, a bounded Fable
-  consult is usually cheaper than the wandering low-tier exploration it
-  replaces. Efficiency never qualifies a task by itself — it only breaks ties
-  among tasks that already qualify.
+- Efficiency never qualifies a task by itself — it only breaks ties among
+  tasks that already qualify.
 
-## Fable Window Fallback
+## Cap-Exhausted Fallback
 
-Fable access is time-windowed, not permanent (`~/.claude/scripts/fable-window-close.sh`
-strips the main-session `model: fable` default once the window closes). When
-the window is closed, none of the three modes disappear — they degrade to a
-named fallback tier, because the judgment in `fable-advisor.md` and
+When the weekly Fable cap is spent (or Fable errors out), the roles degrade to
+named fallback tiers — the judgment in `fable-advisor.md` and
 `fable-verifier.md` is written as a procedure (weight data over priors,
 correct hill-climbing, demand independent evidence), not tacit Fable-only
 capability:
 
-| Mode | While Fable is open | While Fable is closed |
-|------|---------------------|------------------------|
-| Escalation | `/model fable`, human approves | Stays on `opus` for final judgment — no fallback switch exists, since there is no session-level model to switch into. Note this limitation explicitly when a task would otherwise have escalated. |
-| Advisor | `fable-advisor` (`model: fable`) | Same agent, same brief/output contract, invoked with `model: 'opus'` override (Claude) or `gpt-5.6-sol` high/ultra effort (Codex) |
+| Mode | While Fable is available | While the cap is exhausted |
+|------|--------------------------|-----------------------------|
+| Main session | `model: fable` default | Drop to `opusplan`; note the downgrade to the human. `/model fable` proposals resume next weekly reset. |
+| Advisor | Not used (same tier as main) | `fable-advisor` with `model: 'opus'` override (Claude) or `gpt-5.6-sol` high/ultra effort (Codex) |
 | Verifier | `fable-verifier` (`model: fable`) | Same agent, same contract, `model: 'opus'` override (Claude) or `gpt-5.6-sol` high/ultra effort (Codex) |
 
-Detecting closure: a `/model fable` proposal that the human declines because
-the window is closed, or an explicit "Fable unavailable" from the harness, is
-the signal — don't guess from the calendar inside a skill (dates drift; the
-closure script is the source of truth). Once closed, drop `fable` from the
-Routing Tiers table mentally but keep running the advisor/verifier checkpoints
-on their fallback tier; the roles' value is the written judgment process, not
-the model brand.
+Detecting exhaustion: an explicit rate-limit notice, or a silent model
+downgrade you notice mid-session, is the signal — don't guess from the
+calendar. Keep running the verifier gate on its fallback tier; the roles'
+value is the written judgment process, not the model brand.
 
 ## Codex Side: Max / Ultra (GPT-5.6)
 
-The same "rare, top-tier" discipline applies to Codex escalation knobs
-(official guidance: "most tasks don't need Max or Ultra"):
+`gpt-5.6-terra` is the default implementation executor (see Routing Tiers).
+The same "rare, top-tier" discipline as Fable escalation applies to the SOL
+effort knobs (official guidance: "most tasks don't need Max or Ultra"):
 
 Effort levels for `gpt-5.6-sol` (verified via `codex debug models`, 2026-07-12):
 `low` / `medium` / `high` / `xhigh` / `max` / `ultra`.
 
 - `max` effort — "maximum reasoning depth for the hardest problems": a
   **single** hardest problem where quality beats speed (deep root-cause,
-  one-shot design lock-in). The Codex analog of a Fable escalation; prepare
+  one-shot design lock-in). The Codex analog of a Fable-tier judgment; prepare
   the desk the same way first.
 - `ultra` effort — "maximum reasoning with automatic task delegation": max
   depth **plus** parallel sub-work. Reach for it only when the task genuinely
@@ -192,15 +211,15 @@ Effort levels for `gpt-5.6-sol` (verified via `codex debug models`, 2026-07-12):
 Set `agent(..., { model, effort })` per stage:
 
 - Mechanical: `haiku` with low effort.
-- Execution: `sonnet`.
+- Execution: `sonnet` (or delegate the stage to Codex `gpt-5.6-terra` outside
+  the workflow when it is real implementation).
 - Judgment, verification, synthesis: `opus`.
 
-Never run executor or worker stages on `fable` inside a workflow script. Two
-bounded exceptions, when the run meets the bars above: `agentType:
-'fable-advisor'` at planned checkpoints (same hard cap of 3 per run) and
-`agentType: 'fable-verifier'` once per distinct high-stakes claim (several
-gated claims in one run is a smell — surface it). Everything else on Fable
-stays human-in-the-loop main-session only.
+Never run executor or worker stages on `fable` inside a workflow script. One
+bounded exception, when the run meets the bar above: `agentType:
+'fable-verifier'` once per distinct high-stakes claim (several gated claims in
+one run is a smell — surface it). `agentType: 'fable-advisor'` stages apply
+only to off-Fable runs (Cap-Exhausted Fallback), same hard cap of 3.
 
 ## Skills
 
