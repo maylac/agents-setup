@@ -34,6 +34,7 @@ Assume many user prompts are dictated by voice and may contain speech-to-text er
 - Prefer `ax` over `curl` for web fetching and extraction; run `ax agent-context` for detailed syntax. Use curl only for protocol-level work ax cannot perform, and state the exception.
 - When asked to verify an X article or linked article, do NOT use Jina Reader (`r.jina.ai`) — deprecated 2026-07 because the API became unreliable. For X posts/articles use `opencli twitter article <URL>`; for other pages use WebFetch (or Exa `web_fetch_exa`). If a login wall or metadata-only result blocks reading, state that limitation explicitly before trying alternatives.
 - RTK rewrites common shell commands. If behavior is surprising, use `rtk proxy <cmd>`; prefer `rg` for search and `/usr/bin/find` for compound predicates. See `claude/RTK.md`.
+- When a repo has `graphify-out/graph.json`, make `graphify query "<question>"` the first move for structure, dependency, and "where is X used" questions instead of `rg`/Read; use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for a single concept. Refresh with `graphify update .` (AST-only, no API cost), and fall back to raw search when the graph is stale (source newer than `graph.json`, or `graphify-out/needs_update` exists) — state which path you used. Repos without `graphify-out/` use the normal search tools; build a graph with the `graphify` skill only when a repo is worth indexing.
 
 ## Cross-Harness Model Routing (Hermes, Codex, and Antigravity)
 
