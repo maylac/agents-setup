@@ -92,7 +92,10 @@ process_dir() {
       '{path:$path,mtime:$mtime,is_new:$is_new}' \
       > "$tmpdir/$i.json"
     i=$((i+1))
-  done < <(find "$dir" -name "*.md" -type f 2>/dev/null | sort)
+  # Match scan.sh: -L to descend into the symlinked skill dirs that make up most of
+  # ~/.claude/skills, and SKILL.md only — results.json is keyed per skill, so
+  # references/*.md were emitted as candidates that could never match an entry.
+  done < <(find -L "$dir" -name "SKILL.md" -type f 2>/dev/null | sort)
 }
 
 [[ -d "$GLOBAL_DIR" ]] && process_dir "$GLOBAL_DIR"
