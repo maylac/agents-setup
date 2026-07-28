@@ -40,6 +40,24 @@ fi
 # Pre-extract known paths from results.json once (O(1) lookup per file instead of O(n*m))
 known_paths=$(jq -r '.skills[].path' "$RESULTS_JSON" 2>/dev/null)
 
+# Entries whose file is gone are invisible to the filesystem walk below, so their
+# verdict and reason text would stay frozen in results.json forever. Report them
+# here; removal is a separate, user-confirmed step (save-results.sh --prune-missing).
+# The stdout contract is unchanged — this goes to stderr only.
+missing=$(while IFS= read -r dp; do
+  [[ -z "$dp" ]] && continue
+  [[ -f "${dp/#\~/$HOME}" ]] || printf '  %s\n' "$dp"
+done <<< "$known_paths")
+
+if [[ -n "$missing" ]]; then
+  {
+    echo "Warning: $(printf '%s\n' "$missing" | wc -l | tr -d ' ') entries in $RESULTS_JSON point to files that no longer exist:"
+    printf '%s\n' "$missing"
+    echo "  These are never re-evaluated. After confirming with the user, drop them with:"
+    echo "    save-results.sh $RESULTS_JSON --prune-missing"
+  } >&2
+fi
+
 tmpdir=$(mktemp -d)
 # Use a function to avoid embedding $tmpdir in a quoted string (prevents injection
 # if TMPDIR were crafted to contain shell metacharacters).

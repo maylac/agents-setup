@@ -525,7 +525,7 @@
     "web-scraping": {
       "path": "~/.claude/skills/web-scraping/SKILL.md",
       "verdict": "Improve",
-      "reason": "Best-in-cluster unique content: anti-bot landscape table (L212-226), undocumented-API workflow (L228-292), poison-pill detection (L294-388), legal/ethics (L627-648). But zero progressive disclosure — 648 lines of inline Python every invocation; social-media section (L390-559: YouTube/Instagram/TikTok scrapers) duplicates youtube-transcript and agent-reach. Division of labor: WebFetch/Jina = one-off reads; this = anti-bot/undocumented APIs/bulk; agent-reach = social; playwright/gstack = interactive.",
+      "reason": "Best-in-cluster unique content: anti-bot landscape table (L212-226), undocumented-API workflow (L228-292), poison-pill detection (L294-388), legal/ethics (L627-648). But zero progressive disclosure — 648 lines of inline Python every invocation; social-media section (L390-559: YouTube/Instagram/TikTok scrapers) duplicates youtube-transcript and agent-reach. Division of labor: WebFetch/Jina = one-off reads; this = anti-bot/undocumented APIs/bulk; agent-reach = social; playwright/gstack = interactive. [STALE 2026-07-28: the 'Jina' lane above is obsolete. Commit 30ed8e7 (2026-07-08) dropped Jina Reader harness-wide; home/AGENTS.md now PROHIBITS r.jina.ai. Read that lane as WebFetch/Exa web_fetch_exa only (X articles: opencli twitter article). The Improve verdict and the rest of the assessment stand.]",
       "mtime": "2026-07-04T09:22:59Z"
     },
     "page-monitoring": {
@@ -537,7 +537,7 @@
     "article-extractor": {
       "path": "~/.claude/skills/article-extractor/SKILL.md",
       "verdict": "Retire",
-      "reason": "Both primary tools missing (verified: reader MISSING, trafilatura MISSING) — every run falls to fragile curl+HTMLParser fallback (L96-128). 370-line body is tutorial filler: same workflow written three times (L61-128, L169-257, L326-348), emoji 'Best Practices', vague upsells (L368). Niche covered better by builtin WebFetch + user's global Jina Reader rule (CLAUDE.md mandates r.jina.ai), web-scraping for hard cases.",
+      "reason": "Both primary tools missing (verified: reader MISSING, trafilatura MISSING) — every run falls to fragile curl+HTMLParser fallback (L96-128). 370-line body is tutorial filler: same workflow written three times (L61-128, L169-257, L326-348), emoji 'Best Practices', vague upsells (L368). Niche covered better by builtin WebFetch + user's global Jina Reader rule (CLAUDE.md mandates r.jina.ai), web-scraping for hard cases. [STALE 2026-07-28 — DO NOT ACT ON: the 'global Jina Reader rule' clause is the OPPOSITE of current policy. No instruction file ever mandated r.jina.ai after commit 30ed8e7 (2026-07-08, 'drop Jina Reader from harness'); home/AGENTS.md PROHIBITS it (deprecated 2026-07, unreliable API). Correct replacement for this niche: WebFetch or Exa web_fetch_exa, opencli twitter article for X, web-scraping for hard cases. The Retire verdict itself was correct and is already executed — the skill was deleted in the 2026-07-07 sweep; this entry survives only because save-results.sh merges and never prunes.]",
       "mtime": "2026-07-04T09:22:59Z"
     },
     "rss-digest": {
@@ -669,26 +669,26 @@
     "extract-approach": {
       "path": "~/.claude/skills/extract-approach/SKILL.md",
       "verdict": "Keep",
-      "reason": "Load-bearing: ~/CLAUDE.md Solution Recording mandates invoking before completion reports. 77 lines, Japanese, sharp trigger/non-trigger criteria (L14-21), pass/fail rubric (L59-64), explicit division of labor vs lessons.md and auto-memory (L66-72). Output paths match repo-scaffold and memory records. Description 394 chars — just under budget.",
-      "mtime": "2026-07-06T21:49:29Z"
+      "reason": "Keep. 2026-07-12 dual audit: actively used (8 learnings notes). Fixed design-tradeoff vs failed-path checklist mismatch, added evidence line, no-generalization escape, pre-write dedup, recall-side section + AGENTS.md recall wiring.",
+      "mtime": "2026-07-12T01:07:53Z"
     },
     "fable-escalation": {
       "path": "~/.claude/skills/fable-escalation/SKILL.md",
       "verdict": "Keep",
-      "reason": "Load-bearing (~/CLAUDE.md Model Routing) and fully current — VERIFIED: four env aliases (L22) exist in ~/.claude/settings.json and resolve to live Claude 5 family (claude-fable-5[1m], claude-opus-4-8, claude-sonnet-5[1m], claude-haiku-4-5), matching its tier table exactly. 60 lines, clear human-in-the-loop policy. Lives at ~/workspace/agents-setup/skills/fable-escalation (intentional). Re-verify model names when family next changes.",
-      "mtime": "2026-07-06T22:49:50Z"
+      "reason": "Keep (updated). 2026-07-12 dual audit: Codex section re-verified via codex debug models (effort low..max,ultra; ultra=max reasoning+auto delegation); fugu-ultra retired as 5.5-era leftover; trigger narrowed; refuse->recommend (human-final); cross-links to know-your-unknowns/extract-approach.",
+      "mtime": "2026-07-12T01:06:22Z"
     },
     "opus-task-loop": {
       "path": "~/.claude/skills/opus-task-loop/SKILL.md",
-      "verdict": "Improve",
-      "reason": "Lean (58 lines); core contribution — independent-verification table (L28-35: 'ran, no crash' vs 'recomputed a different way') — not covered by karpathy-guidelines or Execution Gate. But partially restates karpathy §4 (decompose/verify) and §2 ('Tempted to add more' row L49); Quick Reference table (L51-58) restates 'Deciding What's Next' (L37-42). Correctly wires into superpowers verification/systematic-debugging.",
-      "mtime": "2026-07-06T21:40:41Z"
+      "verdict": "Keep",
+      "reason": "Keep. 2026-07-12 dual audit (Fable5+GPT-5.6 sol): added 3 end-states, falsification-first verify, superpowers portability note (plugin absent on Codex side), boundaries vs karpathy-guidelines/fable-escalation/extract-approach. Trigger well-bounded.",
+      "mtime": "2026-07-12T01:06:59Z"
     },
     "know-your-unknowns": {
       "path": "~/.claude/skills/know-your-unknowns/SKILL.md",
       "verdict": "Keep",
-      "reason": "97 lines, 141-char description, genuinely distinct artifact-first prompting catalog (11 patterns, situation→pattern routing table L14-26, agent application rules L89-97). Partial overlap with superpowers:brainstorming (patterns 5-6) and superpowers:writing-plans (pattern 8), but those execute workflows while this produces reviewable artifacts to surface the USER'S unknowns — different job.",
-      "mtime": "2026-07-04T09:26:21Z"
+      "reason": "Keep (improved). 2026-07-12 dual audit: description rewritten to trigger moments + negative trigger; pattern-6 boundary vs superpowers:brainstorming; pattern-9 reversibility guard; phase-differentiated wait behavior; cross-linked from fable-escalation desk prep.",
+      "mtime": "2026-07-12T01:08:35Z"
     },
     "refactor-instructions": {
       "path": "~/.claude/skills/refactor-instructions/SKILL.md",
@@ -729,9 +729,9 @@
     "tapestry": {
       "path": "~/.claude/skills/tapestry/SKILL.md",
       "verdict": "Improve",
-      "reason": "460 lines for what should be a thin router: L80-215 and L275-337 inline bash reimplementing extraction that article-extractor and youtube-transcript own (skill admits delegation at L107). Dependencies broken — VERIFIED: reader, trafilatura, pdftotext NOT installed (only yt-dlp) — article and PDF paths as written fail. Examples label assistant 'Codex:' (L379, L397); output format emoji-heavy. Unique keepable asset: URL→action-plan concept and Quest/Reps template (L221-243). NOTE: coordinate with article-extractor Retire verdict — route articles via Jina Reader/WebFetch instead.",
+      "reason": "460 lines for what should be a thin router: L80-215 and L275-337 inline bash reimplementing extraction that article-extractor and youtube-transcript own (skill admits delegation at L107). Dependencies broken — VERIFIED: reader, trafilatura, pdftotext NOT installed (only yt-dlp) — article and PDF paths as written fail. Examples label assistant 'Codex:' (L379, L397); output format emoji-heavy. Unique keepable asset: URL→action-plan concept and Quest/Reps template (L221-243). NOTE: coordinate with article-extractor Retire verdict — route articles via Jina Reader/WebFetch instead. [STALE 2026-07-28: 'via Jina Reader' is obsolete — commit 30ed8e7 (2026-07-08) dropped it and home/AGENTS.md now PROHIBITS r.jina.ai. Route articles via WebFetch or Exa web_fetch_exa; X articles via opencli twitter article. article-extractor has since been deleted, so the coordination note is historical. The Improve verdict stands.]",
       "mtime": "2026-07-04T09:26:21Z"
     }
   },
-  "evaluated_at": "2026-07-07T02:08:56Z"
+  "evaluated_at": "2026-07-12T01:10:32Z"
 }

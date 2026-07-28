@@ -47,11 +47,12 @@ Re-evaluate only skills that have changed since the last run (5–10 min).
 2. Run: `bash ~/.claude/skills/skill-stocktake/scripts/quick-diff.sh \
          ~/.claude/skills/skill-stocktake/results.json`
    (Project dir is auto-detected from `$PWD/.claude/skills`; pass it explicitly only if needed)
-3. If output is `[]`: report "No changes since last run." and stop
-4. Re-evaluate only those changed files using the same Phase 2 criteria
-5. Carry forward unchanged skills from previous results
-6. Output only the diff
-7. Run: `bash ~/.claude/skills/skill-stocktake/scripts/save-results.sh \
+3. If stderr carries `Warning: N entries ... no longer exist`, those skills were deleted from disk — they are never re-evaluated, so report them and ask the user before running `save-results.sh <results.json> --prune-missing`
+4. If output is `[]`: report "No changes since last run." and stop
+5. Re-evaluate only those changed files using the same Phase 2 criteria
+6. Carry forward unchanged skills from previous results
+7. Output only the diff
+8. Run: `bash ~/.claude/skills/skill-stocktake/scripts/save-results.sh \
          ~/.claude/skills/skill-stocktake/results.json <<< "$EVAL_RESULTS"`
 
 ## Full Stocktake Flow
@@ -150,6 +151,8 @@ Evaluation is **holistic AI judgment** — not a numeric rubric. Guiding dimensi
 
 ### Phase 4 — Consolidation
 
+**Deleted skills:** `scan.sh` only sees files that exist, so entries for skills already removed from disk survive every merge with their verdict text frozen — list them with `quick-diff.sh <results.json>` (its stderr warning works in either mode), then confirm with the user before running `save-results.sh <results.json> --prune-missing`.
+
 1. **Retire / Merge**: present detailed justification per file before confirming with user:
    - What specific problem was found (overlap, staleness, broken references, etc.)
    - What alternative covers the same functionality (for Retire: which existing skill/rule; for Merge: the target file and what content to integrate)
@@ -190,5 +193,5 @@ Obtain via Bash: `date -u +%Y-%m-%dT%H:%M:%SZ`. Never use a date-only approximat
 ## Notes
 
 - Evaluation is blind: the same checklist applies to all skills regardless of origin (ECC, self-authored, auto-extracted)
-- Archive / delete operations always require explicit user confirmation
+- Archive / delete operations always require explicit user confirmation — including `save-results.sh --prune-missing`, which is never part of a normal save (it reads no stdin and leaves `evaluated_at` untouched, since pruning is not an evaluation)
 - No verdict branching by skill origin
