@@ -6,6 +6,7 @@
   "permissions": {
     "defaultMode": "auto",
     "allow": [
+      "Bash",
       "Bash(ls *)",
       "Bash(rg *)",
       "Bash(command -v *)",

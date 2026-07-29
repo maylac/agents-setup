@@ -43,6 +43,12 @@
       "live": "~/.claude/settings.json",
       "source": "templates/claude-settings.public.json",
       "mode": "live-mutable-template"
+    },
+    {
+      "id": "paseo-orchestration-preferences",
+      "live": "~/.paseo/orchestration-preferences.json",
+      "source": "paseo/orchestration-preferences.json",
+      "mode": "symlink"
     }
   ],
   "hook_pairs": [

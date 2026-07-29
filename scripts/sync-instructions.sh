@@ -71,6 +71,7 @@ check_link "$HOME/AGENTS.md" "$CORE"
 check_link "$HOME/CLAUDE.md" "$CORE"
 check_link "$HOME/.claude/CLAUDE.md" "$CLA_OUT"
 check_link "$HOME/.codex/AGENTS.md" "$CORE"
+check_link "$HOME/.paseo/orchestration-preferences.json" "$ROOT/paseo/orchestration-preferences.json"
 
 if [ "$DRIFT" -ne 0 ]; then
   echo "sync-instructions: DRIFT DETECTED"

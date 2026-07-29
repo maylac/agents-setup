@@ -46,6 +46,10 @@ Assume many user prompts are dictated by voice and may contain speech-to-text er
 - Do not spawn SOL workers by inheritance when an Antigravity, Terra, or Luna worker can perform the task. SOL may execute only trivial, bounded work where delegation overhead would exceed the work itself, or when workers are unavailable; state that exception briefly.
 - Fan out only independent subtasks, give every worker explicit acceptance criteria and output boundaries, and independently verify material outputs before synthesis. The daily harness report flags SOL above 50% of token usage as routing drift.
 
+## Paseo Delegation
+
+Paseo (local agent-supervision daemon; CLI `paseo`, daemon on 127.0.0.1:6767) is the standard surface for interactive delegation from a main session: second opinions (`paseo-advisor`), contrast committees (`paseo-committee`), full task handoffs (`paseo-handoff`), and worker/verifier loops (`paseo-loop`). Provider choice for every Paseo agent resolves through `~/.paseo/orchestration-preferences.json` — never hardcode a provider string in prompts or skills. Never use the `fable`/`opusplan` aliases for delegated agents. Never restart the Paseo daemon without explicit user approval — it kills every running agent. Prefer Paseo over the Orca orchestration skill for new delegation work; Orca remains for terminal control and its embedded browser.
+
 ## Local Tools
 
 - `ax`: `$HOME/.local/bin/ax`, source at `~/workspace/tools/ax`.
