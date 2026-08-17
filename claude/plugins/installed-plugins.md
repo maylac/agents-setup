@@ -18,7 +18,7 @@ Installed plugins:
   ❯ aws-core@claude-plugins-official
     Version: 1.1.0
     Scope: user
-    Status: ✔ enabled
+    Status: ✘ disabled
 
   ❯ clangd-lsp@claude-plugins-official
     Version: 1.0.0
@@ -27,6 +27,11 @@ Installed plugins:
 
   ❯ codex@openai-codex
     Version: 1.0.2
+    Scope: user
+    Status: ✔ enabled
+
+  ❯ compact-plus@compact-plus-local
+    Version: 1.0.4
     Scope: user
     Status: ✔ enabled
 
@@ -43,7 +48,7 @@ Installed plugins:
   ❯ project-artifact@claude-plugins-official
     Version: unknown
     Scope: user
-    Status: ✔ enabled
+    Status: ✘ disabled
 
   ❯ pyright-lsp@claude-plugins-official
     Version: 1.0.0

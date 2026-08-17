@@ -48,7 +48,7 @@ sanitize_file() {
   local file="$1"
   grep -Iq . "$file" || return 0
   perl -0pi \
-    -e 's#/Users/[A-Za-z0-9._-]+#\$HOME#g;' \
+    -e 's#\\?/Users\\?/[A-Za-z0-9._-]+#\$HOME#g;' \
     -e 's#-Users-[A-Za-z0-9._-]+#-Users-[redacted-user]#g;' \
     -e 's#may\.lac1206\@gmail\.com#[redacted-email]#g;' \
     -e 's#gh[opsu]_[A-Za-z0-9_]+#[REDACTED_GITHUB_TOKEN]#g;' \
@@ -81,6 +81,7 @@ sync_dir() {
     --exclude='.temp/' \
     --exclude='db/' \
     --exclude='node_modules/' \
+    --exclude='__pycache__/' \
     --exclude='dist/' \
     --exclude='build/' \
     --exclude='*.db' \
@@ -89,6 +90,7 @@ sync_dir() {
     --exclude='*.sqlite-shm' \
     --exclude='*.sqlite-wal' \
     --exclude='*.log' \
+    --exclude='*.pyc' \
     --exclude='history.jsonl' \
     --exclude='settings.local.json' \
     "$src/" "$dst/"
@@ -128,7 +130,26 @@ sync_instruction_files() {
     sync_file "$HOME_DIR/.codex/AGENTS.md" "$ROOT/codex/AGENTS.md"
   fi
 
-  sync_file "$HOME_DIR/.codex/hooks.json" "$ROOT/codex/hooks.json"
+  if [ -f "$HOME_DIR/.codex/hooks.json" ]; then
+    jq '
+      if (.hooks | type) == "object" then
+        .hooks |= with_entries(
+          .value |= map(
+            .hooks = ((.hooks // []) | map(
+              select(
+                ((.command // "")
+                  | contains("/.vibe-island/") or contains("/.codex/runcat-hook.py"))
+                | not
+              )
+            ))
+          )
+          | .value |= map(select((.hooks // []) | length > 0))
+          | select(.value | length > 0)
+        )
+      else . end
+    ' "$HOME_DIR/.codex/hooks.json" > "$ROOT/codex/hooks.json.tmp"
+    mv "$ROOT/codex/hooks.json.tmp" "$ROOT/codex/hooks.json"
+  fi
 }
 
 sanitize_instruction_files() {
@@ -223,14 +244,59 @@ TOML
 write_claude_settings_template() {
   if [ -f "$HOME_DIR/.claude/settings.json" ] && command -v jq >/dev/null 2>&1; then
     jq '{
+      model,
+      effortLevel,
       language,
       theme,
+      outputStyle,
+      voice,
       includeCoAuthoredBy,
       remoteControlAtStartup,
+      agentPushNotifEnabled,
+      awaySummaryEnabled,
+      inputNeededNotifEnabled,
+      preferredNotifChannel,
+      skipDangerousModePermissionPrompt,
+      skipWorkflowUsageWarning,
+      permissions: (
+        (.permissions // {})
+        | .allow = ((.allow // []) - [
+            "Bash(git push *)",
+            "Bash(git -C * push *)",
+            "Bash(gh pr create *)"
+          ])
+        | .ask = (((.ask // []) + [
+            "Bash(git push *)",
+            "Bash(git -C * push *)",
+            "Bash(gh pr create *)"
+          ]) | unique)
+      ),
       statusLine,
-      hooks,
+      hooks: (
+        (.hooks // {})
+        | with_entries(
+            .value |= map(
+              .hooks = ((.hooks // []) | map(
+                select(
+                  ((.command // "")
+                    | contains("/System/Library/")
+                      or contains("/opt/homebrew/")
+                      or contains("/.vibe-island/")
+                      or contains("/workspace/agent-notch/"))
+                  | not
+                )
+              ))
+            )
+            | .value |= map(select((.hooks // []) | length > 0))
+            | select(.value | length > 0)
+          )
+      ),
       enabledPlugins
-    }' "$HOME_DIR/.claude/settings.json" > "$ROOT/templates/claude-settings.public.json"
+    }
+    | if ((.statusLine.command // "") | contains("/workspace/agent-notch/")) then
+        .statusLine.command = "$HOME/.claude/statusline.py"
+      else . end
+    ' "$HOME_DIR/.claude/settings.json" > "$ROOT/templates/claude-settings.public.json"
     sanitize_file "$ROOT/templates/claude-settings.public.json"
   fi
 }
@@ -294,6 +360,7 @@ require_command cp
 require_command rsync
 require_command perl
 require_command grep
+require_command jq
 
 mkdir -p "$ROOT/home" "$ROOT/skills" "$ROOT/claude/agents" "$ROOT/claude/hooks" "$ROOT/claude/output-styles" \
   "$ROOT/claude/plugins" "$ROOT/codex/agents" "$ROOT/codex/hooks" "$ROOT/codex/plugins" \

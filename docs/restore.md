@@ -67,11 +67,42 @@ The live `~/.codex/hooks.json` is not symlinked. It is materialized from
 `codex/hooks.json` with `$HOME` expanded so the active Codex hook trust state
 can continue to refer to the live file path.
 
+The backup intentionally removes Vibe Island and RunCat registrations from the
+portable `codex/hooks.json`. They are Mac-managed hooks and must not be enabled
+inside WSL. The Mac audit permits those two documented live-only additions but
+still rejects any other unexplained hook drift.
+
 Check Claude/Codex paired behavior after restore:
 
 ```sh
 scripts/audit-sync.sh
 ```
+
+## Agent and Hook Files
+
+Preview the public-safe agent definitions and hook scripts separately:
+
+```sh
+scripts/install.sh --assets-only
+```
+
+After reviewing the paths and platform dependencies, copy them into the live
+Claude/Codex homes:
+
+```sh
+scripts/install.sh --apply-assets --assets-only
+```
+
+Existing destination files are backed up under
+`~/.agents-setup-backups/<timestamp>/`. The copy is additive: files that exist
+only in the live home are not deleted. A snapshotted Herdr hook may be copied,
+but the Surface/Linux Herdr installation remains its owner and may regenerate
+it. Vibe Island and RunCat registration is excluded from the portable snapshot.
+
+`paseo` and `paseo-*` remain app-managed real directories rather than canonical
+symlinks. `compact-plus` is a Codex-only symlink to the separately restored
+`~/workspace/tools/compact-plus` repository. Both shapes are intentional audit
+exceptions and must be recreated from their owning installation source.
 
 The backup sanitizer rewrites local home paths and Claude project-id fragments
 such as `-Users-...` when snapshots are generated. If a future snapshot contains
@@ -95,6 +126,10 @@ Do not copy auth, channel, session, project, telemetry, cache, or
 
 Claude `settings.json` is kept as a live mutable file. The public template is a
 restore guide; the audit checks the shared behavior that must match Codex.
+The generated template excludes macOS sound commands, Homebrew Moshi, Vibe
+Island, and Agent Notch hooks, and moves git push / PR creation rules into the
+explicit-approval list. Re-add platform integrations only after their
+Surface/Linux commands exist.
 
 ## Codex
 

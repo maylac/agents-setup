@@ -1,66 +1,57 @@
 {
   "hooks": {
-    "PreToolUse": [
+    "PermissionRequest": [
       {
-        "matcher": "Bash",
         "hooks": [
           {
-            "type": "command",
-            "command": "'$HOME/.codex/hooks/rtk-rewrite.sh'"
+            "command": "'$HOME/.agents/hooks/notify-mobile.sh' approval Codex",
+            "type": "command"
           }
         ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "command": "'$HOME/.codex/hooks/rtk-rewrite.sh'",
+            "type": "command"
+          }
+        ],
+        "matcher": "Bash"
       }
     ],
     "SessionStart": [
       {
         "hooks": [
           {
-            "type": "command",
             "command": "bash '$HOME/.codex/herdr-agent-state.sh' session",
-            "timeout": 10
+            "timeout": 10,
+            "type": "command"
           },
           {
-            "type": "command",
             "command": "'$HOME/.agents/skills/agmsg/scripts/session-start.sh' codex '$HOME'",
-            "timeout": 10
-          }
-        ]
-      }
-    ],
-    "PermissionRequest": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "'$HOME/.agents/hooks/notify-mobile.sh' approval Codex"
+            "timeout": 10,
+            "type": "command"
           }
         ]
       }
     ],
     "Stop": [
       {
-        "matcher": "",
         "hooks": [
           {
-            "type": "command",
-            "command": "'$HOME/.codex/hooks/agent-terminal-notify.sh' Codex"
+            "command": "'$HOME/.codex/hooks/agent-terminal-notify.sh' Codex",
+            "type": "command"
           }
-        ]
+        ],
+        "matcher": ""
       },
       {
         "hooks": [
           {
-            "type": "command",
-            "command": "$HOME/.codex/runcat-hook.py",
-            "timeout": 5
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "'$HOME/.agents/hooks/notify-mobile.sh' done Codex"
+            "command": "'$HOME/.agents/hooks/notify-mobile.sh' done Codex",
+            "type": "command"
           }
         ]
       }

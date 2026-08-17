@@ -202,6 +202,9 @@ source_add(
 | データ・セキュリティ・AI倫理 | 8217d282-cdf0-4b38-b78d-d8405c37117b |
 | 組織・人材・スキルアップ | ac263ef2-6409-4236-9575-0c013ad98393 |
 | AWS SAA 模擬試験 復習 | 5c530dde-0c85-49cc-bb48-ef71a41cb7eb |
+| AWS GenAI Developer Professional | 3ebaf7a9-0941-467b-8184-3f3ff3459b2e |
+
+> AWS系は汎用「AWS・クラウド・インフラ」ノートブックが実在せず、Cert単位ノートブック（AWS-SAA等）で運用している。新規AWS講座はCert単位で作成する（2026-07-18確認）。
 
 ---
 
@@ -239,6 +242,7 @@ def condense(content):
 | 症状 | 対処 |
 |------|------|
 | Udemy API 403 | Cookie 期限切れ → Step 1-1 を再実行 |
+| yt-dlp が curriculum 取得で 403（Cookie再取得でも解消せず） | `collect_api_captions.py --url-file <URL一覧>` で subscriber-curriculum API から直接取得（2026-07-18実績） |
 | yt-dlp DRM エラー | 正常（DRM 保護動画はスキップ） |
 | NotebookLM 認証エラー | `! nlm login` を実行 |
 | `~ ` を含むファイルアップロード失敗 | `/tmp/` にコピーしてから `source_add` |

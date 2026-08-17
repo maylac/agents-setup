@@ -70,6 +70,37 @@ expect_materialized_same() {
   rm -f "$tmp"
 }
 
+expect_portable_codex_hooks() {
+  local src="$1"
+  local dest="$2"
+  local label="$3"
+  local expected filtered_live
+  expected="$(mktemp)"
+  filtered_live="$(mktemp)"
+  materialize_home "$src" | jq -S . > "$expected"
+  jq -S '
+    .hooks |= with_entries(
+      .value |= map(
+        .hooks = ((.hooks // []) | map(
+          select(
+            ((.command // "")
+              | contains("/.vibe-island/") or contains("/.codex/runcat-hook.py"))
+            | not
+          )
+        ))
+      )
+      | .value |= map(select((.hooks // []) | length > 0))
+      | select(.value | length > 0)
+    )
+  ' "$dest" > "$filtered_live"
+  if cmp -s "$expected" "$filtered_live"; then
+    ok "$label"
+  else
+    fail "$label differs after excluding Mac-managed Vibe Island and RunCat hooks: $src vs $dest"
+  fi
+  rm -f "$expected" "$filtered_live"
+}
+
 json_ok() {
   local path="$1"
   jq empty "$path" >/dev/null || fail "invalid JSON: $path"
@@ -136,7 +167,29 @@ expect_symlink "$HOME_DIR/.codex/AGENTS.md" "../AGENTS.md" "~/.codex/AGENTS.md"
 expect_same_file "$ROOT/claude/hooks/rtk-rewrite.sh" "$ROOT/codex/hooks/rtk-rewrite.sh" "repo RTK hook pair"
 expect_same_file "$ROOT/claude/hooks/rtk-rewrite.sh" "$HOME_DIR/.claude/hooks/rtk-rewrite.sh" "live Claude RTK hook"
 expect_same_file "$ROOT/codex/hooks/rtk-rewrite.sh" "$HOME_DIR/.codex/hooks/rtk-rewrite.sh" "live Codex RTK hook"
-expect_materialized_same "$ROOT/codex/hooks.json" "$HOME_DIR/.codex/hooks.json" "live Codex hook registration"
+expect_portable_codex_hooks "$ROOT/codex/hooks.json" "$HOME_DIR/.codex/hooks.json" "live Codex portable hook registration"
+
+expect_repo_files_in_live() {
+  local repo_dir="$1"
+  local live_dir="$2"
+  local label="$3"
+  local path rel bad=0
+  while IFS= read -r -d '' path; do
+    rel="${path#"$repo_dir/"}"
+    if [ ! -f "$live_dir/$rel" ]; then
+      fail "$label missing live file: $live_dir/$rel"
+      bad=1
+    elif ! cmp -s "$path" "$live_dir/$rel"; then
+      fail "$label differs: $path vs $live_dir/$rel"
+      bad=1
+    fi
+  done < <(/usr/bin/find "$repo_dir" -type f ! -name '*.pyc' -print0)
+  [ "$bad" -eq 0 ] && ok "$label"
+}
+
+expect_repo_files_in_live "$ROOT/claude/hooks" "$HOME_DIR/.claude/hooks" "repo Claude hooks present in live home"
+expect_repo_files_in_live "$ROOT/codex/hooks" "$HOME_DIR/.codex/hooks" "repo Codex hooks present in live home"
+expect_repo_files_in_live "$ROOT/codex/agents" "$HOME_DIR/.codex/agents" "repo Codex agents present in live home"
 
 json_has_hook_command "$HOME_DIR/.claude/settings.json" "PreToolUse" "Bash" ".claude/hooks/rtk-rewrite.sh" "Claude RTK PreToolUse hook"
 json_has_hook_command "$HOME_DIR/.codex/hooks.json" "PreToolUse" "Bash" ".codex/hooks/rtk-rewrite.sh" "Codex RTK PreToolUse hook"
@@ -148,7 +201,8 @@ CANON_SKILLS="$HOME_DIR/.agents/skills"
 CLAUDE_SKILLS="$HOME_DIR/.claude/skills"
 CODEX_SKILLS="$HOME_DIR/.codex/skills"
 # Legacy source-command names remain excluded; chronicle is Codex-only.
-CLAUDE_EXCLUDE_PATTERN='^source-command-|^chronicle$'
+CLAUDE_EXCLUDE_PATTERN='^[[:space:]]*(source-command-|chronicle$)'
+CODEX_EXCLUDE_PATTERN='^[[:space:]]*compact-plus$'
 SKILL_EXCEPTIONS="$ROOT/manifests/skill-store-exceptions.json"
 
 is_skill_exception() {
@@ -187,7 +241,7 @@ skill_parity_check() {
 }
 
 skill_parity_check "$CLAUDE_SKILLS" "canonical <-> Claude skills" "$CLAUDE_EXCLUDE_PATTERN" "claude"
-skill_parity_check "$CODEX_SKILLS" "canonical <-> Codex skills" "" "codex"
+skill_parity_check "$CODEX_SKILLS" "canonical <-> Codex skills" "$CODEX_EXCLUDE_PATTERN" "codex"
 
 orphan_real_dirs_check() {
   local agent_dir="$1"
@@ -198,6 +252,9 @@ orphan_real_dirs_check() {
   while IFS= read -r path; do
     [ -n "$path" ] || continue
     name="$(basename "$path")"
+    case "$name" in
+      paseo|paseo-*) continue ;;
+    esac
     source="$HOME_DIR/.hermes/skills/$name"
     if is_skill_exception "$name" "$mirror"; then
       if [ -d "$source" ] && diff -qr "$source" "$path" >/dev/null; then

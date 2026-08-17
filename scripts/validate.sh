@@ -126,7 +126,7 @@ else
   printf 'SKIP: live harness sync audit (Claude/Codex/agents homes unavailable)\n'
 fi
 
-check_no_matches 'Private home paths remain:' '(/Users/(maylac|gotasa+ki)|-Users-(maylac|gotasa+ki))'
+check_no_matches 'Private home paths remain:' '(\\?/Users\\?/(maylac|gotasa\+ki)|-Users-(maylac|gotasa\+ki))'
 check_no_matches 'Email address remains:' 'may\.lac1206@gmail\.com'
 check_no_matches 'GitHub token-like value remains:' '(gho_[A-Za-z0-9_]{20,}|ghp_[A-Za-z0-9_]{20,}|ghu_[A-Za-z0-9_]{20,}|ghs_[A-Za-z0-9_]{20,}|github_pat_[A-Za-z0-9_]{20,})'
 # sk- must not be preceded by an alphanumeric so prose like "task-specific-ai-functions" doesn't match.

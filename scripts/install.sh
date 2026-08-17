@@ -4,12 +4,15 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APPLY_SKILLS=0
 APPLY_INSTRUCTIONS=0
+APPLY_ASSETS=0
 INSTRUCTIONS_ONLY=0
+ASSETS_ONLY=0
 BACKUP_DIR=""
 
 usage() {
   cat <<'USAGE'
-Usage: scripts/install.sh [--apply] [--instructions-only]
+Usage: scripts/install.sh [--apply] [--apply-instructions] [--apply-assets]
+                          [--instructions-only|--assets-only]
 
 Dry-run restore checks for the public-safe agent setup snapshot.
 
@@ -17,7 +20,10 @@ Options:
   --apply              Create missing skill symlinks in ~/.agents/skills.
   --apply-instructions Back up current instruction files, then replace them
                        with symlinks to this repo's canonical snapshots.
+  --apply-assets       Back up and copy public-safe Claude/Codex agent and
+                       hook files from this repo.
   --instructions-only  Show only instruction-file comparisons.
+  --assets-only        Show only agent and hook file comparisons.
 USAGE
 }
 
@@ -29,8 +35,14 @@ while [ "$#" -gt 0 ]; do
     --apply-instructions)
       APPLY_INSTRUCTIONS=1
       ;;
+    --apply-assets)
+      APPLY_ASSETS=1
+      ;;
     --instructions-only)
       INSTRUCTIONS_ONLY=1
+      ;;
+    --assets-only)
+      ASSETS_ONLY=1
       ;;
     -h|--help)
       usage
@@ -43,6 +55,19 @@ while [ "$#" -gt 0 ]; do
   esac
   shift
 done
+
+if [ "$INSTRUCTIONS_ONLY" -eq 1 ] && [ "$ASSETS_ONLY" -eq 1 ]; then
+  printf '%s\n' 'ERROR: --instructions-only and --assets-only cannot be combined.' >&2
+  exit 2
+fi
+if [ "$INSTRUCTIONS_ONLY" -eq 1 ] && [ "$APPLY_ASSETS" -eq 1 ]; then
+  printf '%s\n' 'ERROR: --apply-assets cannot be combined with --instructions-only.' >&2
+  exit 2
+fi
+if [ "$ASSETS_ONLY" -eq 1 ] && { [ "$APPLY_INSTRUCTIONS" -eq 1 ] || [ "$APPLY_SKILLS" -eq 1 ]; }; then
+  printf '%s\n' 'ERROR: --assets-only cannot apply instructions or skills.' >&2
+  exit 2
+fi
 
 compare_file() {
   local src="$1"
@@ -177,6 +202,58 @@ apply_materialized_file() {
   printf 'materialized: %s -> %s (%s)\n' "$src" "$dest" "$label"
 }
 
+apply_snapshot_file() {
+  local src="$1"
+  local dest="$2"
+  local label="$3"
+
+  if [ -f "$dest" ] && cmp -s "$src" "$dest"; then
+    printf 'already copied: %s (%s)\n' "$dest" "$label"
+    return 0
+  fi
+
+  backup_target "$dest"
+  mkdir -p "$(dirname "$dest")"
+  rm -f "$dest"
+  cp -p "$src" "$dest"
+  printf 'copied: %s -> %s (%s)\n' "$src" "$dest" "$label"
+}
+
+walk_asset_files() {
+  local callback="$1"
+  local mapping repo_dir live_dir path rel
+  for mapping in \
+    'claude/agents:.claude/agents' \
+    'codex/agents:.codex/agents' \
+    'claude/hooks:.claude/hooks' \
+    'codex/hooks:.codex/hooks'; do
+    repo_dir="${mapping%%:*}"
+    live_dir="${mapping#*:}"
+    [ -d "$ROOT/$repo_dir" ] || continue
+    while IFS= read -r -d '' path; do
+      rel="${path#"$ROOT/$repo_dir/"}"
+      "$callback" "$path" "$HOME/$live_dir/$rel" "$repo_dir/$rel"
+    done < <(/usr/bin/find "$ROOT/$repo_dir" -type f ! -name '*.pyc' -print0 | sort -z)
+  done
+}
+
+show_asset_file() {
+  compare_file "$1" "$2" "$3"
+}
+
+show_asset_dry_run() {
+  printf 'Agent and hook restore dry-run:\n'
+  walk_asset_files show_asset_file
+}
+
+apply_assets() {
+  printf '\nApplying public-safe agent and hook files:\n'
+  walk_asset_files apply_snapshot_file
+  if [ -n "$BACKUP_DIR" ]; then
+    printf 'Backed up replaced asset files under: %s\n' "$BACKUP_DIR"
+  fi
+}
+
 show_instruction_dry_run() {
   printf 'Instruction restore dry-run:\n'
   compare_file "$ROOT/home/AGENTS.md" "$HOME/AGENTS.md" '~/AGENTS.md'
@@ -271,13 +348,24 @@ sync_skills() {
   fi
 }
 
-show_instruction_dry_run
+if [ "$ASSETS_ONLY" -eq 0 ]; then
+  show_instruction_dry_run
+fi
 
 if [ "$APPLY_INSTRUCTIONS" -eq 1 ]; then
   apply_instruction_symlinks
 fi
 
 if [ "$INSTRUCTIONS_ONLY" -eq 0 ]; then
+  printf '\n'
+  show_asset_dry_run
+fi
+
+if [ "$APPLY_ASSETS" -eq 1 ]; then
+  apply_assets
+fi
+
+if [ "$INSTRUCTIONS_ONLY" -eq 0 ] && [ "$ASSETS_ONLY" -eq 0 ]; then
   printf '\n'
   sync_skills
 fi

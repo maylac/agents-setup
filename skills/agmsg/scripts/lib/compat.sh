@@ -110,7 +110,12 @@ compat_get_comm() {
       fi
       ;;
     *)
-      ps -o comm= -p "$pid" 2>/dev/null | xargs basename 2>/dev/null
+      # xargs basename は空白入りパス(例: Claude Desktop 管理CLIの
+      # ".../Application Support/.../claude")を複数引数に割り、basename の
+      # suffix 引数解釈で "Application" を返してしまう(2026-07-17修正)。
+      local _comm_line
+      _comm_line=$(ps -o comm= -p "$pid" 2>/dev/null)
+      [ -n "$_comm_line" ] && basename -- "$_comm_line" 2>/dev/null
       ;;
   esac
 }

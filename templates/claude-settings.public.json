@@ -1,10 +1,23 @@
 {
+  "model": "fable",
+  "effortLevel": "high",
   "language": "Japanese",
   "theme": "dark-daltonized",
+  "outputStyle": "Maylac Operator",
+  "voice": {
+    "autoSubmit": false,
+    "enabled": true,
+    "mode": "hold"
+  },
   "includeCoAuthoredBy": false,
   "remoteControlAtStartup": true,
+  "agentPushNotifEnabled": true,
+  "awaySummaryEnabled": false,
+  "inputNeededNotifEnabled": true,
+  "preferredNotifChannel": "terminal_bell",
+  "skipDangerousModePermissionPrompt": true,
+  "skipWorkflowUsageWarning": true,
   "permissions": {
-    "defaultMode": "auto",
     "allow": [
       "Bash",
       "Bash(ls *)",
@@ -20,16 +33,22 @@
       "Bash(git worktree list *)"
     ],
     "ask": [
-      "Bash(git push *)",
-      "Bash(git -C * push *)",
-      "Bash(gh pr create *)",
-      "Bash(gh release *)",
       "Bash(brew install *)",
       "Bash(brew uninstall *)",
+      "Bash(gh pr create *)",
+      "Bash(gh release *)",
+      "Bash(git -C * push *)",
+      "Bash(git push *)",
       "Bash(npm publish *)",
       "Bash(pnpm publish *)",
-      "Bash(yarn publish *)"
+      "Bash(yarn publish *)",
+      "mcp__gbrain__delete_page",
+      "mcp__gbrain__revert_version",
+      "mcp__notebooklm-mcp__notebook_delete",
+      "mcp__notebooklm-mcp__source_delete",
+      "mcp__notebooklm-mcp__studio_delete"
     ],
+    "defaultMode": "auto",
     "deny": [
       "Bash(rm -rf *)",
       "Bash(curl *)",
@@ -46,102 +65,210 @@
     ]
   },
   "statusLine": {
-    "type": "command",
-    "command": "$HOME/.claude/statusline.py"
+    "command": "$HOME/.claude/statusline.py",
+    "type": "command"
   },
   "hooks": {
-    "Stop": [
+    "InstructionsLoaded": [
       {
-        "matcher": "",
         "hooks": [
           {
-            "type": "command",
-            "command": "$HOME/.claude/hooks/agent-terminal-notify.sh Claude"
+            "async": true,
+            "command": "$HOME/.claude/hooks/instructions-loaded-audit.py",
+            "type": "command"
           }
-        ]
+        ],
+        "matcher": ""
       }
     ],
-    "Elicitation": [
+    "Notification": [
       {
-        "matcher": "",
         "hooks": [
           {
-            "type": "command",
-            "command": "afplay /System/Library/Sounds/Ping.aiff 2>/dev/null || true",
-            "async": true
+            "command": "$HOME/.local/share/uv/tools/ccgram/bin/python -m ccgram.main hook",
+            "timeout": 5,
+            "type": "command"
+          },
+          {
+            "async": true,
+            "command": "$HOME/.agents/hooks/notify-mobile.sh idle Claude",
+            "type": "command"
           }
         ]
       }
     ],
     "PermissionRequest": [
       {
-        "matcher": "",
         "hooks": [
           {
-            "type": "command",
-            "command": "afplay /System/Library/Sounds/Submarine.aiff 2>/dev/null || true",
-            "async": true
+            "async": true,
+            "command": "$HOME/.agents/hooks/notify-mobile.sh approval Claude",
+            "type": "command"
           }
-        ]
-      }
-    ],
-    "PreToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "$HOME/.claude/hooks/rtk-rewrite.sh"
-          }
-        ]
-      }
-    ],
-    "PreCompact": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "$HOME/.claude/hooks/compaction-recovery.py"
-          }
-        ]
+        ],
+        "matcher": ""
       }
     ],
     "PostCompact": [
       {
-        "matcher": "",
         "hooks": [
           {
-            "type": "command",
-            "command": "$HOME/.claude/hooks/compaction-recovery.py"
+            "command": "$HOME/.claude/hooks/compaction-recovery.py",
+            "type": "command"
+          }
+        ],
+        "matcher": ""
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "command": "$HOME/.claude/hooks/compaction-recovery.py",
+            "type": "command"
+          }
+        ],
+        "matcher": ""
+      }
+    ],
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "command": "$HOME/.claude/hooks/rtk-rewrite.sh",
+            "type": "command"
+          }
+        ],
+        "matcher": "Bash"
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "async": true,
+            "command": "$HOME/.local/share/uv/tools/ccgram/bin/python -m ccgram.main hook",
+            "timeout": 5,
+            "type": "command"
           }
         ]
       }
     ],
-    "InstructionsLoaded": [
+    "SessionStart": [
       {
-        "matcher": "",
         "hooks": [
           {
-            "type": "command",
-            "command": "$HOME/.claude/hooks/instructions-loaded-audit.py",
-            "async": true
+            "command": "bash '$HOME/.claude/hooks/herdr-agent-state.sh' session",
+            "timeout": 10,
+            "type": "command"
+          },
+          {
+            "command": "$HOME/.local/share/uv/tools/ccgram/bin/python -m ccgram.main hook",
+            "timeout": 5,
+            "type": "command"
+          }
+        ],
+        "matcher": "*"
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "command": "$HOME/.claude/hooks/agent-terminal-notify.sh Claude",
+            "type": "command"
+          },
+          {
+            "command": "$HOME/.local/share/uv/tools/ccgram/bin/python -m ccgram.main hook",
+            "timeout": 5,
+            "type": "command"
+          },
+          {
+            "async": true,
+            "command": "$HOME/.agents/hooks/notify-mobile.sh done Claude",
+            "type": "command"
+          }
+        ],
+        "matcher": ""
+      }
+    ],
+    "StopFailure": [
+      {
+        "hooks": [
+          {
+            "async": true,
+            "command": "$HOME/.local/share/uv/tools/ccgram/bin/python -m ccgram.main hook",
+            "timeout": 5,
+            "type": "command"
+          },
+          {
+            "async": true,
+            "command": "$HOME/.agents/hooks/notify-mobile.sh error Claude",
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          {
+            "async": true,
+            "command": "$HOME/.local/share/uv/tools/ccgram/bin/python -m ccgram.main hook",
+            "timeout": 5,
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "async": true,
+            "command": "$HOME/.local/share/uv/tools/ccgram/bin/python -m ccgram.main hook",
+            "timeout": 5,
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "TaskCompleted": [
+      {
+        "hooks": [
+          {
+            "async": true,
+            "command": "$HOME/.local/share/uv/tools/ccgram/bin/python -m ccgram.main hook",
+            "timeout": 5,
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "TeammateIdle": [
+      {
+        "hooks": [
+          {
+            "async": true,
+            "command": "$HOME/.local/share/uv/tools/ccgram/bin/python -m ccgram.main hook",
+            "timeout": 5,
+            "type": "command"
           }
         ]
       }
     ]
   },
-  "outputStyle": "Maylac Operator",
   "enabledPlugins": {
-    "codex@openai-codex": true,
-    "clangd-lsp@claude-plugins-official": true,
     "andrej-karpathy-skills@karpathy-skills": false,
-    "frontend-design@claude-plugins-official": true,
-    "superpowers@superpowers-marketplace": true,
-    "pyright-lsp@claude-plugins-official": true,
-    "typescript-lsp@claude-plugins-official": true,
-    "kotlin-lsp@claude-plugins-official": true,
     "aws-core@claude-plugins-official": false,
-    "project-artifact@claude-plugins-official": false
+    "clangd-lsp@claude-plugins-official": true,
+    "codex@openai-codex": true,
+    "compact-plus@compact-plus-local": true,
+    "frontend-design@claude-plugins-official": true,
+    "kotlin-lsp@claude-plugins-official": true,
+    "project-artifact@claude-plugins-official": false,
+    "pyright-lsp@claude-plugins-official": true,
+    "superpowers@superpowers-marketplace": true,
+    "typescript-lsp@claude-plugins-official": true
   }
 }

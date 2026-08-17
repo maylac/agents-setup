@@ -29,6 +29,7 @@ mkdir -p \
   "$REPO/scripts" \
   "$REPO/manifests" \
   "$REPO/codex/hooks" \
+  "$REPO/codex/agents" \
   "$REPO/templates" \
   "$REPO/home" \
   "$REPO/claude/hooks" \
@@ -68,7 +69,8 @@ cp "$REPO/codex/hooks/rtk-rewrite.sh" "$HOME_FIXTURE/.codex/hooks/rtk-rewrite.sh
 
 printf 'agent\n' > "$REPO/claude/agents/helper.md"
 cp "$REPO/claude/agents/helper.md" "$HOME_FIXTURE/.claude/agents/helper.md"
-printf 'name = "helper"\n' > "$HOME_FIXTURE/.codex/agents/helper.toml"
+printf 'name = "helper"\n' > "$REPO/codex/agents/helper.toml"
+cp "$REPO/codex/agents/helper.toml" "$HOME_FIXTURE/.codex/agents/helper.toml"
 
 ln -s "$REPO/home/AGENTS.md" "$HOME_FIXTURE/AGENTS.md"
 ln -s "$REPO/home/AGENTS.md" "$HOME_FIXTURE/CLAUDE.md"
@@ -83,7 +85,7 @@ ln -s "../AGENTS.md" "$HOME_FIXTURE/.codex/AGENTS.md"
 cat > "$REPO/codex/hooks.json" <<'JSON'
 {"hooks":{"PreToolUse":[{"matcher":"Bash","hooks":[{"command":"$HOME/.codex/hooks/rtk-rewrite.sh"}]}]}}
 JSON
-printf '{"hooks":{"PreToolUse":[{"matcher":"Bash","hooks":[{"command":"%s/.codex/hooks/rtk-rewrite.sh"}]}]}}\n' "$HOME_FIXTURE" > "$HOME_FIXTURE/.codex/hooks.json"
+printf '{"hooks":{"PreToolUse":[{"matcher":"Bash","hooks":[{"command":"%s/.codex/hooks/rtk-rewrite.sh"}]}],"Stop":[{"hooks":[{"command":"%s/.vibe-island/bin/vibe-island-bridge"},{"command":"%s/.codex/runcat-hook.py"}]}]}}\n' "$HOME_FIXTURE" "$HOME_FIXTURE" "$HOME_FIXTURE" > "$HOME_FIXTURE/.codex/hooks.json"
 printf '{"hooks":{"PreToolUse":[{"matcher":"Bash","hooks":[{"command":"%s/.claude/hooks/rtk-rewrite.sh"}]}],"Stop":[{"hooks":[{"command":"echo done"}]}]}}\n' "$HOME_FIXTURE" > "$HOME_FIXTURE/.claude/settings.json"
 
 cat > "$HOME_FIXTURE/.agents/skills/alpha/SKILL.md" <<'SKILL'
@@ -106,7 +108,8 @@ cp -R "$HOME_FIXTURE/.hermes/skills/hermes-local" "$HOME_FIXTURE/.claude/skills/
 cp -R "$HOME_FIXTURE/.hermes/skills/hermes-local" "$HOME_FIXTURE/.codex/skills/hermes-local"
 
 success_output="$(HOME="$HOME_FIXTURE" TMPDIR="$TEST_TMP/tmp/" bash "$REPO/scripts/audit-sync.sh" 2>&1)"
-assert_contains "$success_output" "ok: live Codex hook registration"
+assert_contains "$success_output" "ok: live Codex portable hook registration"
+assert_contains "$success_output" "ok: repo Codex agents present in live home"
 assert_contains "$success_output" "ok: canonical <-> Claude skills parity"
 assert_contains "$success_output" "AI config sync audit passed."
 
@@ -118,6 +121,15 @@ set -e
 [ "$drift_status" -eq 1 ] || fail "expected Hermes-local exception drift audit to fail, got $drift_status"
 assert_contains "$drift_output" "FAIL: ~/.claude/skills exception drift"
 cp "$HOME_FIXTURE/.hermes/skills/hermes-local/SKILL.md" "$HOME_FIXTURE/.claude/skills/hermes-local/SKILL.md"
+
+printf 'drift\n' >> "$HOME_FIXTURE/.codex/agents/helper.toml"
+set +e
+agent_drift_output="$(HOME="$HOME_FIXTURE" TMPDIR="$TEST_TMP/tmp/" bash "$REPO/scripts/audit-sync.sh" 2>&1)"
+agent_drift_status=$?
+set -e
+[ "$agent_drift_status" -eq 1 ] || fail "expected Codex agent drift audit to fail, got $agent_drift_status"
+assert_contains "$agent_drift_output" "FAIL: repo Codex agents present in live home differs"
+cp "$REPO/codex/agents/helper.toml" "$HOME_FIXTURE/.codex/agents/helper.toml"
 
 printf '{"hooks":{"PreToolUse":[{"matcher":"Bash","hooks":[{"command":"%s/.codex/hooks/rtk-rewrite.sh"}]}],"Stop":[{"hooks":[{"command":"open -a Ghostty"}]}]}}\n' "$HOME_FIXTURE" > "$HOME_FIXTURE/.codex/hooks.json"
 

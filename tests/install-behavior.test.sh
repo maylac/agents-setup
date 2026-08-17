@@ -42,7 +42,11 @@ mkdir -p \
   "$REPO/claude/rules/python" \
   "$REPO/claude/rules/swift" \
   "$REPO/claude/rules/kotlin" \
+  "$REPO/claude/agents" \
+  "$REPO/claude/hooks" \
   "$REPO/codex" \
+  "$REPO/codex/agents" \
+  "$REPO/codex/hooks" \
   "$REPO/skills/alpha" \
   "$REPO/skills/existing" \
   "$REPO/skills/.scratch" \
@@ -57,6 +61,11 @@ printf 'claude\n' > "$REPO/claude/CLAUDE.md"
 printf 'claude agents\n' > "$REPO/claude/AGENTS.md"
 printf 'rtk\n' > "$REPO/claude/RTK.md"
 printf 'rule\n' > "$REPO/claude/rules/common/rule.md"
+printf 'claude agent\n' > "$REPO/claude/agents/helper.md"
+printf 'codex agent\n' > "$REPO/codex/agents/helper.toml"
+printf '#!/usr/bin/env bash\nexit 0\n' > "$REPO/claude/hooks/helper.sh"
+printf '#!/usr/bin/env bash\nexit 0\n' > "$REPO/codex/hooks/helper.sh"
+chmod +x "$REPO/claude/hooks/helper.sh" "$REPO/codex/hooks/helper.sh"
 printf 'skill\n' > "$REPO/skills/alpha/SKILL.md"
 printf 'skill\n' > "$REPO/skills/existing/SKILL.md"
 printf 'hidden\n' > "$REPO/skills/.scratch/SKILL.md"
@@ -70,6 +79,23 @@ printf '{"hooks":{"PreToolUse":[{"matcher":"Bash","hooks":[{"command":"%s/.codex
 instructions_output="$(HOME="$HOME_FIXTURE" TMPDIR="$TEST_TMP/tmp/" bash "$REPO/scripts/install.sh" --instructions-only)"
 assert_contains "$instructions_output" "same materialized: $HOME_FIXTURE/.codex/hooks.json"
 assert_not_contains "$instructions_output" "Target skill directory:"
+assert_not_contains "$instructions_output" "Agent and hook restore dry-run:"
+
+assets_output="$(HOME="$HOME_FIXTURE" TMPDIR="$TEST_TMP/tmp/" bash "$REPO/scripts/install.sh" --assets-only)"
+assert_contains "$assets_output" "Agent and hook restore dry-run:"
+assert_contains "$assets_output" "would copy missing: $REPO/claude/agents/helper.md -> $HOME_FIXTURE/.claude/agents/helper.md"
+assert_not_contains "$assets_output" "Instruction restore dry-run:"
+assert_not_contains "$assets_output" "Target skill directory:"
+
+apply_assets_output="$(HOME="$HOME_FIXTURE" TMPDIR="$TEST_TMP/tmp/" bash "$REPO/scripts/install.sh" --apply-assets --assets-only)"
+assert_contains "$apply_assets_output" "copied: $REPO/claude/agents/helper.md -> $HOME_FIXTURE/.claude/agents/helper.md"
+cmp -s "$REPO/claude/agents/helper.md" "$HOME_FIXTURE/.claude/agents/helper.md" || fail 'Claude agent was not copied'
+cmp -s "$REPO/codex/agents/helper.toml" "$HOME_FIXTURE/.codex/agents/helper.toml" || fail 'Codex agent was not copied'
+[ -x "$HOME_FIXTURE/.claude/hooks/helper.sh" ] || fail 'Claude hook executable mode was not preserved'
+[ -x "$HOME_FIXTURE/.codex/hooks/helper.sh" ] || fail 'Codex hook executable mode was not preserved'
+
+repeat_assets_output="$(HOME="$HOME_FIXTURE" TMPDIR="$TEST_TMP/tmp/" bash "$REPO/scripts/install.sh" --apply-assets --assets-only)"
+assert_contains "$repeat_assets_output" "already copied: $HOME_FIXTURE/.claude/agents/helper.md"
 
 set +e
 invalid_output="$(HOME="$HOME_FIXTURE" TMPDIR="$TEST_TMP/tmp/" bash "$REPO/scripts/install.sh" --bogus 2>&1)"

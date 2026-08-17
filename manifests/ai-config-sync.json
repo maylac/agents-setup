@@ -95,6 +95,18 @@
     {
       "id": "codex-agent-superset",
       "reason": "Claude agents are trimmed to the small always-available roster, while Codex keeps language and execution subagent TOML files with explicit model pins. The extra Codex agents are dormant until selected and do not add Claude context."
+    },
+    {
+      "id": "mac-managed-codex-hooks",
+      "reason": "Vibe Island and RunCat hooks are Mac-only. The portable hook snapshot and Surface install exclude them; the Mac live audit permits only these documented extras."
+    },
+    {
+      "id": "codex-compact-plus",
+      "reason": "compact-plus is Codex-only and links to the separately versioned ~/workspace/tools/compact-plus repository rather than the canonical ~/.agents/skills store."
+    },
+    {
+      "id": "paseo-managed-skills",
+      "reason": "paseo and paseo-* are installed as real directories by the Paseo app in canonical, Claude, and Codex stores. They are intentionally not replaced with canonical symlinks because that would conflict with Paseo updates."
     }
   ]
 }

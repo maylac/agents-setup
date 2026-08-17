@@ -1,6 +1,6 @@
 ---
 name: fable-advisor
-description: Fable 5 checkpoint advisor for long exploratory tasks. Use at planned checkpoints, or when 3+ consecutive iterations yield only marginal gains on the same line, to re-rank the remaining directions with frontier judgment (hard cap 3 consults per run — see fable-escalation). Advice only — never implements. Reuse the same instance across checkpoints via SendMessage so its context and prompt cache accumulate.
+description: Fable 5 checkpoint advisor for long exploratory tasks — use only while the main session is NOT on Fable (cap exhausted / opusplan fallback); a Fable main session re-ranks directions itself. Use at planned checkpoints, or when 3+ consecutive iterations yield only marginal gains on the same line, to re-rank the remaining directions with frontier judgment (hard cap 3 consults per run — see fable-escalation). Advice only — never implements. Reuse the same instance across checkpoints via SendMessage so its context and prompt cache accumulate.
 tools: ["Read", "Grep", "Glob"]
 model: fable
 effort: high
