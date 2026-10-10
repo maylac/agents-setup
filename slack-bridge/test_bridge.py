@@ -45,6 +45,18 @@ class BridgeTest(unittest.TestCase):
             self.assertNotIn("bypassPermissions", cmd)
             self.assertNotIn("--dangerously-skip-permissions", cmd)
 
+    def test_github_transport_config(self):
+        env = {"BRIDGE_TRANSPORT": "github", "BRIDGE_ALLOWED_SENDERS": "maylac", "BRIDGE_ALLOWED_REPOS": "/tmp"}
+        with self.assertRaises(SystemExit):
+            bridge.load_config(env)
+        cfg = bridge.load_config(dict(env, BRIDGE_GITHUB_REPO="maylac/agent-tasks"))
+        self.assertEqual((cfg["transport"], cfg["github_label"]), ("github", "agent-task"))
+
+    def test_github_tasks_only_from_allowlisted_authors(self):
+        issues = [{"number": 1, "author": {"login": "U_ME"}}, {"number": 2, "author": {"login": "stranger"}},
+                  {"number": 3, "author": None}]
+        self.assertEqual([i["number"] for i in bridge.github_tasks(issues, self.cfg)], [1])
+
     def test_repo_allowlist_uses_realpath(self):
         self.assertIn(os.path.realpath("/tmp"), self.cfg["repos"])
 

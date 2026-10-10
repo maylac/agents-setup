@@ -4,6 +4,9 @@
 Polls one Slack channel (stdlib only, no Socket Mode), accepts top-level
 messages only from allowlisted senders, runs `claude -p` or `agy --print`
 in a fresh git worktree of an allowlisted repo, and replies in the thread.
+With BRIDGE_TRANSPORT=github it instead reads open issues labelled
+`agent-task` (via the already-authenticated `gh` CLI), replies as issue
+comments, and closes the issue; Dots relays results to Slack.
 
 Contract format (header lines, blank line, then the task body):
 
@@ -26,14 +29,21 @@ REPLY_LIMIT = 3500
 
 
 def load_config(env=os.environ):
-    required = ["SLACK_BOT_TOKEN", "SLACK_CHANNEL_ID", "BRIDGE_ALLOWED_SENDERS", "BRIDGE_ALLOWED_REPOS"]
+    transport = env.get("BRIDGE_TRANSPORT", "slack")
+    if transport not in ("slack", "github"):
+        raise SystemExit("slack-bridge: BRIDGE_TRANSPORT must be 'slack' or 'github'")
+    required = ["BRIDGE_ALLOWED_SENDERS", "BRIDGE_ALLOWED_REPOS"]
+    required += ["SLACK_BOT_TOKEN", "SLACK_CHANNEL_ID"] if transport == "slack" else ["BRIDGE_GITHUB_REPO"]
     missing = [k for k in required if not env.get(k)]
     if missing:
         raise SystemExit("slack-bridge: missing config: " + ", ".join(missing))
     split = lambda v: [x.strip() for x in v.split(",") if x.strip()]
     return {
-        "token": env["SLACK_BOT_TOKEN"],
-        "channel": env["SLACK_CHANNEL_ID"],
+        "transport": transport,
+        "github_repo": env.get("BRIDGE_GITHUB_REPO", ""),
+        "github_label": env.get("BRIDGE_GITHUB_LABEL", "agent-task"),
+        "token": env.get("SLACK_BOT_TOKEN", ""),
+        "channel": env.get("SLACK_CHANNEL_ID", ""),
         "senders": set(split(env["BRIDGE_ALLOWED_SENDERS"])),
         "repos": {os.path.realpath(p) for p in split(env["BRIDGE_ALLOWED_REPOS"])},
         "state": env.get("BRIDGE_STATE_FILE", os.path.expanduser("~/.local/state/slack-bridge/last_ts")),
@@ -100,23 +110,23 @@ def reply(cfg, ts, text):
     slack(cfg, "chat.postMessage", channel=cfg["channel"], thread_ts=ts, text=text[:REPLY_LIMIT])
 
 
-def run_task(cfg, msg):
-    ts = msg["ts"]
+def run_task(cfg, text, task_id, say):
+    """Run one contract; `say(text)` posts a progress or result reply."""
     try:
-        header, body = parse_contract(msg.get("text", ""))
+        header, body = parse_contract(text)
     except ValueError as e:
-        return reply(cfg, ts, "rejected: %s" % e)
+        return say("rejected: %s" % e)
     repo = os.path.realpath(os.path.expanduser(header["repo"]))
     if repo not in cfg["repos"]:
-        return reply(cfg, ts, "rejected: repo not in BRIDGE_ALLOWED_REPOS: %s" % repo)
-    name = "bridge-" + ts.replace(".", "-")
+        return say("rejected: repo not in BRIDGE_ALLOWED_REPOS: %s" % repo)
+    name = "bridge-" + task_id
     workdir = os.path.join(cfg["worktrees"], name)
     os.makedirs(cfg["worktrees"], exist_ok=True)
     wt = subprocess.run(["git", "-C", repo, "worktree", "add", "-b", name, workdir],
                         capture_output=True, text=True)
     if wt.returncode != 0:
-        return reply(cfg, ts, "failed: git worktree add\n" + wt.stderr[-1000:])
-    reply(cfg, ts, "started: %s in %s (branch %s)" % (header["agent"], workdir, name))
+        return say("failed: git worktree add\n" + wt.stderr[-1000:])
+    say("started: %s in %s (branch %s)" % (header["agent"], workdir, name))
     try:
         res = subprocess.run(build_command(header, body, cfg), cwd=workdir,
                              capture_output=True, text=True, timeout=cfg["timeout"])
@@ -125,7 +135,7 @@ def run_task(cfg, msg):
     except subprocess.TimeoutExpired:
         status, output = "failed (timeout %ds)" % cfg["timeout"], ""
     tail = output[-(REPLY_LIMIT - 200):]
-    reply(cfg, ts, "%s\nbranch: %s\n```\n%s\n```" % (status, name, tail))
+    say("%s\nbranch: %s\n```\n%s\n```" % (status, name, tail))
 
 
 def read_state(path):
@@ -152,14 +162,37 @@ def poll_once(cfg):
     for msg in sorted(out.get("messages", []), key=lambda m: float(m["ts"])):
         write_state(cfg["state"], msg["ts"])  # advance first: a crash never re-runs a task
         if is_task(msg, cfg):
-            run_task(cfg, msg)
+            ts = msg["ts"]
+            run_task(cfg, msg.get("text", ""), ts.replace(".", "-"), lambda t, ts=ts: reply(cfg, ts, t))
+
+
+def gh(*args):
+    return subprocess.run(["gh"] + list(args), capture_output=True, text=True, check=True).stdout
+
+
+def github_tasks(issues, cfg):
+    return [i for i in issues if (i.get("author") or {}).get("login") in cfg["senders"]]
+
+
+def poll_github_once(cfg):
+    repo, label = cfg["github_repo"], cfg["github_label"]
+    issues = json.loads(gh("issue", "list", "-R", repo, "--label", label, "--state", "open",
+                           "--json", "number,body,author", "--limit", "20"))
+    for issue in sorted(github_tasks(issues, cfg), key=lambda i: i["number"]):
+        num = str(issue["number"])
+        # Remove the label first: a crash never re-runs a task.
+        gh("issue", "edit", num, "-R", repo, "--remove-label", label)
+        say = lambda t, num=num: gh("issue", "comment", num, "-R", repo, "--body", t[:REPLY_LIMIT])
+        run_task(cfg, issue.get("body", ""), "gh%s-%d" % (num, int(time.time())), say)
+        gh("issue", "close", num, "-R", repo)
 
 
 def main():
     cfg = load_config()
+    poll = poll_github_once if cfg["transport"] == "github" else poll_once
     while True:
         try:
-            poll_once(cfg)
+            poll(cfg)
         except Exception as e:  # keep the daemon alive; launchd logs stderr
             print("slack-bridge: %s" % e, file=sys.stderr, flush=True)
         time.sleep(cfg["interval"])

@@ -28,6 +28,17 @@ Goal, owned files, acceptance criteria as runnable checks, time budget.
    Optional: `BRIDGE_POLL_SECONDS` (20), `BRIDGE_TASK_TIMEOUT_SECONDS` (3600), `BRIDGE_CLAUDE_PERMISSION_MODE` (auto), `BRIDGE_AGY_DEFAULT_MODEL`.
 3. Install: `mkdir -p ~/.local/state/slack-bridge && sed "s#\$HOME#$HOME#g" launchd/com.maylac.slack-bridge.plist.template > ~/Library/LaunchAgents/com.maylac.slack-bridge.plist && launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.maylac.slack-bridge.plist`
 
+### GitHub transport (no Slack token needed)
+
+If Dots is connected to Slack and GitHub but you do not want a separate Slack bot, set `BRIDGE_TRANSPORT=github`. Dots opens an issue labelled `agent-task` whose body is the contract; the bridge (using the existing `gh` login) removes the label, comments progress and results, and closes the issue; Dots relays the result to Slack.
+
+```
+BRIDGE_TRANSPORT=github
+BRIDGE_GITHUB_REPO=maylac/agent-tasks
+BRIDGE_ALLOWED_SENDERS=maylac
+BRIDGE_ALLOWED_REPOS=/Users/gotasasaki/workspace/maylac/repo-a
+```
+
 Missing config makes the daemon exit (fail closed). The first run records "now" and never executes older channel history. Logs: `~/.local/state/slack-bridge/err.log`.
 
 ## Test
