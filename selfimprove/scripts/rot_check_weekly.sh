@@ -3,7 +3,7 @@
 # findings または巡回期限があれば macOS 通知を出し、古いレポートを刈る。
 set -u
 
-SELFIMPROVE="$HOME/workspace/agents-setup/selfimprove"
+SELFIMPROVE="$HOME/workspace/maylac/agents-setup/selfimprove"
 OUT=$(/usr/bin/python3 "$SELFIMPROVE/scripts/rot_check.py" 2>&1)
 STATUS=$?
 echo "$OUT"
