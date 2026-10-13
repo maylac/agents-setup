@@ -99,10 +99,9 @@ only in the live home are not deleted. A snapshotted Herdr hook may be copied,
 but the Surface/Linux Herdr installation remains its owner and may regenerate
 it. Vibe Island and RunCat registration is excluded from the portable snapshot.
 
-`paseo` and `paseo-*` remain app-managed real directories rather than canonical
-symlinks. `compact-plus` is a Codex-only symlink to the separately restored
-`~/workspace/tools/compact-plus` repository. Both shapes are intentional audit
-exceptions and must be recreated from their owning installation source.
+`compact-plus` is a Codex-only symlink to the separately restored
+`~/workspace/tools/compact-plus` repository and must be recreated from its
+owning installation source.
 
 The backup sanitizer rewrites local home paths and Claude project-id fragments
 such as `-Users-...` when snapshots are generated. If a future snapshot contains

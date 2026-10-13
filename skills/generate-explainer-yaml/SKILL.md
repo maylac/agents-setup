@@ -1,6 +1,6 @@
 ---
 name: generate-explainer-yaml
-description: Create or refine core.yaml and view.yaml from a document, repo summary, PR, README, design note, or spec for the explainer pipeline.
+description: Create or refine the core.yaml and view.yaml inputs for an explainer from a document, repo, PR, or spec.
 ---
 
 # generate-explainer-yaml

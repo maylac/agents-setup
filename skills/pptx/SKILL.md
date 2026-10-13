@@ -1,10 +1,12 @@
 ---
 name: pptx
-description: "Any task involving a .pptx file as input or output: create slide decks or presentations; read, parse, or extract text from .pptx; edit or update existing presentations; combine or split slide files; work with templates, layouts, speaker notes, or comments. Trigger on deck, slides, presentation, or any .pptx filename."
+description: "Standalone PPTX tooling: edit slide XML or use PptxGenJS when a presentation plugin is unavailable or low-level control is needed."
 license: Proprietary. LICENSE.txt has complete terms
 ---
 
 # PPTX Skill
+
+Use an explicitly requested tool or presentation skill. Prefer the installed `presentations:Presentations` workflow for ordinary deck creation when available. Use this skill for its standalone template-editing and PptxGenJS workflows. Resolve `scripts/` from this skill's directory and verify the required tools before running them. Preserve supplied templates and visual requirements over the optional design ideas below.
 
 ## Quick Reference
 

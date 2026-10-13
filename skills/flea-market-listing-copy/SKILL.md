@@ -1,6 +1,6 @@
 ---
 name: flea-market-listing-copy
-description: Write Japanese resale listings, titles, condition notes, keywords, pricing guidance, and replies for Mercari/Rakuma/Yahoo.
+description: Write Japanese resale listings and buyer replies for Mercari, Rakuma, or Yahoo, with condition notes and pricing guidance.
 ---
 
 # Flea Market Listing Copy

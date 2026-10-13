@@ -1,6 +1,6 @@
 ---
 name: extract-approach
-description: 難問を解いた直後に「どう考えて解いたか」を1ノートに記録するレコーダー。一筋縄でいかないバグの解決、アーキテクチャ判断、非自明なデバッグ、設計トレードオフの決着がついた直後に必ず使用する。単純な作業(タイポ修正、機械的変更、既知パターンの適用)では使わない。
+description: Record the verified solution to a non-obvious bug or design tradeoff in docs/learnings after resolution; skip routine fixes.
 ---
 
 # extract-approach — 解法レコーダー

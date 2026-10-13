@@ -1,6 +1,6 @@
 ---
 name: e2e-medallion-architecture
-description: 'Implement Bronze/Silver/Gold medallion lakehouses in Microsoft Fabric: workspace/lakehouse setup (schema-enabled vs legacy), PySpark + Delta ingestion/transform patterns per layer, notebook deployment via REST, pipeline orchestration, and Power BI Direct Lake consumption.'
+description: Implement Microsoft Fabric Bronze/Silver/Gold lakehouses with PySpark/Delta layers, pipelines, REST deployment, and Direct Lake.
 ---
 
 > **CRITICAL NOTES**

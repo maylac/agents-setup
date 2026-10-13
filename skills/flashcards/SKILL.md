@@ -1,6 +1,6 @@
 ---
 name: flashcards
-description: Generate or drill in-chat certification flashcards with lightweight Leitner buckets. Use for quick card creation, quizzes, review, or exam-fact memorization. For persistent spaced repetition in Anki, use the anki skill.
+description: Create or drill lightweight in-chat certification flashcards. Use Anki for persistent spaced repetition.
 argument-hint: "[subject] [--generate | --drill | --review | --stats | --session <n>]"
 ---
 

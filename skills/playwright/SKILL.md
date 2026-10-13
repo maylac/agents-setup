@@ -1,12 +1,12 @@
 ---
 name: "playwright"
-description: Use terminal Playwright automation for navigation, forms, screenshots, snapshots, extraction, and UI debugging.
+description: Automate a browser via Playwright CLI for local previews and reproducible UI inspection; use e2e-testing for test suites.
 ---
 
 
 # Playwright CLI Skill
 
-Drive a real browser from the terminal using `playwright-cli`. Prefer the bundled wrapper script so the CLI works even when it is not globally installed.
+Drive a browser from the terminal using `playwright-cli`. Prefer the bundled wrapper script so the CLI works even when it is not globally installed. If the task depends on the user's existing browser tabs or login session, prefer the host browser tool or connected browser skill; a new CLI browser session may not share that state.
 Treat this skill as CLI-first automation. Do not pivot to `@playwright/test` unless the user explicitly asks for test files.
 
 ## Prerequisite check (required)
@@ -17,7 +17,7 @@ Before proposing commands, check whether `npx` is available (the wrapper depends
 command -v npx >/dev/null 2>&1
 ```
 
-If it is not available, pause and ask the user to install Node.js/npm (which provides `npx`). Provide these steps verbatim:
+If it is not on PATH, check the host's known user-local Node installation before treating it as missing. When no runtime is installed, use an available browser tool or install Node within the user's authorized setup scope. Ask for user action only if access or installation requires it. Useful checks:
 
 ```bash
 # Verify Node/npm are installed

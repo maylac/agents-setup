@@ -12,12 +12,15 @@ Agents live in `~/.claude/agents/`. Use them for work that benefits from isolati
 
 ## Common Choices
 
+Follow the Claude model and effort defaults in `~/.claude/CLAUDE.md`; a task-level model choice takes priority. Use the table below to select a bounded agent when needed.
+
 | Agent | Use When |
 |-------|----------|
-| planner | A feature, refactor, migration, or system-boundary decision needs a real implementation plan. |
-| code-reviewer | A non-trivial code change needs review before landing. |
-| build-error-resolver | A build failure is not obvious after reading the error and local context. |
-| security-reviewer | The task touches auth, secrets, permissions, payments, user input, or network boundaries. |
+| main session | Architecture or multi-step work benefits from a concise plan. |
+| implementation-worker | An approved bounded edit or test run benefits from parallel execution; assign owned files and acceptance criteria. |
+| code-reviewer | A material risky change needs one independent review before landing. |
+| build-error-resolver | A real build failure is not obvious after reading the error and local context. |
+| security-reviewer | A material change to auth, secrets, permissions, payments, user input, or network boundaries needs one focused review. |
 | fable-advisor | A long exploratory task hits a planned checkpoint or 3+ consecutive marginal-gain iterations and needs its remaining directions re-ranked (bar and hard cap in `fable-escalation`). |
 | fable-verifier | A completion claim precedes an expensive-to-reverse landing and needs a final verification gate (bar in `fable-escalation`). |
 
@@ -25,8 +28,4 @@ Agents live in `~/.claude/agents/`. Use them for work that benefits from isolati
 
 Run agents in parallel only when the tasks are independent and the combined result will be better than a single focused pass. Good examples are security plus maintainability review, or separate investigations of unrelated failures.
 
-For complex problems, split perspectives deliberately:
-- factual verification
-- senior engineering tradeoff review
-- security or privacy review
-- consistency and redundancy review
+Split only independent work that benefits from parallel execution; avoid repeated review passes over the same change.

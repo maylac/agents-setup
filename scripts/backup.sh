@@ -169,8 +169,12 @@ write_codex_template() {
 
 approval_policy = "never"
 sandbox_mode = "workspace-write"
-model = "gpt-5.6-sol"
+model = "gpt-6-astra"
 model_reasoning_effort = "high"
+
+[agents]
+default_subagent_model = "gpt-6-luna"
+default_subagent_reasoning_effort = "high"
 
 [sandbox_workspace_write]
 network_access = true
@@ -246,6 +250,8 @@ write_claude_settings_template() {
     jq '{
       model,
       effortLevel,
+      modelSettings,
+      promptSuggestionEnabled,
       language,
       theme,
       outputStyle,
@@ -296,6 +302,7 @@ write_claude_settings_template() {
     | if ((.statusLine.command // "") | contains("/workspace/agent-notch/")) then
         .statusLine.command = "$HOME/.claude/statusline.py"
       else . end
+    | if .effortLevel == null then del(.effortLevel) else . end
     ' "$HOME_DIR/.claude/settings.json" > "$ROOT/templates/claude-settings.public.json"
     sanitize_file "$ROOT/templates/claude-settings.public.json"
   fi

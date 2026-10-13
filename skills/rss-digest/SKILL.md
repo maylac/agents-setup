@@ -1,6 +1,6 @@
 ---
 name: rss-digest
-description: Fetch, triage, and summarize RSS feeds with the feed CLI for digests, roundups, and recent high-signal posts.
+description: Fetch, triage, and summarize RSS feeds into a digest, roundup, or recent high-signal reading list.
 metadata: {"openclaw": {"emoji": "📡", "requires": {"bins": ["feed"]}, "install": [{"kind": "brew", "formula": "odysseus0/tap/feed", "bins": ["feed"], "label": "Install via Homebrew"}, {"kind": "go", "package": "github.com/odysseus0/feed/cmd/feed@latest", "bins": ["feed"], "label": "Install via Go"}]}}
 ---
 

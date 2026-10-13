@@ -1,89 +1,49 @@
 ---
 name: harness-audit
-description: Audit an agent harness across skills, hooks, settings, MCP, agents, and memory for efficiency and stability. Use for cross-cutting setup audits, broken dependencies, or context bloat. For a skills-only rescan, use skill-stocktake.
+description: Audit an agent harness across its installed skills, hooks, settings, MCP, agents, and memory. Use for cross-cutting setup failures, broken dependencies, or context cost; use skill-stocktake for skills only.
 ---
 
 # Harness Audit
 
-## Overview
+Audit a configured harness from its real installation, then produce an evidence-backed fix brief. Select only the asset families relevant to the request; a skills-only review belongs to `skill-stocktake`.
 
-Audit the whole agent harness with one rule above all: **never judge an asset from its text alone — verify every dependency on disk before issuing a verdict.** A plausible-looking SKILL.md whose scripts/ directory is missing fails 100% of the time; a verdict-only review misses exactly these. (Baseline evidence: a prior verdict-only stocktake missed every always-failing skill; the verification pass found revealjs/webapp-testing-class breakage in one run.)
+## Establish the target
 
-The deliverable is not the verdicts — it is a **fix-instruction document another (cheaper) model can execute without re-deriving the analysis**.
+1. Identify the requested runtime and its active home or canonical store. Do not assume a Claude, Codex, or another runtime path.
+2. Locate its configuration files and follow symlinks before editing or reporting ownership.
+3. Record the target paths, discovered runtime version where material, and unavailable tools. An absent optional integration is evidence, not a reason to install it.
 
-## Phase 1 — Inventory with cost columns
+For each in-scope asset, verify claims against the filesystem and available commands:
 
-Enumerate assets and measure what actually costs tokens:
-
-```bash
-# skills: name, body lines/bytes, frontmatter description length, symlink target
-# (description of EVERY skill is injected into EVERY session — sum it)
-python3 - <<'EOF'
-import os,re
-base=os.path.expanduser("~/.claude/skills")
-for n in sorted(os.listdir(base)):
-    sk=os.path.join(base,n,"SKILL.md")
-    if not os.path.exists(sk): continue
-    t=open(sk,errors="replace").read()
-    m=re.search(r"^description:\s*(.*(?:\n(?:  |\t).*)*)",t,re.M)
-    print(n, t.count("\n")+1, len(t.encode()), len(m.group(1)) if m else 0)
-EOF
-```
-
-Beyond skills, inventory: hooks wired in `settings.json` vs scripts present in `~/.claude/hooks/`; MCP servers registered in `~/.claude.json` vs permission-rule remnants in settings; launchd/cron jobs; symlink-farm integrity (canonical store vs harness mirrors); agents in `~/.claude/agents/`.
-
-Treat usage stats as broken if every asset reads 0 — judge on quality/overlap only, and say so in the report.
-
-## Phase 2 — Evidence verification (the load-bearing step)
-
-For each asset, verify with commands, not reading:
-
-| Claim in the asset | Verification |
+| Claim | Check |
 |---|---|
-| references scripts/, references/, examples/ | `ls` the directory — missing = broken-on-load |
-| requires a CLI/binary | `which <bin>` |
-| hardcodes a path (`~/tasks/...`, `$HOME/dev/...`) | `ls`/`test -d` |
-| routes to another skill/plugin | check it is actually installed |
-| claims a hook/command/cron exists | grep settings.json, `ls ~/.claude/commands/`, `launchctl list` |
-| env var like `$SKILL_PATH`, `$CODEX_HOME` | confirm this harness sets it |
+| Script, reference, or asset exists | `test -e` / `test -x` |
+| CLI or service is required | `command -v` and its local configuration |
+| Symlink or mirror works | `readlink` plus target existence |
+| Hook, MCP, agent, or scheduled job is registered | read the active config and inspect the referenced target |
+| Version-sensitive behavior | verify the installed version or authoritative local documentation |
 
-Unadapted imports are the top defect class: assets lifted from another harness (Codex/chat products), another user's plugin pack, or a dead framework — spot them by wrong agent names, wrong locale defaults, dead sibling links, and decorative metadata for servers that are not installed.
+Read prose only after these checks. Treat zero-valued usage telemetry as unavailable when all assets show zero.
 
-## Phase 3 — Three-axis evaluation via batched subagents
+## Evaluate
 
-Group assets into **thematic batches (~20)** so one subagent sees a whole family and can catch intra-family overlap/contradiction. Run batches sequentially; **persist each batch's JSON to disk before starting the next** (context may be summarized mid-run).
+Assess each asset on three axes:
 
-Each subagent prompt must contain: the axis definitions below, the verification table above, user context (active projects, rules that assets may contradict), and this output contract:
+- **Context cost:** concise, discriminating descriptions; instructions worth loading; conditional detail in references when it is substantial.
+- **Task value:** trigger and scope match; guidance changes a decision beyond model baseline behavior; no overlap that merely restates global rules.
+- **Runtime stability:** dependencies exist, paths match the chosen harness, and safety or authorization boundaries still hold.
 
-```json
-{"name":"...","lines":N,
- "verdict":"Keep|Improve|Update|Retire|Merge into [X]",
- "reason":"self-contained, cites line ranges, states verified evidence",
- "fixes":["executable edit instruction with file + section/line + target size"],
- "priority":"P0|P1|P2"}
-```
+Use `Keep`, `Improve`, `Update`, `Retire`, or `Merge into <target>`. Every non-keep verdict must cite the asset section and observed evidence. Never infer that a whole asset is broken from an unavailable optional integration.
 
-Axes:
-- **Token efficiency**: description ≤ ~400 chars and trigger-only (it is injected every session); body lean (< ~500 lines); long reference material moved to `references/*.md` (progressive disclosure); content the base model already knows (generic language idioms, textbook syntax) is negative value — it costs tokens and can prescribe degraded patterns.
-- **Output quality**: concrete commands/code over prose; examples worth imitating; scope matches name and trigger.
-- **Stability**: verified-missing dependencies; version-sensitive API/model references; contradictions with the user's global rules; interactive constructs (`read -r`) that hang non-interactive shells.
+## Deliverable and changes
 
-Retire-bias heuristics: model-baseline restatement → Retire; duplicated trigger space → Merge with a named target and a list of what content to carry over; broken deps → fix if the workflow is real, Retire if fully substitutable. **Never retire load-bearing assets referenced by CLAUDE.md/AGENTS.md** — improve only.
+Write a concise fix brief with:
 
-## Phase 4 — Synthesis and handoff
+- audited paths and evidence date;
+- per-asset verdict, evidence, concrete repair, and residual risk;
+- cross-cutting causes such as stale paths or description bloat;
+- instructions anchored to headings rather than fragile line numbers.
 
-1. Extract cross-cutting patterns (description bloat, dead links, unadapted imports, rule contradictions) — they justify individual verdicts and guide future installs.
-2. Write the fix-instruction document with an **execution-principles header**: canonical store location and symlink handling, do-not-edit exceptions (auto-generated or self-updating assets), and a warning that line numbers were valid at audit time — the executor must re-anchor on section headings.
-3. **Gate all deletions on explicit user approval** — present the Retire/Merge list as a batch; edits may proceed without approval.
-4. Persist: update the results cache. Memory writes are not automatic — record at most one pointer to the audit outcome, and only if it meets the harness's own memory criteria (durable, not derivable from the report file itself). Verify by re-running the Phase 1 scan (expected count delta, no dangling symlinks, frontmatter still valid YAML).
+Make justified repairs within the user's scope. Preserve canonical sources and symlink topology. Present deletions, merges, publishing, or changes outside the authorized harness scope for explicit user approval. A task authorization covers normal scoped repairs; do not ask again merely because a repair is reversible.
 
-## Common mistakes
-
-| Mistake | Consequence |
-|---|---|
-| Judging from SKILL.md text without `ls`/`which` | Miss every always-failing asset (the baseline failure) |
-| Alphabetical batches | Family overlaps (e.g. three de-AI-ify skills) go undetected |
-| Verdicts like "Superseded" without evidence | Executor must re-derive; handoff value lost |
-| Fixes without line/section anchors and target sizes | Executor guesses scope, edits drift |
-| Deleting before user approval | Irreversible removal of something only the user knew was wanted |
-| Trusting usage stats without checking for all-zeros | Retiring on a broken signal |
+Re-run the checks affected by each repair and report the result. Update an audit cache only when this workflow produced the cache's stated evaluation; do not overwrite an unrelated or stale cache with partial results.

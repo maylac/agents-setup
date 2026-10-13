@@ -1,6 +1,6 @@
 ---
 name: anki
-description: Create and manage Anki flashcards. Use when the user wants to create flashcards, add notes to Anki, manage decks, or work with spaced repetition learning. Also use when user mentions "anki", "make cards", "add to anki", "learn this", "memorize", "remember this", "SRS", or asks to turn content into flashcards.
+description: Create or manage persistent Anki decks and cards through AnkiConnect when spaced repetition is required.
 ---
 
 # Anki Flashcard Management

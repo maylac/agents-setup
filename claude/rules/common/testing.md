@@ -26,9 +26,9 @@ Use test-first development when it clarifies the work or prevents regression. It
 
 A tested change passes this bar only if all applicable lines hold:
 
-- bug fix: the regression test demonstrably fails on the pre-fix code, and the report states how that was checked (stash/revert run, or explicit reasoning when impractical)
+- bug fix: reproduce the failure before the fix when practical; do not disturb unrelated working-tree state just to create a pre-fix run
 - new behavior: the test name states the behavior ("rejects expired token"), not the mechanism ("calls validate()")
-- the completion report contains the pasted test command and its output — the bare claim "tests pass" fails this line
+- the completion report names the relevant command and outcome; include raw output when it explains a failure or unexpected behavior
 - no test was weakened to go green (assertion removed or loosened, test skipped); if one was, that fact is the headline of the report, not a footnote
 
 ## Troubleshooting Test Failures

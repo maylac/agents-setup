@@ -1,24 +1,13 @@
 ---
 name: orchestration
-description: >-
-  Use Orca orchestration for structured multi-agent coordination: threaded
-  messages, blocking ask/reply flows, task dispatch, worker_done/escalation
-  waits, task DAGs, decision gates, coordinator loops, or decomposing work
-  across agents. Use `orca-cli` instead for full ownership handoffs, including
-  requests phrased as "hand off", "handoff", "handover", "give this to another
-  agent", or "another worktree" when the user did not explicitly ask to
-  supervise, monitor, wait for results, or coordinate a DAG. Use `orca-cli` for
-  ordinary terminal control, lightweight terminal prompts, shell commands, Orca
-  worktree management, reading or waiting on terminals, and automation of the
-  browser embedded inside Orca. Use Computer Use for browser windows, webviews,
-  Orca app UI, or desktop UI outside Orca's embedded browser.
+description: "Manage Orca task DAGs, dispatches, and worker completion when Orca orchestration is requested or already owns the task."
 ---
 
 # Orca Inter-Agent Orchestration
 
 Orchestration is Orca's structured coordination layer for agent messages, task ownership, dispatch state, and worker completion tracking.
 
-Use this skill when coordination state matters. For lightweight terminal prompts or basic worktree/terminal/built-in-browser control, use `orca-cli`.
+Use this skill when Orca coordination state matters. For new delegation, follow the active harness and user routing preferences using a supported delegation mechanism. The `orca-cli` skill is optional: if absent, inspect the installed Orca CLI help for terminal/worktree/browser operations. Do not require an unavailable skill to continue an otherwise supported task.
 
 ## Tool Boundary
 
@@ -137,7 +126,7 @@ Recovery only: `orca orchestration reset --tasks|--messages|--all --json` clears
 
 For full ownership transfer, use non-lifecycle terminal/worktree commands and then stop monitoring unless the user asks for supervision.
 
-Treat these as full handoff requests by default: "hand off", "handoff", "handover", "give this to another agent", "give this to another worktree", "send this to another agent", "another agent", "another worktree", or "launch another agent to own this." Custom model or reasoning effort words such as `gpt-5.6-sol`, `high`, or `xhigh` do not make the handoff supervised.
+Treat these as full handoff requests by default: "hand off", "handoff", "handover", "give this to another agent", "give this to another worktree", "send this to another agent", "another agent", "another worktree", or "launch another agent to own this." A custom model or reasoning effort request does not make the handoff supervised.
 
 Supervised orchestration remains available only when the user explicitly asks for supervision or coordination: "supervise", "monitor", "wait for worker_done", "wait for results", "track completion", "DAG", "decision gate", "ask/reply", or "coordinate workers."
 
@@ -161,9 +150,11 @@ Custom Codex model/effort handoff:
 
 `orca worktree create --agent codex --prompt ...` launches the known Codex agent but does not accept Codex-specific `--model` or `-c model_reasoning_effort=...` arguments. When the user asks for a specific Codex model or effort, create the independent worktree first, launch Codex with the requested command in that worktree, wait only for TUI readiness if prompt delivery would otherwise race startup, send the prompt, and stop:
 
+For execution handoffs, use Luna; use Astra when the user assigns planning, oversight, or final judgment to the handoff. If that requested model is unavailable, report the issue and stop rather than switching automatically.
+
 ```bash
 orca worktree create --name <task-name> --no-parent --json
-orca terminal create --worktree id:<newWorktreeId> --title <task-name> --command 'codex --model gpt-5.6-sol -c model_reasoning_effort="xhigh"' --json
+orca terminal create --worktree id:<newWorktreeId> --title <task-name> --command 'codex --model gpt-6-luna -c model_reasoning_effort="xhigh"' --json
 orca terminal wait --terminal <handle> --for tui-idle --timeout-ms 60000 --json
 orca terminal send --terminal <handle> --text "<task brief>" --enter --json
 ```

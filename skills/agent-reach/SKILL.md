@@ -1,6 +1,6 @@
 ---
 name: agent-reach
-description: Multi-platform research router for web, social, video, podcasts, GitHub, and finance. Use for explicit current-information research spanning platforms. Not for a single readable URL, posting, or a platform covered by a dedicated skill.
+description: Research across web and social platforms using Agent Reach backends; use a dedicated tool for a single URL or platform.
 metadata:
   openclaw:
     homepage: https://github.com/Panniantong/Agent-Reach
@@ -9,6 +9,8 @@ metadata:
 # Agent Reach — 互联网能力路由器
 
 15 平台、多后端。用于明确的互联网检索/调研任务；普通 URL 阅读优先使用官方文档、WebFetch、专门 skill 或用户指定工具。
+
+Check that `agent-reach` and the chosen backend exist before running their commands. If the router is absent, use available search/connectors directly for the requested platforms. The command examples below describe optional backends, not tools guaranteed by installing this skill. Do not request cookies when an existing authorized connector or browser session suffices.
 
 ## 常驻规则（全程适用）
 

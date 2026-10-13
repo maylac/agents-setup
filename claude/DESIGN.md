@@ -181,8 +181,8 @@ Run before declaring UI work complete; fix failures first:
 
 ## 14. Delegation Map
 
-- Charts, dashboards, KPI tiles → `dataviz` skill (palette validator + mark specs).
+- Charts, dashboards, KPI tiles → `data-analytics:visualize-data` when available; otherwise use an available visualization skill such as `visualize:visualize`.
 - Mobile screen flows/navigation → `mobile-app-ui-design` skill.
-- Presentations → `frontend-slides` / open-slide skills; one-off artifacts → `artifact-design`.
-- Distinctive implementation push → `frontend-design` plugin skill (persona + boldness rules; consistent with this file).
+- Presentations → an available presentations skill, `frontend-slides`, or open-slide skills; for one-off artifacts, choose a matching skill from the current catalog.
+- Distinctive web or page implementation → `hallmark` when available; otherwise choose a relevant skill from the current catalog.
 - This file wins on: process (§1), direction (§2), tokens (§3–7), quality bar (§8–13).

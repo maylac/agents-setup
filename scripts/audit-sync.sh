@@ -252,9 +252,6 @@ orphan_real_dirs_check() {
   while IFS= read -r path; do
     [ -n "$path" ] || continue
     name="$(basename "$path")"
-    case "$name" in
-      paseo|paseo-*) continue ;;
-    esac
     source="$HOME_DIR/.hermes/skills/$name"
     if is_skill_exception "$name" "$mirror"; then
       if [ -d "$source" ] && diff -qr "$source" "$path" >/dev/null; then

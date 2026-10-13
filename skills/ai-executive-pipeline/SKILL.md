@@ -1,6 +1,6 @@
 ---
 name: ai-executive-pipeline
-description: Review a business idea through five legendary CEO/investor perspectives and synthesize strategy and investment judgment.
+description: Stress-test a business idea through five CEO/investor lenses and synthesize strategy and investment judgment.
 ---
 
 # AI Executive Pipeline — 伝説のCEO取締役会

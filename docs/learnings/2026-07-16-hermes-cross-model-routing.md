@@ -27,3 +27,11 @@ Hermesの親モデルをSOLに保ちつつ、実作業をAntigravityへ優先委
 - ルーティング方針は、モデル固定の実行経路と検証可能なreceiptがなければ強制ではない。
 - 外部ハーネスは汎用subagent設定へ押し込まず、専用の明示モデル付きadapter/toolとして露出する。
 - 「高位モデルでレビュー済み」という主張は、コマンド引数だけでなく生成側transcriptの実model fieldでも確認する。
+
+## 2026-09-23追記: Codex Astra/Lunaの役割ルーティング
+
+Codexでは共通指示文だけで親から子へのモデル継承を制御しない。親設定はAstraのまま保ち、`[agents]` の `default_subagent_model = "gpt-6-luna"` と `default_subagent_reasoning_effort = "high"` を設定し、planner・architect・reviewer・supervisorのような役割だけ個別agentファイルでAstraへpinする。backup generatorとrepo/live agent定義も同じモデル方針に揃える。public templateは親の既定effortを維持する。
+
+公式Subagents schemaではagent個別の正しいキーは `model_reasoning_effort`。旧 `reasoning_effort` ではない。モデル指定を変える際はeffort値を保ったままキーを移行し、Codex CLIの `--strict-config` でglobal configを確認する。明示 `-m gpt-6-luna` の成功はLunaの利用可否を示すが、親からspawnされた既定子がLunaになった証拠とは区別する。今回のAstra親smokeはephemeral sessionでthread IDエラー、通常session retryも終了0ながらJSONLにspawn eventなし・`receiver_thread_ids` 空で、default解決証拠は得られなかった。実配車確認ではspawn eventと子threadのmodel設定を要求し、親の成功終了やモデル自己申告だけでは合格にしない。
+
+同期先や任意ハーネスの状態は、実際のパスを確認してから評価する。skillsの正本はrepo内 `skills/`。liveの `~/.agents/skills/<name>` はrepoへのsymlinkで、`~/.codex/skills/<name>` はそこを参照する。`scripts/sync-skills.local.sh` はlive mirrorを扱う。未導入のハーネス経路は未設定として扱い、存在しない `settings.json` / `hooks.json` を作って監査を通さない。ClaudeのFable template/rosterは明示指定時だけのClaude互換経路として残す。今回の作業では既存のdirty skill変更をそのまま保持した。

@@ -1,6 +1,6 @@
 ---
 name: generate-explainer-html
-description: Build a self-contained HTML explainer from core.yaml and view.yaml. Use after generate-explainer-yaml or when adding switchable views to an explainer bundle.
+description: Build a self-contained, switchable-view HTML explainer from an existing core.yaml and view.yaml pair.
 ---
 
 # generate-explainer-html

@@ -1,6 +1,14 @@
 {
-  "model": "fable",
-  "effortLevel": "high",
+  "model": "claude-opus-5-5",
+  "modelSettings": {
+    "claude-opus-5-5": {
+      "effortLevel": "medium"
+    },
+    "claude-sonnet-5": {
+      "effortLevel": "medium"
+    }
+  },
+  "promptSuggestionEnabled": false,
   "language": "Japanese",
   "theme": "dark-daltonized",
   "outputStyle": "Maylac Operator",

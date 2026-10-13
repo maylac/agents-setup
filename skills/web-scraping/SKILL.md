@@ -1,6 +1,6 @@
 ---
 name: web-scraping
-description: Web scraping with anti-bot bypass, content extraction, undocumented APIs, poison pill detection, and page-change monitoring. Not for clean article-only extraction (use WebFetch) or myLife clipping (use clip).
+description: Build or debug repeatable web extraction pipelines, including dynamic pages and extraction failures; use normal web tools for one-off reading.
 ---
 
 # Web scraping methodology

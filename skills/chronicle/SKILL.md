@@ -1,11 +1,11 @@
 ---
 name: chronicle
-description: View the user's current screen and recent screen history. Use when the user explicitly refers to something visible or recently shown, or asks about Chronicle. Do not use for ambiguity that repository or configuration inspection can resolve.
+description: Read Chronicle screen history when the user refers to recent on-screen work and the required recording and memory capabilities are enabled.
 ---
 
 # Chronicle
 
-This skill allows you to view the user's screen. This skill is enabled because the user has enabled the Codex screen recording (Chronicle) feature, which records a rolling buffer of the past several hours of work to `$TMPDIR/chronicle/screen_recording`.
+This skill documents the legacy Chronicle recording interface. Installation of this skill does not establish that recording or memories are enabled. Verify the preconditions below; for current-screen tasks, use the host's supported screen or computer-use tool within that tool's permissions when available.
 
 ## Preconditions
 

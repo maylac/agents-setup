@@ -1,19 +1,11 @@
 ---
 name: computer-use
-description: >-
-  Use Orca's computer-use CLI to inspect and operate local desktop app windows
-  through accessibility trees, screenshots, and safe UI actions. Use for
-  desktop app interaction: list apps/windows, get app state, read visible UI,
-  click controls, type, press keys, scroll, drag, set values, or perform
-  accessibility actions. Also use for browser windows, webviews, Orca app UI,
-  or other desktop UI. Triggers include "computer use", "orca computer", "read
-  Spotify", "read Slack", "control/click/read in a desktop app", and "get app
-  state".
+description: "Operate desktop apps through Orca's computer-use CLI when Orca is requested or is the available UI runtime."
 ---
 
 # Computer Use
 
-Use this skill for desktop UI through `orca computer`. When the requested target is a website or web app, operate the desktop browser app/window that contains the page.
+Use this skill for desktop UI through `orca computer`. For ordinary UI tasks, prefer an available purpose-built connector or the host's supplied computer-use tool. This document describes Orca commands only; do not transfer its element IDs or coordinate conventions to another runtime. If Orca is unavailable, continue with an available tool that satisfies the request, or report the missing runtime when Orca itself was requested.
 
 ## Preconditions
 

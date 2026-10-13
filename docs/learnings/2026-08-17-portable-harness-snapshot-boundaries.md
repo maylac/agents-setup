@@ -12,7 +12,7 @@ MacのClaude/Codex設定をSurface WSLへ再現する際、live設定にはVibe 
 
 - `/Users/name`だけを置換した: JSONエスケープされた`\/Users\/name`の2本目のslashが一致せず、ユーザー名が残った。
 - live `hooks.json`をそのままpublic snapshotへ同期した: Vibe IslandとRunCatまでportable設定へ入り、WSLで存在しないcommandを登録する。
-- Paseoの実ディレクトリを一般的なmirror driftとしてsymlink化しようとした: Paseoアプリ自身の更新仕様と衝突するため、所有者境界が誤っていた。
+- アプリ管理の実ディレクトリを一般的なmirror driftとしてsymlink化しようとした: 所有アプリの更新仕様と衝突するため、所有者境界が誤っていた。
 - agent/hookは暗号化payloadにあるため手作業で戻せばよいとした: 再現手順と監査証拠がなく、「保全済み」と「利用可能」を区別できなかった。
 
 ## 効いたアプローチ
@@ -21,7 +21,7 @@ MacのClaude/Codex設定をSurface WSLへ再現する際、live設定にはVibe 
 2. snapshot生成時にMac専用hookだけをJSON構造として除外し、auditでは同じ既知2種だけをlive-only差分として許容した。
 3. Claude templateでもmacOS sound、Homebrew、Vibe Island、Agent Notchを除外し、git push/PR作成を`ask`へ正規化した。
 4. `--assets-only`と`--apply-assets`を追加し、public-safe agents/hooksをdry-run、既存backup、copy、冪等再実行できるようにした。
-5. Paseoと外部repo正本のcompact-plusは、削除せずintentional differenceとして監査へ明記した。
+5. 外部repo正本のcompact-plusは削除せず、intentional differenceとして監査へ明記した。
 
 ## なぜ効いたか
 

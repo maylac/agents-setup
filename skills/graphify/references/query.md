@@ -1,6 +1,18 @@
 # graphify reference: query, path, explain
 
-Load this when the user asks a question against an existing graph, or runs `/graphify path` or `/graphify explain`. The core's query stub points here for the full traversal flow. These flows use the `graphify query` CLI when it is available and fall back to an inline NetworkX traversal otherwise.
+Load this when the user explicitly asks a natural-language graph query, or runs `/graphify path` or `/graphify explain`. First verify availability without assuming `.graphify_python` exists:
+
+```bash
+if command -v graphify >/dev/null 2>&1; then
+  GRAPHIFY_MODE=cli
+elif test -f graphify-out/.graphify_python && "$(cat graphify-out/.graphify_python)" -c 'import graphify, networkx' 2>/dev/null; then
+  GRAPHIFY_MODE=python
+else
+  GRAPHIFY_MODE=unavailable
+fi
+```
+
+When unavailable, use `rg` and source inspection for the requested relationship and state that graph evidence could not be checked; do not install graphify for a query. With CLI-only availability, use the direct CLI command and skip Python vocabulary-expansion, traversal, and save-result snippets below. Inline NetworkX snippets require `GRAPHIFY_MODE=python`.
 
 Two traversal modes - choose based on the question:
 
@@ -9,18 +21,18 @@ Two traversal modes - choose based on the question:
 | BFS (default) | _(none)_ | "What is X connected to?" - broad context, nearest neighbors first |
 | DFS | `--dfs` | "How does X reach Y?" - trace a specific chain or dependency path |
 
-First check the graph exists:
+For a known-symbol `/graphify explain`, run `graphify explain "SYMBOL"` directly after availability and graph-existence checks. It does not need vocabulary expansion. For `path`, resolve both supplied symbols directly. The vocabulary expansion and BFS/DFS traversal below apply only to an explicit natural-language `query`.
+
+First check the graph exists without requiring Python:
 ```bash
-$(cat graphify-out/.graphify_python) -c "
-from pathlib import Path
-if not Path('graphify-out/graph.json').exists():
-    print('ERROR: No graph found. Run /graphify <path> first to build the graph.')
-    raise SystemExit(1)
-"
+test -f graphify-out/graph.json || {
+  echo 'ERROR: No graph found. Run /graphify <path> first to build the graph.'
+  exit 1
+}
 ```
 If it fails, stop and tell the user to run `/graphify <path>` first.
 
-### Step 0 — Constrained query expansion (REQUIRED before traversal)
+### Step 0 — Constrained query expansion (natural-language query only; Python mode only)
 
 graphify's `query` CLI matches nodes via case-folded substring + IDF — there is **no stemming, no synonyms, no cross-language match** inside the binary, and the inline fallback below matches the same way. If the user's question uses different language or different domain vocabulary than the graph's labels (user says "обработчик" / graph says "handler"; user says "authentication" / graph says "Guardian"), the literal matcher returns 0 hits and the answer collapses to noise.
 

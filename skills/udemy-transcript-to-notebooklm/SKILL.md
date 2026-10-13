@@ -1,6 +1,6 @@
 ---
 name: udemy-transcript-to-notebooklm
-description: Convert Udemy transcript .txt files into structured Markdown for NotebookLM review, with summaries, concepts, Q&A, and glossary.
+description: Convert Udemy transcript text into NotebookLM-ready Markdown with summaries, concepts, Q&A, and a glossary.
 ---
 
 # Udemy Transcript → NotebookLM 学習用Markdown

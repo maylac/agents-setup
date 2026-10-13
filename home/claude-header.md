@@ -1,13 +1,13 @@
 # Workflow
 
-- Home-wide principles and safety rules are single-sourced in `~/AGENTS.md`; they auto-load for any session whose cwd is under `$HOME` (parent traversal, verified 2026-07-17), and scoped rules under `rules/` load when matching files are touched. If cwd is outside `$HOME` (temp worktree, scratchpad), read `~/AGENTS.md` before side-effectful work.
-- Use plan mode for ambiguous, architectural, or 3+ step work. For bug reports, inspect evidence, fix the root cause, and verify without unnecessary hand-holding.
+- Home-wide principles and safety rules are single-sourced in `~/AGENTS.md` and loaded through the `~/CLAUDE.md` symlink. Claude Code's project `AGENTS.md` loading depends on the active version and memory mode; check the loaded instructions and explicitly read the applicable project `AGENTS.md` if it is absent. If cwd is outside `$HOME` (for example, a temp worktree), read `~/AGENTS.md` before side-effectful work.
+- When the active session supports plan mode, use it for ambiguous requirements, architectural work, or decisions that need user review before edits. For ordinary multi-step work, state a brief plan and proceed. For bug reports, inspect evidence, fix the root cause, and verify without unnecessary hand-holding.
 - Route recurring workflow lessons through the `self-improve` skill. Technical solutions that required a real pivot go through `extract-approach`.
-- Use built-in Explore/Plan for read-only discovery. Use custom subagents only when isolation, specialist review, or parallel work materially helps.
+- Follow shared model-routing and cross-harness collaboration policy in `~/AGENTS.md`. In Claude Code, see the Claude agent and performance rules for native routing and bounded delegation. For Codex, follow Astra/Luna routing.
 
 # Design Quality
 
-Before user-facing UI work, load `~/.claude/DESIGN.md` and follow its pre-ship process.
+Before user-facing UI work, load `~/.claude/DESIGN.md` when it exists. Otherwise resolve `~/.claude/CLAUDE.md` and read the sibling `DESIGN.md`. Follow its pre-ship process and use a task-relevant design skill available in the current session.
 
 # Memory System
 
@@ -15,12 +15,16 @@ Use auto-memory proactively, but verify paths, names, and state against current 
 
 # Model Routing
 
-The default is `fable` (Fable 5 — permanent on Max since 2026-07-20, capped at 50% of weekly limits): the main session does judgment, planning, review, and user-facing reporting. Protect the cap by keeping implementation and high-volume tool loops off the main session — execution orchestration (workflow scripts, parallel subagent fleets, review agents) runs on `opus` (Opus 5), and implementation defaults to Codex `gpt-5.6-terra`. If the cap runs out mid-week, drop to `opusplan` and continue. The `fable-verifier` gate (independent-context verification) still guards expensive-to-reverse completion claims; `fable-advisor` applies only while the main session is off Fable. Bars and cadence in `fable-escalation`.
+Use Claude's configured model for Claude-owned execution; the current main-session default is Opus 5.5 at medium effort unless the user chooses otherwise. Use one high-effort Opus review for a material risky change; reserve xhigh for exceptional tasks. Fable agents are opt-in. For ordinary actionable work with a useful division, dispatch one bounded task to the opposite harness while advancing a separate part locally, following the shared policy below.
 
-# Codex Collaboration
+## Token Efficiency
 
-Implementation defaults to Codex (`gpt-5.6-terra`): delegate rather than implementing on the main session, and continue with the returned session ID. Heavy research also goes to Codex when it materially preserves Claude context.
+Prefer deterministic tools and focused reads over broad context gathering. Request concise worker evidence. Stop when relevant checks pass, and rerun broader checks only after a change, failure, or specific unresolved risk. Use a short plan for complex work; reassess after two identical failed approaches.
+
+# Cross-Harness Collaboration
+
+Follow the default cross-harness collaboration policy in `~/AGENTS.md` and use the `cross-harness-collab` skill for the opposite-harness task or read-only consultation. Keep ownership and acceptance criteria explicit; peer-marked tasks cannot delegate again.
 
 # Mobile Completion Reporting
 
-Completion, error, and approval-wait events reach the user's phone through `~/.agents/hooks/notify-mobile.sh` (Telegram via ccgram's bot when configured, Slack DM fallback via `hermes send`). Do not remove its hook wiring; when a long unattended task ends, the Stop hook is the delivery path — no extra action needed.
+Use mobile completion notifications only when the hook is registered and its target script exists. Do not claim a notification was delivered without success evidence. Preserve any installed hook wiring; when it is absent, report completion in the current task.
