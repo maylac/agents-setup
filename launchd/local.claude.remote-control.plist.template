@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- One Claude Code Remote Control host per repo. Render with:
+     sed -e "s#__HOME__#$HOME#g" -e "s#__NAME__#vantik#g" -e "s#__REPO__#$HOME/workspace/maylac/reskilling-os#g" -e "s#__CAPACITY__#3#g" \
+       launchd/local.claude.remote-control.plist.template > ~/Library/LaunchAgents/local.claude.remote-control-__NAME__.plist
+     launchctl bootstrap "gui/$(id -u)" ~/Library/LaunchAgents/local.claude.remote-control-__NAME__.plist
+     stdout is the TUI redraw stream (grew to 108 MB on the first host); send it to /dev/null and keep stderr. -->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>local.claude.remote-control-__NAME__</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>__HOME__/.local/bin/claude</string>
+    <string>remote-control</string>
+    <string>--name</string>
+    <string>Mac __NAME__</string>
+    <string>--spawn=worktree</string>
+    <string>--capacity</string>
+    <string>__CAPACITY__</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>__REPO__</string>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>ThrottleInterval</key>
+  <integer>30</integer>
+  <key>StandardOutPath</key>
+  <string>/dev/null</string>
+  <key>StandardErrorPath</key>
+  <string>__HOME__/.claude/remote-control/__NAME__-stderr.log</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>__HOME__/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+  </dict>
+</dict>
+</plist>
