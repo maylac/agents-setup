@@ -27,9 +27,9 @@ The public settings template selects Opus 5.5 and saves medium effort per model;
 
 ## Keeping the Mac reachable
 
-The Desktop **Connect new sessions to Remote Control** preference and `remoteControlAtStartup` control how new Claude sessions connect; neither keeps a Remote Control host process running on its own. iOS Remote needs the Mac's Remote Control server to be active. The verified login-scoped LaunchAgent is `/Users/gotasasaki/Library/LaunchAgents/local.claude.remote-control.plist`; it starts `/Users/gotasasaki/.local/bin/claude remote-control --name "Mac agents-setup" --spawn=worktree --capacity 4` at login and keeps it running. It requires the Mac user to remain logged in and the Mac to have network access.
+The Desktop **Connect new sessions to Remote Control** preference and `remoteControlAtStartup` control how new Claude sessions connect; neither keeps a Remote Control host process running on its own. iOS Remote needs the Mac's Remote Control server to be active. The verified login-scoped LaunchAgent is `$HOME/Library/LaunchAgents/local.claude.remote-control.plist`; it starts `$HOME/.local/bin/claude remote-control --name "Mac agents-setup" --spawn=worktree --capacity 4` at login and keeps it running. It requires the Mac user to remain logged in and the Mac to have network access.
 
-Check it with `launchctl print "gui/$(id -u)/local.claude.remote-control"`. The service's stdout and stderr are `/Users/gotasasaki/.claude/remote-control/stdout.log` and `/Users/gotasasaki/.claude/remote-control/stderr.log`. The service was verified running on this Mac and visible in Claude Desktop under **Code > Local > Remote Control**; iOS availability still awaits user confirmation.
+Check it with `launchctl print "gui/$(id -u)/local.claude.remote-control"`. The service's stdout and stderr are `$HOME/.claude/remote-control/stdout.log` and `$HOME/.claude/remote-control/stderr.log`. The service was verified running on this Mac and visible in Claude Desktop under **Code > Local > Remote Control**; iOS availability still awaits user confirmation.
 
 To stop the login-scoped host, run `launchctl bootout "gui/$(id -u)/local.claude.remote-control"`; this ends Remote Control availability until the service is loaded again.
 
