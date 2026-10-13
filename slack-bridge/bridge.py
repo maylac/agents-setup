@@ -2,15 +2,22 @@
 """Slack -> Mac mini bridge: turns task contracts posted by Dots into agent runs.
 
 Polls one Slack channel (stdlib only, no Socket Mode), accepts top-level
-messages only from allowlisted senders, runs `claude -p` or `agy --print`
-in a fresh git worktree of an allowlisted repo, and replies in the thread.
+messages only from allowlisted senders, runs `claude -p`, `codex exec` or
+`agy --print` in a fresh git worktree of an allowlisted repo, and replies in
+the thread.
 With BRIDGE_TRANSPORT=github it instead reads open issues labelled
 `agent-task` (via the already-authenticated `gh` CLI), replies as issue
 comments, and closes the issue; Dots relays results to Slack.
 
+An agent that hits a Hard Stop prints a line starting with NEEDS-APPROVAL:;
+the bridge then labels the issue `needs-approval` and leaves it open instead
+of closing it. A rate-limit message in the agent output is reported as
+"blocked (rate limit)" with the matching line so the dispatcher can relay
+the reset time.
+
 Contract format (header lines, blank line, then the task body):
 
-    agent: claude            # or agy
+    agent: claude            # or codex / agy
     repo: /Users/me/workspace/project
     model: Gemini 3.5 Flash (Low)   # optional
 
@@ -18,6 +25,7 @@ Contract format (header lines, blank line, then the task body):
 """
 import json
 import os
+import re
 import subprocess
 import sys
 import time
@@ -26,6 +34,9 @@ import urllib.request
 
 API = "https://slack.com/api/"
 REPLY_LIMIT = 3500
+AGENTS = ("claude", "codex", "agy")
+APPROVAL_MARK = "NEEDS-APPROVAL:"
+RATE_LIMIT_RE = re.compile(r"(?i)(\b429\b|rate.?limit|usage limit|resets? at)")
 
 
 def load_config(env=os.environ):
@@ -52,6 +63,8 @@ def load_config(env=os.environ):
         "timeout": int(env.get("BRIDGE_TASK_TIMEOUT_SECONDS", "3600")),
         "claude_mode": env.get("BRIDGE_CLAUDE_PERMISSION_MODE", "auto"),
         "agy_model": env.get("BRIDGE_AGY_DEFAULT_MODEL", "Gemini 3.5 Flash (Low)"),
+        "codex_bin": env.get("BRIDGE_CODEX_BIN", "codex"),
+        "approval_label": env.get("BRIDGE_APPROVAL_LABEL", "needs-approval"),
     }
 
 
@@ -66,8 +79,8 @@ def parse_contract(text):
         if not colon:
             raise ValueError("bad header line: " + line)
         header[key.strip().lower()] = value.strip()
-    if header.get("agent") not in ("claude", "agy"):
-        raise ValueError("agent must be 'claude' or 'agy'")
+    if header.get("agent") not in AGENTS:
+        raise ValueError("agent must be one of: " + ", ".join(AGENTS))
     if not header.get("repo"):
         raise ValueError("repo is required")
     return header, body.strip()
@@ -91,6 +104,11 @@ def build_command(header, body, cfg):
         if header.get("model"):
             cmd += ["--model", header["model"]]
         return cmd
+    if header["agent"] == "codex":
+        cmd = [cfg["codex_bin"], "exec", body, "--sandbox", "workspace-write"]
+        if header.get("model"):
+            cmd += ["-m", header["model"]]
+        return cmd
     return ["agy", "--print", body, "--model", header.get("model") or cfg["agy_model"],
             "--mode", "accept-edits", "--print-timeout", "%ds" % cfg["timeout"]]
 
@@ -110,32 +128,52 @@ def reply(cfg, ts, text):
     slack(cfg, "chat.postMessage", channel=cfg["channel"], thread_ts=ts, text=text[:REPLY_LIMIT])
 
 
+def classify_output(returncode, output):
+    """Map an agent run to a status line the dispatcher can act on."""
+    for line in output.splitlines():
+        if line.strip().startswith(APPROVAL_MARK):
+            return "needs-approval", line.strip()
+    if returncode != 0:
+        for line in output.splitlines():
+            if RATE_LIMIT_RE.search(line):
+                return "blocked (rate limit)", line.strip()[:200]
+        return "failed (exit %d)" % returncode, ""
+    return "done", ""
+
+
 def run_task(cfg, text, task_id, say):
-    """Run one contract; `say(text)` posts a progress or result reply."""
+    """Run one contract; `say(text)` posts a progress or result reply.
+
+    Returns the status string ("done", "failed ...", "needs-approval", ...).
+    """
     try:
         header, body = parse_contract(text)
     except ValueError as e:
-        return say("rejected: %s" % e)
+        say("rejected: %s" % e)
+        return "rejected"
     repo = os.path.realpath(os.path.expanduser(header["repo"]))
     if repo not in cfg["repos"]:
-        return say("rejected: repo not in BRIDGE_ALLOWED_REPOS: %s" % repo)
+        say("rejected: repo not in BRIDGE_ALLOWED_REPOS: %s" % repo)
+        return "rejected"
     name = "bridge-" + task_id
     workdir = os.path.join(cfg["worktrees"], name)
     os.makedirs(cfg["worktrees"], exist_ok=True)
     wt = subprocess.run(["git", "-C", repo, "worktree", "add", "-b", name, workdir],
                         capture_output=True, text=True)
     if wt.returncode != 0:
-        return say("failed: git worktree add\n" + wt.stderr[-1000:])
+        say("failed: git worktree add\n" + wt.stderr[-1000:])
+        return "failed (worktree)"
     say("started: %s in %s (branch %s)" % (header["agent"], workdir, name))
     try:
         res = subprocess.run(build_command(header, body, cfg), cwd=workdir,
                              capture_output=True, text=True, timeout=cfg["timeout"])
-        status = "done" if res.returncode == 0 else "failed (exit %d)" % res.returncode
         output = (res.stdout + ("\n" + res.stderr if res.returncode else "")).strip()
+        status, detail = classify_output(res.returncode, output)
     except subprocess.TimeoutExpired:
-        status, output = "failed (timeout %ds)" % cfg["timeout"], ""
-    tail = output[-(REPLY_LIMIT - 200):]
-    say("%s\nbranch: %s\n```\n%s\n```" % (status, name, tail))
+        status, detail, output = "failed (timeout %ds)" % cfg["timeout"], "", ""
+    tail = output[-(REPLY_LIMIT - 300):]
+    say("%s\n%sbranch: %s\n```\n%s\n```" % (status, detail + "\n" if detail else "", name, tail))
+    return status
 
 
 def read_state(path):
@@ -183,8 +221,12 @@ def poll_github_once(cfg):
         # Remove the label first: a crash never re-runs a task.
         gh("issue", "edit", num, "-R", repo, "--remove-label", label)
         say = lambda t, num=num: gh("issue", "comment", num, "-R", repo, "--body", t[:REPLY_LIMIT])
-        run_task(cfg, issue.get("body", ""), "gh%s-%d" % (num, int(time.time())), say)
-        gh("issue", "close", num, "-R", repo)
+        status = run_task(cfg, issue.get("body", ""), "gh%s-%d" % (num, int(time.time())), say)
+        if status == "needs-approval":
+            # Leave the issue open for the dispatcher to collect the approval.
+            gh("issue", "edit", num, "-R", repo, "--add-label", cfg["approval_label"])
+        else:
+            gh("issue", "close", num, "-R", repo)
 
 
 def main():
