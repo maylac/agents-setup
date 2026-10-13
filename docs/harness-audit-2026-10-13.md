@@ -53,7 +53,7 @@
 
 ## E. 承認待ち・ユーザー操作が必要
 
-- `git push` と `gh pr create` は本セッションの権限分類で拒否された。各ブランチは worktree に残っているので、許可ルール追加後に push する(手順は `docs/grok-bot/README.md` 末尾)。
+- 4 ブランチは 2026-10-14 に push 済み。`gh pr create` は権限分類で拒否されたため、PR 作成はユーザー操作(`docs/grok-bot/README.md` §5)。
 - launchd の変更(永続化)はすべて拒否された: `stdout.log` の `/dev/null` 化、2 系統目の Remote Control(`local.claude.remote-control-vantik.plist`)、週次 rot の `install_launchd.sh`。plist の内容は `launchd/local.claude.remote-control.plist.template` に置いた。
 - Codex live 設定: `sandbox_mode = "workspace-write"`、`model_reasoning_effort = "high"`。
 - idle な Vantik セッション 3 本(`011hdi…` `018R2V…` `013TSX…`)の archive と worktree 削除。`01SrSn…` は未コミット変更 4 件があるため保留。

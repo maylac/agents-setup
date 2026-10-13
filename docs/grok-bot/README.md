@@ -71,19 +71,16 @@ iPhone ─ Slack #agent-tasks ┤(Bot がルーティンで読む)
 - bridge 停止: `launchctl bootout "gui/$(id -u)/com.maylac.slack-bridge"`。未処理 Issue は open のまま残る(ラベルを外した後は再実行されないので、再起動後は手で `agent-task` を付け直す)。
 - Dispatcher 停止: Grok Bot のルーティンを無効化。Dots に戻す場合は `~/AGENTS.md` の該当節を git で戻す。
 
-## 5. 本セッションで push できなかったブランチ
+## 5. PR の作成
 
-権限分類で `git push` と `gh pr create` が拒否されたため、以下は worktree `~/workspace/maylac/agents-setup/.claude/worktrees/bridge-cse_01WHAXwFhuYRYHRyEsFkkWb6` にローカルコミットとして残っている(順に stack)。
+4 本のブランチは 2026-10-14 に origin へ push 済み。`gh pr create` は Remote Control セッションの権限分類で拒否されたため、PR は次のコマンドで作る(stack 順。上から順にマージし、マージ後に次の PR の base を `main` に変える)。この節を直したコミットだけはローカルに残っているので、先に `git -C <worktree> push` する。
 
 ```sh
-W=~/workspace/maylac/agents-setup/.claude/worktrees/bridge-cse_01WHAXwFhuYRYHRyEsFkkWb6
-for b in snapshot/harness-drift-2026-10 fix/repo-path-and-validate-regex docs/harness-audit-2026-10 feat/slack-bridge-codex; do
-  git -C "$W" push -u origin "$b"
-done
-gh pr create -R maylac/agents-setup --base main --head snapshot/harness-drift-2026-10 --fill
-gh pr create -R maylac/agents-setup --base snapshot/harness-drift-2026-10 --head fix/repo-path-and-validate-regex --fill
-gh pr create -R maylac/agents-setup --base fix/repo-path-and-validate-regex --head docs/harness-audit-2026-10 --fill
-gh pr create -R maylac/agents-setup --base docs/harness-audit-2026-10 --head feat/slack-bridge-codex --fill
+R=maylac/agents-setup
+gh pr create -R $R --base main --head snapshot/harness-drift-2026-10 --fill
+gh pr create -R $R --base snapshot/harness-drift-2026-10 --head fix/repo-path-and-validate-regex --fill
+gh pr create -R $R --base fix/repo-path-and-validate-regex --head docs/harness-audit-2026-10 --fill
+gh pr create -R $R --base docs/harness-audit-2026-10 --head feat/slack-bridge-codex --fill
 ```
 
-main checkout をマージ後に追従させる手順は `docs/learnings/2026-10-13-live-config-drift-snapshot.md` の 4。
+GitHub アプリからなら `https://github.com/maylac/agents-setup/pull/new/<branch>` を開けばよい。main checkout をマージ後に追従させる手順は `docs/learnings/2026-10-13-live-config-drift-snapshot.md` の 4。
