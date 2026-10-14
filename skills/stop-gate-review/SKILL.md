@@ -1,6 +1,6 @@
 ---
 name: stop-gate-review
-description: Review only the immediately previous Claude turn for a terse ship/no-ship stop gate. Use when the user asks for an ALLOW/BLOCK decision, says to allow immediately for non-editing/status/setup turns, or explicitly scopes review to the previous Claude turn rather than the whole repo or branch.
+description: Return an ALLOW/BLOCK review when explicitly asked to judge only the immediately previous Claude turn.
 ---
 
 # Stop-Gate Review

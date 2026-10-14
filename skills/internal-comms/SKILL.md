@@ -1,6 +1,6 @@
 ---
 name: internal-comms
-description: Draft internal company communications such as status reports, leadership updates, 3P updates, newsletters, FAQs, incident reports, and project updates. Use when the user explicitly asks for an internal communication or names one of these formats.
+description: Draft internal company communications such as status, leadership, incident, project, FAQ, or newsletter updates.
 license: Complete terms in LICENSE.txt
 ---
 

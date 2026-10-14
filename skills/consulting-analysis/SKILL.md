@@ -1,6 +1,6 @@
 ---
 name: consulting-analysis
-description: 'Produce consulting-grade research reports (market, industry, brand, consumer, financial, competitive, investment DD) in two phases: (1) analysis framework with chapter skeleton and data-query requirements, (2) final report with charts, comparison tables, and strategic narratives after data collection.'
+description: Create evidence-backed consulting research reports, from analysis framework and data needs through charts and recommendations.
 ---
 
 # Professional Research Report Skill

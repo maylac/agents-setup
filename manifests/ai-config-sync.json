@@ -43,12 +43,6 @@
       "live": "~/.claude/settings.json",
       "source": "templates/claude-settings.public.json",
       "mode": "live-mutable-template"
-    },
-    {
-      "id": "paseo-orchestration-preferences",
-      "live": "~/.paseo/orchestration-preferences.json",
-      "source": "paseo/orchestration-preferences.json",
-      "mode": "symlink"
     }
   ],
   "hook_pairs": [
@@ -90,7 +84,7 @@
     },
     {
       "id": "claude-agent-roster",
-      "reason": "Claude keeps a small always-available roster: code-reviewer, security-reviewer, build-error-resolver, plus the two Claude-only Fable consultation roles fable-advisor and fable-verifier (model: fable has no Codex equivalent; the Codex analog is max/ultra effort per the fable-escalation skill). Built-in Plan/Explore and skills cover the retired planner, database, E2E, and communication roles."
+      "reason": "Claude keeps a small always-available roster: code-reviewer, security-reviewer, build-error-resolver, plus two Claude-only Fable compatibility roles, fable-advisor and fable-verifier, which are used only when the user explicitly requests that legacy workflow. The global routing policy sends routine planning/review to Astra and execution to Luna. Built-in Plan/Explore and skills cover the retired planner, database, E2E, and communication roles."
     },
     {
       "id": "codex-agent-superset",
@@ -103,10 +97,6 @@
     {
       "id": "codex-compact-plus",
       "reason": "compact-plus is Codex-only and links to the separately versioned ~/workspace/tools/compact-plus repository rather than the canonical ~/.agents/skills store."
-    },
-    {
-      "id": "paseo-managed-skills",
-      "reason": "paseo and paseo-* are installed as real directories by the Paseo app in canonical, Claude, and Codex stores. They are intentionally not replaced with canonical symlinks because that would conflict with Paseo updates."
     }
   ]
 }

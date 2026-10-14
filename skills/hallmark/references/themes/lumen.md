@@ -4,7 +4,7 @@ Premium AI-tool register, built around a **hand-engineered apparatus** rather th
 
 Lumen runs a strict **two-register typography system**: all prose is **lowercase** (hero titles, section titles, lede, body, buttons, nav, brand, footer copy — even acronyms when they appear in body text); all mono labels are **UPPERCASE** (eyebrows, callouts, meter labels, stat labels). The contrast between quiet lowercase prose and loud UPPERCASE machine-readout is the typographic signature.
 
-Loaded eagerly by SKILL.md Step 3 whenever the catalog pick is `lumen`. Palettes + font stack live in [`site/css/tokens.css`](../../../../site/css/tokens.css) under `[data-theme="lumen"]` (Night, default) and `[data-theme="lumen"][data-drop="day"]` (Day). This file carries the drops + apparatus family + signature moves + motion + anti-patterns.
+Load this when the catalog pick is `lumen`. This packaged reference contains the Night and Day palettes, font stack, apparatus family, signature moves, motion, anti-patterns, and diversification axes. The upstream `site/css/tokens.css` snapshot is not bundled, so use the values below rather than treating that path as a local dependency.
 
 ## Axes (diversification)
 

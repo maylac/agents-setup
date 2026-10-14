@@ -12,9 +12,9 @@ Claude Code環境(ハーネス)そのものを継続的に改善する仕組み�
 1. **決定的な検査はスクリプト、判断だけモデル** (Anthropic loops記事)。週次の腐敗検知は
    `rot_check.py`(stdlibのみ・LLM不要・トークン0)が行い、レポートの読解と修正判断だけを
    エージェントセッションで行う。
-2. **モデル非依存で生き残る**。判断手順はすべて `/self-improve` スキルのチェックリストとして
-   焼き込んであり、Opus / Sonnet / Codex いずれでも実行できる。特定モデル(Fable等)の
-   サブスク終了に依存しない。
+2. **役割を分けて生き残る**。判断手順は `/self-improve` スキルのチェックリストとして
+   焼き込んであり、評価・方針判断はAstra、変更・調査・検証の実行はLunaが担う。
+   特定モデル(Fable等)のサブスク終了に依存しない。
 3. **見送り判断こそ資産**。採用したものは adoption-log に「行き先」まで、見送ったものは
    rejection-log に「理由と再評価条件」まで書く。次に同じ情報に出会ったとき再検討を繰り返さない。
 4. **既存資産を呼ぶ、複製しない**。深掘り監査は `harness-audit` / `skill-stocktake`、
@@ -47,9 +47,9 @@ sync-skills.sh で Claude/Codex 両方へ symlink)。
 | 頻度 | 何が | 誰が | 内容 |
 |---|---|---|---|
 | 週次(月曜08:30) | launchd `com.maylac.selfimprove-rot` | スクリプト | rot_check.py実行→レポート出力。findingsか巡回期限があればmacOS通知 |
-| 通知が来たら | `/self-improve` | 任意モデル | レポートを読み、findings修正 + 期限が来た③巡回 |
-| 随時(教訓が溜まったら) | `/self-improve distill` | 任意モデル | lessons.md等を行き先に振り分け+圧縮 |
-| 月次(月初) | `/self-improve full` | Opus推奨 | 上記全部 + skill-stocktake(Full) + fewer-permission-prompts |
+| 通知が来たら | `/self-improve` | 判断=Astra / 実行=Luna | レポートを評価し、findings修正 + 期限が来た③巡回 |
+| 随時(教訓が溜まったら) | `/self-improve distill` | 判断=Astra / 実行=Luna | lessons.md等を行き先に振り分け+圧縮 |
+| 月次(月初) | `/self-improve full` | 判断=Astra / 実行=Luna | 上記全部 + skill-stocktake(Full) + fewer-permission-prompts |
 
 ## ②のルーティング表 (教訓の行き先)
 

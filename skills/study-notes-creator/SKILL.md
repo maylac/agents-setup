@@ -1,6 +1,6 @@
 ---
 name: study-notes-creator
-description: Create organized study notes, diagrams, folders, examples, and exam-prep materials from PDFs, lecture notes, or docs.
+description: Create organized study notes, diagrams, examples, and exam-prep materials from PDFs, lectures, or documents.
 ---
 
 # Study Notes Creator

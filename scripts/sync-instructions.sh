@@ -7,7 +7,7 @@
 #   usage: sync-instructions.sh [--dry-run|--check]   (乖離検出時は exit 3)
 #   運用: bash ~/.agents/sync-skills.sh && bash "$(dirname "$0")/sync-instructions.sh"
 set -euo pipefail
-ROOT="$HOME/workspace/agents-setup"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CORE="$ROOT/home/AGENTS.md"
 CLA_HEADER="$ROOT/home/claude-header.md"
 SOUL_CORE="$ROOT/home/soul-core.md"
@@ -71,7 +71,6 @@ check_link "$HOME/AGENTS.md" "$CORE"
 check_link "$HOME/CLAUDE.md" "$CORE"
 check_link "$HOME/.claude/CLAUDE.md" "$CLA_OUT"
 check_link "$HOME/.codex/AGENTS.md" "$CORE"
-check_link "$HOME/.paseo/orchestration-preferences.json" "$ROOT/paseo/orchestration-preferences.json"
 
 if [ "$DRIFT" -ne 0 ]; then
   echo "sync-instructions: DRIFT DETECTED"

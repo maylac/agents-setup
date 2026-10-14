@@ -6,7 +6,7 @@ This directory contains user-level Claude Code configuration. Keep instruction f
 
 - `CLAUDE.md` is the Claude Code entry point for this config tree.
 - `rules/common/` contains shared user rules. Prefer path-scoped frontmatter for rules that only apply to code or test files.
-- `skills/` is a symlink mirror of the canonical shared skill store at `~/.agents/skills`.
+- `skills/` links through `~/.agents/skills` to the canonical shared skill sources in the repository's `skills/` directory.
 - `agents/` contains Claude subagent definitions. Use them only when their extra context and cost are justified.
 
 ## Working Agreements

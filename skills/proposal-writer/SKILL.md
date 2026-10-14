@@ -1,6 +1,6 @@
 ---
 name: proposal-writer
-description: Write business proposals (sales, partnership, project, grant) — executive summary, problem/solution framing, pricing, and close. Use when the user asks to draft or improve a proposal. Not for internal status docs (use internal-comms) or consulting research reports (use consulting-analysis).
+description: Draft or improve a sales, partnership, project, or grant proposal with its executive case, pricing, and close.
 ---
 
 # Proposal Writer

@@ -1,10 +1,12 @@
 ---
 name: xlsx
-description: "Any task where a spreadsheet file (.xlsx, .xlsm, .csv, .tsv) is the primary input or output: read, edit, fix, create, convert, clean messy tabular data, add formulas or charts. Trigger when the user references a spreadsheet file even casually. Not when the deliverable is a Word doc, HTML report, script, or Google Sheets integration."
+description: "Standalone Excel file editing with openpyxl and LibreOffice when a spreadsheet plugin is unavailable or direct workbook manipulation is needed."
 license: Proprietary. LICENSE.txt has complete terms
 ---
 
 # Requirements for Outputs
+
+Use an explicitly requested spreadsheet tool or skill. Prefer the installed `spreadsheets:Spreadsheets` workflow for ordinary artifact creation when available; this skill provides the standalone Python and LibreOffice path. Resolve bundled scripts relative to this skill's directory.
 
 ## All Excel files
 
@@ -29,7 +31,7 @@ A user may ask you to create, edit, or analyze the contents of an .xlsx file. Yo
 
 ## Important Requirements
 
-**LibreOffice Required for Formula Recalculation**: You can assume LibreOffice is installed for recalculating formula values using the `scripts/recalc.py` script. The script automatically configures LibreOffice on first run, including in sandboxed environments where Unix sockets are restricted (handled by `scripts/office/soffice.py`)
+**Formula recalculation**: `scripts/recalc.py` requires LibreOffice's `soffice` executable. Check `command -v soffice` before using it; the bundled wrapper configures an installed LibreOffice but does not install it. If unavailable, use an available spreadsheet runtime that recalculates formulas, or report that cached values were not verified. Never claim recalculation succeeded from a successful file save alone.
 
 ## Reading and analyzing data
 

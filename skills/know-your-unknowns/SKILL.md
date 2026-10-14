@@ -1,6 +1,6 @@
 ---
 name: know-your-unknowns
-description: Surface blind spots via reviewable artifacts. Use when touching an unfamiliar module, when requirements are ambiguous inside an already-scoped task, when the user can't articulate the design they want, before porting a reference implementation, or before merging a skimmed diff. Not for routine implementation with clear requirements, and not for open-ended idea exploration (that's brainstorming).
+description: Surface reviewable unknowns before changing an unfamiliar module, porting a reference, or acting on ambiguous scoped requirements.
 ---
 
 # Know Your Unknowns

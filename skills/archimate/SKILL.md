@@ -1,6 +1,6 @@
 ---
 name: archimate
-description: Create ArchiMate enterprise architecture diagrams using PlantUML stdlib macros. Best for TOGAF viewpoints, layered EA modeling (Business/Application/Technology), motivation analysis, and migration planning.
+description: Create PlantUML ArchiMate diagrams for enterprise-architecture viewpoints, motivation analysis, and migration planning.
 ---
 
 # Enterprise Architecture Diagram Generator (ArchiMate)

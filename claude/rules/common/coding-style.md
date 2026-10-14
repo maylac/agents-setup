@@ -30,6 +30,6 @@ Code work may be called complete only when every applicable line below passes. E
 
 - Names: a reader can predict what each new function or variable does without opening its body; no new abbreviation that doesn't already appear in the repo.
 - Scope: every hunk in the diff traces back to the request; a hunk that would make a reviewer ask "why is this here?" fails this line.
-- Failure paths: every new I/O, parse, or external call either handles failure or deliberately propagates it, and at least one realistic failure path was actually exercised (test or manual run), not just written.
+- Failure paths: handle or deliberately propagate errors; execute a failure-path check when its risk and reachability warrant it, and otherwise state the relevant limitation briefly.
 - Magic values: every literal that isn't self-explanatory is named or carries a comment stating the constraint it encodes.
-- Proof: "it works" is backed by pasted output (test run, log, or behavior diff) in the completion report. A description of what should happen is not proof.
+- Evidence: report the check command and relevant result concisely; include raw output only when it helps explain a failure or unexpected behavior.

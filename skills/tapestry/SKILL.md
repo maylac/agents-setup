@@ -1,6 +1,6 @@
 ---
 name: tapestry
-description: Extract content from a URL and turn it into an action plan. Handles articles, YouTube, PDFs, and similar sources.
+description: Extract a URL's article, video, PDF, or similar source and turn it into an actionable plan.
 allowed-tools: Bash,Read,Write
 ---
 

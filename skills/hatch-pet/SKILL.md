@@ -1,6 +1,6 @@
 ---
 name: hatch-pet
-description: Create, repair, validate, visually QA, and package Codex-compatible animated pet spritesheets and pet.json assets.
+description: Create, repair, validate, and package Codex-compatible animated pet spritesheets with pet.json assets.
 ---
 
 # Hatch Pet
@@ -361,9 +361,9 @@ Final visual QA worker responsibilities:
 
 Model choice for workers:
 
-- Prefer a smaller capable model for brand discovery, since it returns a compact research brief rather than doing orchestration.
-- Prefer a smaller capable model for visual workers, such as `gpt-5.6-luna` with medium reasoning, when model override is available.
-- Use the parent/default model only for orchestration or when a smaller worker model is unavailable.
+- Use `gpt-6-luna` for brand discovery, image workers, and evidence collection.
+- Keep orchestration and final visual QA judgment with `gpt-6-astra`.
+- If the assigned model is unavailable, report that and stop; do not switch models automatically.
 - Keep at most two generation workers active at once unless the user explicitly asks for higher parallelism. Run final visual QA as a single worker after deterministic image processing. Close workers after their result has been consumed.
 
 Use this base worker prompt:

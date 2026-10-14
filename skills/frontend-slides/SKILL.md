@@ -1,6 +1,6 @@
 ---
 name: frontend-slides
-description: Create animation-rich HTML presentations or convert PowerPoint decks into web slides with strong visual direction.
+description: Create animation-rich HTML presentations or convert PowerPoint decks into visually directed web slides.
 origin: ECC
 ---
 

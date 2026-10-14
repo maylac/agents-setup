@@ -29,6 +29,19 @@ printf '%s\n' \
   '{"plain":"/Users/fixture-user/.codex/hooks/run.sh","escaped":"\/Users\/fixture-user\/portable\/bridge","regex":"keep \/regex\/literal","hooks":{"Stop":[{"hooks":[{"command":"\/Users\/fixture-user\/.vibe-island\/bin\/bridge"},{"command":"$HOME/.codex/runcat-hook.py"},{"command":"echo portable"}]}]}}' \
   > "$HOME_FIXTURE/.codex/hooks.json"
 
+cat > "$HOME_FIXTURE/.claude/settings.json" <<'JSON'
+{
+  "model": "claude-opus-5-5",
+  "effortLevel": "high",
+  "modelSettings": {
+    "claude-opus-5-5": {"effortLevel": "medium"},
+    "claude-sonnet-5": {"effortLevel": "medium"}
+  },
+  "promptSuggestionEnabled": false,
+  "remoteControlAtStartup": true
+}
+JSON
+
 HOME="$HOME_FIXTURE" bash "$REPO/scripts/backup.sh" --instructions-only >/dev/null
 sanitized="$REPO/codex/hooks.json"
 
@@ -45,5 +58,22 @@ grep -Fq 'echo portable' "$sanitized" || fail 'portable Codex hook was removed'
 if grep -Fq '.vibe-island' "$sanitized" || grep -Fq 'runcat-hook.py' "$sanitized"; then
   fail 'Mac-only Codex hook remains in portable snapshot'
 fi
+
+HOME="$HOME_FIXTURE" bash "$REPO/scripts/backup.sh" >/dev/null
+claude_settings="$REPO/templates/claude-settings.public.json"
+jq -e '
+  .model == "claude-opus-5-5" and
+  .effortLevel == "high" and
+  .modelSettings["claude-opus-5-5"].effortLevel == "medium" and
+  .modelSettings["claude-sonnet-5"].effortLevel == "medium" and
+  .promptSuggestionEnabled == false and
+  .remoteControlAtStartup == true
+' "$claude_settings" >/dev/null || fail 'Claude model settings were not projected as expected'
+
+jq 'del(.effortLevel)' "$HOME_FIXTURE/.claude/settings.json" > "$HOME_FIXTURE/.claude/settings.tmp"
+mv "$HOME_FIXTURE/.claude/settings.tmp" "$HOME_FIXTURE/.claude/settings.json"
+HOME="$HOME_FIXTURE" bash "$REPO/scripts/backup.sh" >/dev/null
+jq -e '(has("effortLevel") | not)' "$claude_settings" >/dev/null ||
+  fail 'absent legacy effortLevel should be omitted from the backup snapshot'
 
 printf 'backup sanitizer tests passed.\n'

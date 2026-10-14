@@ -1,6 +1,6 @@
 ---
 name: mobile-app-ui-design
-description: Design mobile app screens, flows, mockups, onboarding, navigation, and React Native/Flutter/SwiftUI-style visual prototypes.
+description: Design mobile app screens, flows, onboarding, navigation, and visual prototypes for React Native, Flutter, or SwiftUI.
 ---
 
 # Mobile App UI/UX Design Skill

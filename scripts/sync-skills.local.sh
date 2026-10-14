@@ -11,9 +11,6 @@
 #   - 各エージェントdir直下のリンク切れsymlinkは prune。
 #   - 名前が "." で始まるエントリ (.system 等) と非dirは無視。
 #   - 旧 source-command 名はClaude側だけ除外する。
-#   - paseo / paseo-* は Paseoアプリの自己管理領域 (.paseo-managed-files.json マニフェスト付きで
-#     ~/.agents ~/.claude ~/.codex の3箇所に実体インストールされる) のため、ミラー対象から全面除外。
-#     symlink化するとアプリのアップデート動作と衝突する (2026-07-30)。
 
 set -euo pipefail
 
@@ -49,7 +46,6 @@ for agent in "${AGENT_DIRS[@]}"; do
   for path in "$CANON"/*; do
     name="$(basename "$path")"
     case "$name" in .*) continue;; esac      # ドット始まりは無視
-    case "$name" in paseo|paseo-*) continue;; esac  # Paseoアプリ自己管理 — ミラー禁止 (ヘッダ仕様参照)
     [ -d "$path" ] || continue               # dir (symlink-to-dir含む) のみ
     link="$agent/$name"
     want="$REL_PREFIX/$name"
@@ -94,7 +90,6 @@ if [ -d "$HOME/.hermes" ]; then
   for path in "$CANON"/*; do
     name="$(basename "$path")"
     case "$name" in .*) continue;; esac
-    case "$name" in paseo|paseo-*) continue;; esac  # Paseoアプリ自己管理 — ミラー禁止 (ヘッダ仕様参照)
     [ -d "$path" ] || continue
     if grep -Fxq "$name" "$hermes_local_names_file"; then
       continue

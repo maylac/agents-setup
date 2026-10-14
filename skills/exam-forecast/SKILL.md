@@ -1,11 +1,6 @@
 ---
 name: exam-forecast
-description: >
-  Analyze past mock/practice exams for the same certification to surface patterns
-  — domain weighting, recurring trap types, favored question styles, scenario-vs-recall
-  mix — and forecast likely emphases for the upcoming exam. Use when the user says
-  "what's on the exam", "analyze past exams", "predict the exam", or shares past
-  mock exams.
+description: Forecast a certification exam's likely emphasis from past mock exams, including domain weighting, traps, and question styles.
 argument-hint: "[exam name, with past mock exams shared or paths to them]"
 ---
 

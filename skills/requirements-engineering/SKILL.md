@@ -1,6 +1,6 @@
 ---
 name: requirements-engineering
-description: Transform vague feature ideas into clear, testable requirements using EARS format. Capture user stories, define acceptance criteria, identify edge cases, and validate completeness before moving to design.
+description: Turn a vague feature idea into clear, testable EARS requirements with user stories, acceptance criteria, and edge cases.
 license: MIT
 compatibility: Claude Code, Cursor, VS Code, Windsurf
 metadata:
