@@ -79,5 +79,5 @@ FolioCapture / agents-setup / hermes-hub と同型。セクションは以下の
 ## 関連
 
 - extract-approach スキル — learnings ノートの書式と発火条件
-- ~/workspace/agents-setup — グローバル設定の正本(このスキルはrepoローカル分のみ担当)
+- ~/workspace/maylac/agents-setup — グローバル設定の正本(このスキルはrepoローカル分のみ担当)
 - ~/CLAUDE.md「Development Workflow Standard: Backlog.md」— backlog init の判断基準

@@ -57,7 +57,7 @@ are historical observations, not guarantees about every version or setup:
   shell loop in the tested setup. Check the actual command path before drawing
   conclusions from an RTK run.
 - Comparing `~/.agents/skills/skill-stocktake/results.json` with
-  `~/workspace/agents-setup/skills/skill-stocktake/results.json` found
+  `~/workspace/maylac/agents-setup/skills/skill-stocktake/results.json` found
   different checksums and a real two-line mismatch. Bare `diff` reported
   `[ok] Files are identical` three times; `rtk proxy diff` showed the change
   at `522c522` onward. The rewritten command also returned exit status 0.

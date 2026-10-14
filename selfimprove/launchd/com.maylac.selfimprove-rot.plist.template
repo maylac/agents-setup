@@ -7,7 +7,7 @@
   <key>ProgramArguments</key>
   <array>
     <string>/bin/zsh</string>
-    <string>__HOME__/workspace/agents-setup/selfimprove/scripts/rot_check_weekly.sh</string>
+    <string>__HOME__/workspace/maylac/agents-setup/selfimprove/scripts/rot_check_weekly.sh</string>
   </array>
   <key>StartCalendarInterval</key>
   <dict>

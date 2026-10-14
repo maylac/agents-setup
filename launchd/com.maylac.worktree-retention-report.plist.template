@@ -7,7 +7,7 @@
   <key>ProgramArguments</key>
   <array>
     <string>/usr/bin/python3</string>
-    <string>$HOME/workspace/agents-setup/scripts/worktree-retention-report.py</string>
+    <string>$HOME/workspace/maylac/agents-setup/scripts/worktree-retention-report.py</string>
     <string>--output</string>
     <string>$HOME/tasks/worktree-retention-report.md</string>
   </array>

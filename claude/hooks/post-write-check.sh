@@ -22,7 +22,7 @@ except Exception:
 [[ -z "$file_path" ]] && exit 0
 
 case "$file_path" in
-  */workspace/myLife/scripts/*.py|*/workspace/agents-setup/*.py)
+  */workspace/myLife/scripts/*.py|*/workspace/maylac/agents-setup/*.py)
     if command -v ruff >/dev/null 2>&1; then
       ruff check "$file_path" 2>&1 | sed 's/^/[lint] /' >&2
     fi

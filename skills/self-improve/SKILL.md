@@ -5,7 +5,7 @@ description: ハーネス自己改善エコシステムの実行手順。週次r
 
 # self-improve — ハーネス自己改善の実行手順
 
-正本と設計書: `~/workspace/agents-setup/selfimprove/README.md`(以下 `$SI` = そのディレクトリ)。
+正本と設計書: `~/workspace/maylac/agents-setup/selfimprove/README.md`(以下 `$SI` = そのディレクトリ)。
 このスキルはどのモデルでも実行できるよう手順を焼き込んである。判断に迷ったらREADMEの設計原則に戻る。
 
 ## モード
@@ -48,4 +48,4 @@ quick の全手順に加えて: `skill-stocktake`(Full) → 公式 `/fewer-permi
 
 - rot_check.py が実行済みで、対応した findings は再実行で消えている
 - 台帳(sources/adoption/rejection)への記録が漏れていない
-- 変更は `~/workspace/agents-setup` にコミットされている(ハーネス資産の正本はこのrepo)
+- 変更は `~/workspace/maylac/agents-setup` にコミットされている(ハーネス資産の正本はこのrepo)
