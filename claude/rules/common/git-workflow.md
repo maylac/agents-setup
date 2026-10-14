@@ -20,7 +20,7 @@ Use the repository's convention when one exists. Otherwise use:
 
 Common types: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `perf`, `ci`.
 
-Attribution is disabled globally via `~/.claude/settings.json`.
+Attribution lines follow the active harness defaults; live `~/.claude/settings.json` sets no attribution key.
 
 ## Pull Request Workflow
 
