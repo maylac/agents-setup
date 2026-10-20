@@ -6,7 +6,7 @@ It polls one Slack channel, accepts task contracts only from allowlisted senders
 ## Contract
 
 ```
-agent: claude            # or codex / agy
+agent: claude            # or codex / agy / grok (grok needs BRIDGE_GROK_ENABLED=1)
 repo: $HOME/workspace/maylac/some-repo
 model: claude-opus-5-5   # optional; codex e.g. gpt-6-luna; agy defaults to Gemini 3.5 Flash (Low)
 
@@ -33,6 +33,21 @@ Goal, owned files, acceptance criteria as runnable checks, time budget.
 - `blocked (rate limit)`: a non-zero exit whose output mentions a 429, rate limit, usage limit or reset time. The matching line is quoted so the dispatcher can relay the reset time and re-file the task for another agent (for example `agent: codex`).
 - `needs-approval`: the agent printed a line starting with `NEEDS-APPROVAL:` (a Hard Stop such as a force push or a deploy). The issue gets the `needs-approval` label and stays open; the dispatcher collects the approval and files a follow-up contract.
 3. Install: `mkdir -p ~/.local/state/slack-bridge && sed "s#\$HOME#$HOME#g" launchd/com.maylac.slack-bridge.plist.template > ~/Library/LaunchAgents/com.maylac.slack-bridge.plist && launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.maylac.slack-bridge.plist`
+
+### Shared harness and routing policy
+
+`harness.py` + `routing.json` are the one place all three agents share:
+
+- **Preamble.** Every task is prefixed with the same rules (AGENTS.md, Hard Stops, `NEEDS-APPROVAL:`, report format) and runs with `CROSS_HARNESS_PEER=1`, so no agent re-delegates.
+- **Chains.** `chains[agent]` lists routes (`agent:model`) in order, e.g. `claude` → opus → sonnet → `codex:gpt-6-luna`. Edit `routing.json` to change policy; it is validated at startup.
+- **When it falls back.** Only when a non-zero exit shows the route itself is unusable (rate/usage limit, auth, overloaded or missing model, missing binary). Ordinary task failures, timeouts and `NEEDS-APPROVAL` stop the run. Before the next route starts, the bridge's own worktree is reset to `HEAD`.
+- **Cooldowns.** An unavailable route is skipped for `cooldown_seconds[kind]` (state: `cooldowns.json`). Reset times are not parsed; the quoted line is relayed instead.
+- **Never silent.** The result comment has a `route:` line listing each hop. If every route is cooling down or dead the status is `blocked (no route)`.
+- **Pinning.** A contract `model:` pins the run to that one route; `fallback: allow` re-enables the chain after it, `fallback: off` pins the default route.
+
+- **Grok subscription (SuperGrok / X Premium+).** `grok` is a fourth agent (Grok Build CLI, `grok -p`, signed in with the subscription) and the last resort in every chain. It is off until `BRIDGE_GROK_ENABLED=1`, because the CLI's permission and model flags are not documented yet: set them via `BRIDGE_GROK_ARGS` only after checking `grok --help` (the bridge never adds a bypass flag itself), and `BRIDGE_GROK_BIN` if it is not on PATH. The Grok Bot Dispatcher and Grok Build probably draw on one subscription, so Grok stays last to protect the Dispatcher's weekly allowance (unverified; if Grok Build reports a limit it is cooled down like any other route).
+
+Env: `BRIDGE_ROUTING_FILE`, `BRIDGE_COOLDOWN_FILE`, `BRIDGE_GROK_ENABLED`, `BRIDGE_GROK_BIN`, `BRIDGE_GROK_ARGS`.
 
 ### GitHub transport (no Slack token needed)
 
