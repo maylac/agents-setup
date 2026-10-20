@@ -24,7 +24,7 @@ Task:
 # Order matters: the first matching kind wins. Applied to the output tail of a non-zero exit only.
 UNAVAILABLE = (
     ("rate_limit", re.compile(r"(?i)(\b429\b|rate.?limit|usage limit|quota|resets? at)")),
-    ("auth", re.compile(r"(?i)(not logged in|/login\b|\b401\b|unauthori[sz]ed|invalid api key|authentication (failed|required))")),
+    ("auth", re.compile(r"(?i)(not logged in|not signed in|grok login|/login\b|\b401\b|unauthori[sz]ed|invalid api key|authentication (failed|required))")),
     ("model_unavailable", re.compile(r"(?i)(overloaded|\b529\b|\b503\b|model.{0,40}(not found|not available|does not exist|unsupported)|no access to model)")),
 )
 TAIL_LINES = 30

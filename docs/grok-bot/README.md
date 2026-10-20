@@ -6,7 +6,7 @@
 
 - Grok Bot はアカウントごとに 1 台の共有クラウド PC(ブラウザ・ターミナル・`/workspace`)で動く。**Mac mini 上では動かず、SSH も既定では持たない**。入口は Grok Bot の iOS/Android/デスクトップアプリ、または X でのタグ付け。Slack/Telegram から直接話しかける公式経路はない。
 - 連携: GitHub・Notion・Linear(OAuth)、Slack(OAuth。認可画面に "Cursor" と出る報告あり)、Google 系。MCP は公開到達可能なサーバーのみ。
-- Grok Build CLI(`grok -p`、SuperGrok / X Premium+ で利用可、2026-05 時点 beta)は同じサブスクを使うコーディングエージェント。bridge では最終手段の route `grok` として扱い、`BRIDGE_GROK_ENABLED=1` で明示的に有効化する(CLI 未導入・フラグ未確認のため既定は無効)。Dispatcher と週次枠を共有する可能性があるので最後尾に置いている。
+- Grok Build CLI(`grok -p`、SuperGrok / X Premium+ で利用可、2026-05 時点 beta)は同じサブスクを使うコーディングエージェント。bridge では最終手段の route `grok` として扱い、`BRIDGE_GROK_ENABLED=1` で明示的に有効化する(grok 1.0.62 でフラグ確認済み。未サインインのため既定は無効)。Dispatcher と週次枠を共有する可能性があるので最後尾に置いている。
 - 料金: X Premium+ に Grok Bot と SuperGrok が同梱。週次使用量は chat とは別枠で、ブラウザ長時間・多 Bot 会話・曖昧な調査で速く減る。
 - 全 Bot が 1 台の PC と認証情報を共有する(トラスト境界は 1 つ)。Mac mini の SSH 鍵や NAS 認証は渡さない。
 

@@ -69,7 +69,7 @@ def load_config(env=os.environ):
         "codex_bin": env.get("BRIDGE_CODEX_BIN", "codex"),
         "grok_enabled": env.get("BRIDGE_GROK_ENABLED", "") == "1",
         "grok_bin": env.get("BRIDGE_GROK_BIN", "grok"),
-        "grok_args": shlex.split(env.get("BRIDGE_GROK_ARGS", "")),
+        "grok_args": shlex.split(env.get("BRIDGE_GROK_ARGS", "--permission-mode acceptEdits")),
         "approval_label": env.get("BRIDGE_APPROVAL_LABEL", "needs-approval"),
         "policy": harness.load_policy(env.get("BRIDGE_ROUTING_FILE", os.path.join(os.path.dirname(os.path.abspath(__file__)), "routing.json"))),
         "cooldowns": env.get("BRIDGE_COOLDOWN_FILE", os.path.expanduser("~/.local/state/slack-bridge/cooldowns.json")),
@@ -118,9 +118,10 @@ def build_command(header, body, cfg):
             cmd += ["-m", header["model"]]
         return cmd
     if header["agent"] == "grok":
-        # Grok Build CLI (SuperGrok / X Premium+ login). Permission and model flags are not
-        # documented yet, so they come only from BRIDGE_GROK_ARGS; the route's model is not passed.
-        return [cfg["grok_bin"], "-p", body] + cfg["grok_args"]
+        # Grok Build CLI (SuperGrok / X Premium+ login; grok 1.0.62 flags). Permission mode
+        # comes from BRIDGE_GROK_ARGS (default acceptEdits); never a bypass flag.
+        cmd = [cfg["grok_bin"], "-p", body] + cfg["grok_args"]
+        return cmd + ["-m", header["model"]] if header.get("model") else cmd
     return ["agy", "--print", body, "--model", header.get("model") or cfg["agy_model"],
             "--mode", "accept-edits", "--print-timeout", "%ds" % cfg["timeout"]]
 

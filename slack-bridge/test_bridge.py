@@ -102,6 +102,7 @@ class RoutingTest(unittest.TestCase):
         self.assertEqual(harness.plan_routes(pol, {"agent": "grok"})[0], ("grok", ""))
         self.assertFalse(self.cfg["grok_enabled"])
         cfg = bridge.load_config(dict(ENV, BRIDGE_GROK_ENABLED="1", BRIDGE_GROK_ARGS="--foo bar"))
+        self.assertEqual(bridge.build_command({"agent": "grok"}, "t", bridge.load_config(dict(ENV)))[3:], ["--permission-mode", "acceptEdits"])
         self.assertEqual(bridge.build_command({"agent": "grok"}, "t", cfg), ["grok", "-p", "t", "--foo", "bar"])
         said = []
         self.assertEqual(bridge.run_task(self.cfg, "agent: grok\nrepo: /tmp\n\nx", "g1", said.append), "rejected")
@@ -110,6 +111,7 @@ class RoutingTest(unittest.TestCase):
         self.assertIsNone(harness.unavailable_kind(0, "429 rate limit"))
         self.assertEqual(harness.unavailable_kind(1, "x\nusage limit, resets at 5pm")[0], "rate_limit")
         self.assertEqual(harness.unavailable_kind(1, "Not logged in")[0], "auth")
+        self.assertEqual(harness.unavailable_kind(1, "Error: Not signed in. run grok login")[0], "auth")
         self.assertEqual(harness.unavailable_kind(1, "API Error 529 overloaded")[0], "model_unavailable")
         self.assertIsNone(harness.unavailable_kind(1, "assertion failed"))
 
