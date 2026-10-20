@@ -66,6 +66,11 @@ Assume many user prompts are dictated by voice and may contain speech-to-text er
 - **Work vs. consultation.** Work mode edits only its assigned files and runs task-relevant checks. Consultation is read-only: one pass plus at most one focused follow-up. Peers marked `CROSS_HARNESS_PEER=1` or `delegated peer` must not delegate further. Workers marked `CROSS_HARNESS_WORKER=1` may re-delegate bounded, independent subtasks inside their scope, passing on ownership, criteria, model choice, and limits, verifying child results, and reporting them upward; re-delegation never widens permissions or authorizes external side effects.
 - If the cross-harness route is unavailable, say so and continue the authorized work in the current harness without claiming the other harness participated.
 
+## Japanese Prose Refinement
+
+- The shared `yomiyasu` skill is available at `~/.agents/skills/yomiyasu/SKILL.md`. Load it when the user asks to refine Japanese prose; do not apply it to every response.
+- When delegating Japanese prose refinement to a worker whose normal skill discovery is disabled, name `~/.agents/skills/yomiyasu/SKILL.md` explicitly in the delegation brief.
+
 ## Local Tools
 
 - For NAS work, use the existing SSH alias `ugnas` first. It was verified on 2026-09-27; Vantik commands run through `ssh ugnas` and `docker exec vantik`. Check current SSH connectivity before falling back to a browser or asking the user to unlock the home Mac. The user needs NAS work to continue while away from home; do not assume physical access to the Mac. Read or write the live SQLite DB inside the container, and use SQLite online backups for local inspection instead of opening the live DB over SMB.
