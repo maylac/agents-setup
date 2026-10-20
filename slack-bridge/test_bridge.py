@@ -1,5 +1,10 @@
 import os
+import stat
+import subprocess
+import tempfile
 import unittest
+
+import harness
 
 import bridge
 
@@ -77,6 +82,92 @@ class BridgeTest(unittest.TestCase):
 
     def test_repo_allowlist_uses_realpath(self):
         self.assertIn(os.path.realpath("/tmp"), self.cfg["repos"])
+
+
+class RoutingTest(unittest.TestCase):
+    def setUp(self):
+        self.cfg = bridge.load_config(ENV)
+
+    def test_plan_routes_default_and_pinned(self):
+        pol = self.cfg["policy"]
+        self.assertEqual([r[0] for r in harness.plan_routes(pol, {"agent": "claude"})], ["claude", "claude", "codex", "grok"])
+        self.assertEqual(harness.plan_routes(pol, {"agent": "claude", "model": "x"}), [("claude", "x")])
+        self.assertEqual(len(harness.plan_routes(pol, {"agent": "claude", "fallback": "off"})), 1)
+        self.assertEqual(harness.plan_routes(pol, {"agent": "claude", "model": "x", "fallback": "allow"})[0], ("claude", "x"))
+        self.assertGreater(len(harness.plan_routes(pol, {"agent": "claude", "model": "x", "fallback": "allow"})), 1)
+
+    def test_grok_is_last_resort_and_gated(self):
+        pol = self.cfg["policy"]
+        self.assertEqual(harness.plan_routes(pol, {"agent": "claude"})[-1], ("grok", ""))
+        self.assertEqual(harness.plan_routes(pol, {"agent": "grok"})[0], ("grok", ""))
+        self.assertFalse(self.cfg["grok_enabled"])
+        cfg = bridge.load_config(dict(ENV, BRIDGE_GROK_ENABLED="1", BRIDGE_GROK_ARGS="--foo bar"))
+        self.assertEqual(bridge.build_command({"agent": "grok"}, "t", cfg), ["grok", "-p", "t", "--foo", "bar"])
+        said = []
+        self.assertEqual(bridge.run_task(self.cfg, "agent: grok\nrepo: /tmp\n\nx", "g1", said.append), "rejected")
+
+    def test_unavailable_kind_only_on_failure(self):
+        self.assertIsNone(harness.unavailable_kind(0, "429 rate limit"))
+        self.assertEqual(harness.unavailable_kind(1, "x\nusage limit, resets at 5pm")[0], "rate_limit")
+        self.assertEqual(harness.unavailable_kind(1, "Not logged in")[0], "auth")
+        self.assertEqual(harness.unavailable_kind(1, "API Error 529 overloaded")[0], "model_unavailable")
+        self.assertIsNone(harness.unavailable_kind(1, "assertion failed"))
+
+    def test_cooldown_expires(self):
+        now = [1000.0]
+        with tempfile.TemporaryDirectory() as d:
+            c = harness.Cooldowns(os.path.join(d, "c.json"), clock=lambda: now[0])
+            c.mark(("claude", "m"), "rate_limit", 60)
+            self.assertTrue(c.active(("claude", "m")))
+            now[0] = 1061
+            self.assertIsNone(c.active(("claude", "m")))
+
+
+class FallbackRunTest(unittest.TestCase):
+    """End-to-end run_task with fake agent binaries on PATH."""
+
+    def fake(self, d, name, code, text):
+        path = os.path.join(d, name)
+        with open(path, "w") as f:
+            f.write("#!/bin/sh\necho '%s'\nexit %d\n" % (text, code))
+        os.chmod(path, os.stat(path).st_mode | stat.S_IEXEC)
+
+    def run_contract(self, header, claude=(1, "429 rate limit, resets at 17:10")):
+        d = tempfile.mkdtemp()
+        repo = os.path.join(d, "repo")
+        os.makedirs(repo)
+        for cmd in (["init", "-q"], ["-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "--allow-empty", "-m", "i"]):
+            subprocess.run(["git", "-C", repo] + cmd, check=True)
+        bin_dir = os.path.join(d, "bin")
+        os.makedirs(bin_dir)
+        self.fake(bin_dir, "claude", *claude)
+        self.fake(bin_dir, "codex", 0, "codex ok")
+        cfg = bridge.load_config(dict(ENV, BRIDGE_ALLOWED_REPOS=repo, BRIDGE_WORKTREE_DIR=os.path.join(d, "wt"),
+                                      BRIDGE_COOLDOWN_FILE=os.path.join(d, "cd.json")))
+        old = os.environ["PATH"]
+        os.environ["PATH"] = bin_dir + os.pathsep + old
+        self.addCleanup(os.environ.__setitem__, "PATH", old)
+        said = []
+        status = bridge.run_task(cfg, "agent: claude\nrepo: %s\n%s\n\ndo it" % (repo, header), "t1", said.append)
+        return status, said, cfg
+
+    def test_rate_limited_claude_falls_back_visibly(self):
+        status, said, cfg = self.run_contract("")
+        self.assertEqual(status, "done")
+        self.assertIn("route:", said[-1])
+        self.assertIn("claude:claude-opus-5-5 unavailable (rate_limit)", said[-1])
+        self.assertIn("ran codex:gpt-6-luna", said[-1])
+        # the cooldown means a second task skips the dead routes without running them
+        self.assertTrue(harness.Cooldowns(cfg["cooldowns"]).active(("claude", "claude-opus-5-5")))
+
+    def test_pinned_model_never_falls_back(self):
+        status, said, _ = self.run_contract("model: claude-opus-5-5")
+        self.assertEqual(status, "blocked (no route)")
+        self.assertNotIn("codex", said[-1].split("```")[0].replace("fallback", ""))
+
+    def test_real_failure_does_not_fall_back(self):
+        status, said, _ = self.run_contract("", claude=(1, "AssertionError in test"))
+        self.assertEqual(status, "failed (exit 1)")
 
 
 if __name__ == "__main__":

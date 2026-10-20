@@ -1,0 +1,14 @@
+{
+  "chains": {
+    "claude": ["claude:claude-opus-5-5", "claude:claude-sonnet-5-5", "codex:gpt-6-luna", "grok"],
+    "codex": ["codex:gpt-6-luna", "claude:claude-sonnet-5-5", "grok"],
+    "agy": ["agy:Gemini 3.5 Flash (Low)", "codex:gpt-6-luna", "claude:claude-sonnet-5-5", "grok"],
+    "grok": ["grok", "codex:gpt-6-luna", "claude:claude-sonnet-5-5"]
+  },
+  "cooldown_seconds": {
+    "rate_limit": 1800,
+    "auth": 3600,
+    "model_unavailable": 900,
+    "binary_missing": 3600
+  }
+}

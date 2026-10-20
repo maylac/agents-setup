@@ -26,15 +26,18 @@ Contract format (header lines, blank line, then the task body):
 import json
 import os
 import re
+import shlex
 import subprocess
 import sys
 import time
 import urllib.parse
 import urllib.request
 
+import harness
+
 API = "https://slack.com/api/"
 REPLY_LIMIT = 3500
-AGENTS = ("claude", "codex", "agy")
+AGENTS = ("claude", "codex", "agy", "grok")
 APPROVAL_MARK = "NEEDS-APPROVAL:"
 RATE_LIMIT_RE = re.compile(r"(?i)(\b429\b|rate.?limit|usage limit|resets? at)")
 
@@ -64,7 +67,12 @@ def load_config(env=os.environ):
         "claude_mode": env.get("BRIDGE_CLAUDE_PERMISSION_MODE", "auto"),
         "agy_model": env.get("BRIDGE_AGY_DEFAULT_MODEL", "Gemini 3.5 Flash (Low)"),
         "codex_bin": env.get("BRIDGE_CODEX_BIN", "codex"),
+        "grok_enabled": env.get("BRIDGE_GROK_ENABLED", "") == "1",
+        "grok_bin": env.get("BRIDGE_GROK_BIN", "grok"),
+        "grok_args": shlex.split(env.get("BRIDGE_GROK_ARGS", "")),
         "approval_label": env.get("BRIDGE_APPROVAL_LABEL", "needs-approval"),
+        "policy": harness.load_policy(env.get("BRIDGE_ROUTING_FILE", os.path.join(os.path.dirname(os.path.abspath(__file__)), "routing.json"))),
+        "cooldowns": env.get("BRIDGE_COOLDOWN_FILE", os.path.expanduser("~/.local/state/slack-bridge/cooldowns.json")),
     }
 
 
@@ -109,6 +117,10 @@ def build_command(header, body, cfg):
         if header.get("model"):
             cmd += ["-m", header["model"]]
         return cmd
+    if header["agent"] == "grok":
+        # Grok Build CLI (SuperGrok / X Premium+ login). Permission and model flags are not
+        # documented yet, so they come only from BRIDGE_GROK_ARGS; the route's model is not passed.
+        return [cfg["grok_bin"], "-p", body] + cfg["grok_args"]
     return ["agy", "--print", body, "--model", header.get("model") or cfg["agy_model"],
             "--mode", "accept-edits", "--print-timeout", "%ds" % cfg["timeout"]]
 
@@ -155,6 +167,10 @@ def run_task(cfg, text, task_id, say):
     if repo not in cfg["repos"]:
         say("rejected: repo not in BRIDGE_ALLOWED_REPOS: %s" % repo)
         return "rejected"
+    routes = [r for r in harness.plan_routes(cfg["policy"], header) if r[0] != "grok" or cfg["grok_enabled"]]
+    if header["agent"] == "grok" and not cfg["grok_enabled"]:
+        say("rejected: agent grok needs BRIDGE_GROK_ENABLED=1")
+        return "rejected"
     name = "bridge-" + task_id
     workdir = os.path.join(cfg["worktrees"], name)
     os.makedirs(cfg["worktrees"], exist_ok=True)
@@ -163,16 +179,48 @@ def run_task(cfg, text, task_id, say):
     if wt.returncode != 0:
         say("failed: git worktree add\n" + wt.stderr[-1000:])
         return "failed (worktree)"
-    say("started: %s in %s (branch %s)" % (header["agent"], workdir, name))
-    try:
-        res = subprocess.run(build_command(header, body, cfg), cwd=workdir,
-                             capture_output=True, text=True, timeout=cfg["timeout"])
-        output = (res.stdout + ("\n" + res.stderr if res.returncode else "")).strip()
-        status, detail = classify_output(res.returncode, output)
-    except subprocess.TimeoutExpired:
-        status, detail, output = "failed (timeout %ds)" % cfg["timeout"], "", ""
+    cool = harness.Cooldowns(cfg["cooldowns"])
+    trail, status, detail, output, used = [], "blocked (no route)", "", "", None
+    for route in routes:
+        active = cool.active(route)
+        if active:
+            trail.append("skip %s: %s until %s" % (harness.route_id(route), active["kind"],
+                                                  time.strftime("%H:%M", time.localtime(active["until"]))))
+            continue
+        if used:  # a previous route died mid-run; start the next one from a clean tree
+            subprocess.run(["git", "-C", workdir, "reset", "--hard", "-q", "HEAD"], capture_output=True)
+            subprocess.run(["git", "-C", workdir, "clean", "-fdq"], capture_output=True)
+        used = route
+        say("started: %s in %s (branch %s)" % (harness.route_id(route), workdir, name))
+        cmd = build_command(dict(header, agent=route[0], model=route[1]), harness.PREAMBLE + body, cfg)
+        env = dict(os.environ, CROSS_HARNESS_PEER="1")
+        try:
+            res = subprocess.run(cmd, cwd=workdir, capture_output=True, text=True,
+                                 timeout=cfg["timeout"], env=env)
+            output = (res.stdout + ("\n" + res.stderr if res.returncode else "")).strip()
+            rc = res.returncode
+        except FileNotFoundError:
+            rc, output = 127, "command not found: %s" % cmd[0]
+            kind = ("binary_missing", output)
+        except subprocess.TimeoutExpired:
+            status, detail, output = "failed (timeout %ds)" % cfg["timeout"], "", ""
+            break
+        else:
+            kind = None if APPROVAL_MARK in output else harness.unavailable_kind(rc, output)
+        if kind:
+            cool.mark(route, kind[0], cfg["policy"]["cooldown"][kind[0]], kind[1])
+            trail.append("%s unavailable (%s): %s" % (harness.route_id(route), kind[0], kind[1]))
+            status, detail = "blocked (no route)", kind[1]
+            continue
+        status, detail = classify_output(rc, output)
+        break
+    route_note = ""
+    if status == "blocked (no route)":
+        detail = "; ".join(trail) or "no route available"
+    elif trail:
+        route_note = "route: %s\n" % " -> ".join(trail + ["ran %s" % harness.route_id(used)])
     tail = output[-(REPLY_LIMIT - 300):]
-    say("%s\n%sbranch: %s\n```\n%s\n```" % (status, detail + "\n" if detail else "", name, tail))
+    say("%s\n%s%sbranch: %s\n```\n%s\n```" % (status, route_note, detail + "\n" if detail else "", name, tail))
     return status
 
 

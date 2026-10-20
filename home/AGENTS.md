@@ -11,11 +11,11 @@ For the full rationale and worked examples, load the `karpathy-guidelines` skill
 
 In autonomous runs (below), "ask" means only the Hard Stops list; for everything else, decide, record the assumption in the report, and proceed.
 
-## Autonomous Operation: Slack / Grok Bot → GitHub Issue → Mac mini
+## Autonomous Operation: Grok Bot (Slack optional) → GitHub Issue → Mac mini
 
-The user operates from Slack and a phone and does not touch a PC. The home Mac mini is the always-on mothership where all local execution happens.
+The user operates from a phone (Grok Bot app; Slack is an optional entry and report channel) and does not touch a PC. The home Mac mini is the always-on mothership where all local execution happens.
 
-- **Roles.** The Dispatcher (xAI Grok Bot, cloud-hosted; previously ChatGPT Dots) is the orchestrator: it takes the user's request, decomposes it, writes task contracts, files them, judges returned evidence, and reports back in Slack `#agent-tasks`. Agents run on the Mac mini: Claude Code owns implementation, debugging, refactoring, and review of material changes; Codex (`codex exec`, gpt-6-luna) is the fallback implementer when Claude is rate-limited; Antigravity (`agy`) owns bounded mechanical work — lookup, inventory, extraction, summarization, doc drafts, test enumeration. The Dispatcher does not implement; agents do not re-scope.
+- **Roles.** The Dispatcher (xAI Grok Bot, cloud-hosted; previously ChatGPT Dots) is the orchestrator: it takes the user's request, decomposes it, writes task contracts, files them, judges returned evidence, and reports back where the request came from (Grok Bot app, or Slack `#agent-tasks` if used). Agents run on the Mac mini: Claude Code owns implementation, debugging, refactoring, and review of material changes; Codex (`codex exec`, gpt-6-luna) is the fallback implementer when Claude is rate-limited; Antigravity (`agy`) owns bounded mechanical work — lookup, inventory, extraction, summarization, doc drafts, test enumeration. The Dispatcher does not implement; agents do not re-scope.
 - **Task contract.** One dispatch = one GitHub issue labelled `agent-task` in the dispatch repo, whose body is: a header (`agent: claude|codex|agy`, `repo: <path>`, optional `model:`), a blank line, then goal, owned files, acceptance criteria as runnable checks, and time budget. The agent replies as issue comments with: status (done / blocked / failed), changed files, each check command with pass/fail, commit or PR link, and at most 5 lines of notes. No transcripts or full diffs.
 - **Dispatch.** The bridge (`~/workspace/maylac/agents-setup/slack-bridge/bridge.py`, `BRIDGE_TRANSPORT=github`, launchd) polls those issues with the Mac's `gh` login, runs the agent non-interactively inside a fresh git worktree (`claude -p`, `codex exec --sandbox workspace-write`, or `agy --print … --print-timeout 30m`), and closes the issue. Prefer this route over GUI or browser automation. If the bridge, an agent login, or a rate limit blocks a run, the bridge says so in the issue and the Dispatcher relays it to Slack with the reset time; nobody asks the user to operate the Mac.
 - **Single command path.** Only the Dispatcher files `agent-task` issues. If the user instructs an agent directly (Claude iOS Remote Control, Codex app), that work carries a `manual` label or stays out of the dispatch repo, so two controllers never edit the same tree.
@@ -32,7 +32,7 @@ When a repository already uses Backlog.md, start with `backlog instructions over
 
 The user pre-authorizes autonomous execution through implementation. Do not ask for confirmation to plan, read, create or edit files, install project dependencies, run builds and tests, create branches or worktrees, commit, push non-default branches, or open PRs. Finish with the PR ready and a Slack report; merging to the default branch happens on the user's reply unless the repo explicitly enables auto-merge.
 
-Hard stops — prepare a draft or dry run, post one approval request in the Slack thread, and keep doing other unblocked work:
+Hard stops — prepare a draft or dry run, post one approval request in the originating channel (Grok Bot app or Slack thread), and keep doing other unblocked work:
 
 - Force pushes or history rewrites on shared branches; lockfile deletion.
 - Irreversible deletion outside the task worktree (databases, backups, cloud resources).
@@ -60,11 +60,16 @@ Assume many user prompts are dictated by voice and may contain speech-to-text er
 
 ## Cross-Harness Model Routing and Collaboration
 
-- **Claude Code:** use the user's configured Claude model (currently Opus 5.5, medium effort) for Claude-owned planning, judgment, and execution; native agent and effort rules live in `~/.claude/CLAUDE.md` and `rules/common/`. **Codex:** `gpt-6-astra` plans, supervises, reviews evidence, and decides; `gpt-6-luna` implements, fixes, researches, documents, and runs tests. Astra may do a trivial operation itself when delegation costs more than the work. Explicit task-level model choices win; if a requested model or route is unavailable, stop that route and report it, never fall back silently.
+- **Claude Code:** use the user's configured Claude model (currently Opus 5.5, medium effort) for Claude-owned planning, judgment, and execution; native agent and effort rules live in `~/.claude/CLAUDE.md` and `rules/common/`. **Codex:** `gpt-6-astra` plans, supervises, reviews evidence, and decides; `gpt-6-luna` implements, fixes, researches, documents, and runs tests. Astra may do a trivial operation itself when delegation costs more than the work. Explicit task-level model choices win; if a requested model or route is unavailable, stop that route and report it, never fall back silently. Dispatched runs are the exception: the bridge harness (`slack-bridge/routing.json`) applies the written fallback chain, pins runs that set `model:` or `fallback: off` to one route, and lists every hop in the result comment. The Grok subscription CLI (`grok -p`) is the gated last-resort route (`BRIDGE_GROK_ENABLED=1`).
 - **Evidence before completion.** For non-trivial implementation, name the execution owner and show that it did the work (Luna receipt, Claude session, or bridge issue comment). A read-only peer judgment needs no execution worker.
 - **Default split.** For interactive (non-dispatched) actionable work with a useful bounded division, give one independent subtask to the opposite harness through the `cross-harness-collab` skill (`--mode work`, explicit `--owned-path` and acceptance checks) while the owner advances a distinct part. Keep tiny or indivisible tasks local. The main session owns scope, integration, and the final decision; one external worker by default; no overlapping paths, no chat loops.
 - **Work vs. consultation.** Work mode edits only its assigned files and runs task-relevant checks. Consultation is read-only: one pass plus at most one focused follow-up. Peers marked `CROSS_HARNESS_PEER=1` or `delegated peer` must not delegate further. Workers marked `CROSS_HARNESS_WORKER=1` may re-delegate bounded, independent subtasks inside their scope, passing on ownership, criteria, model choice, and limits, verifying child results, and reporting them upward; re-delegation never widens permissions or authorizes external side effects.
 - If the cross-harness route is unavailable, say so and continue the authorized work in the current harness without claiming the other harness participated.
+
+## Japanese Prose Refinement
+
+- The shared `yomiyasu` skill is available at `~/.agents/skills/yomiyasu/SKILL.md`. Load it when the user asks to refine Japanese prose; do not apply it to every response.
+- When delegating Japanese prose refinement to a worker whose normal skill discovery is disabled, name `~/.agents/skills/yomiyasu/SKILL.md` explicitly in the delegation brief.
 
 ## Local Tools
 
