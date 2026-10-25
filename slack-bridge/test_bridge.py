@@ -1,4 +1,6 @@
+import json
 import os
+import shlex
 import stat
 import subprocess
 import tempfile
@@ -65,6 +67,9 @@ class BridgeTest(unittest.TestCase):
         status, detail = bridge.classify_output(1, "error: 429 rate limit, resets at 17:10 JST")
         self.assertEqual(status, "blocked (rate limit)")
         self.assertIn("17:10", detail)
+        status, detail = bridge.classify_output(1, "You've hit your session limit · resets 2:50pm (Asia/Tokyo)")
+        self.assertEqual(status, "blocked (rate limit)")
+        self.assertIn("resets 2:50pm", detail)
         status, detail = bridge.classify_output(0, "did work\nNEEDS-APPROVAL: force push to master\n")
         self.assertEqual((status, detail), ("needs-approval", "NEEDS-APPROVAL: force push to master"))
 
@@ -107,11 +112,202 @@ class RoutingTest(unittest.TestCase):
         said = []
         self.assertEqual(bridge.run_task(self.cfg, "agent: grok\nrepo: /tmp\n\nx", "g1", said.append), "rejected")
 
+    def test_cursor_route_is_isolated_and_gated(self):
+        pol = self.cfg["policy"]
+        self.assertEqual(harness.plan_routes(pol, {"agent": "cursor"}), [("cursor", "")])
+        self.assertFalse(self.cfg["cursor_enabled"])
+        self.assertEqual(bridge.build_command({"agent": "cursor", "model": "m"}, "task",
+                                              bridge.load_config(dict(ENV, BRIDGE_CURSOR_ENABLED="1"))),
+                         ["cursor-agent", "-p", "task", "--output-format", "text", "--model", "m"])
+        cursor_cmd = bridge.build_command({"agent": "cursor"}, "task",
+                                          bridge.load_config(dict(ENV, BRIDGE_CURSOR_ENABLED="1")))
+        self.assertFalse(set(cursor_cmd) & {"--force", "--yolo", "--dangerously-skip-permissions",
+                                           "--dangerously-bypass-approvals-and-sandbox"})
+        self.assertEqual(harness.plan_routes(pol, {"agent": "claude"})[-1], ("grok", ""))
+
+
+class CursorRunTest(unittest.TestCase):
+    def setup_repo(self, root):
+        repo = os.path.join(root, "repo")
+        os.makedirs(repo)
+        subprocess.run(["git", "-C", repo, "init", "-q"], check=True)
+        subprocess.run(["git", "-C", repo, "-c", "user.name=t", "-c", "user.email=t@t",
+                        "commit", "-q", "--allow-empty", "-m", "i"], check=True)
+        return repo
+
+    def config(self, root, repo, binary, enabled="1"):
+        return bridge.load_config(dict(ENV, BRIDGE_ALLOWED_REPOS=repo,
+                                      BRIDGE_WORKTREE_DIR=os.path.join(root, "worktrees"),
+                                      BRIDGE_COOLDOWN_FILE=os.path.join(root, "cooldowns.json"),
+                                      BRIDGE_CURSOR_ENABLED=enabled, BRIDGE_CURSOR_BIN=binary))
+
+    def config_with_policy(self, root, repo, binary, chains):
+        policy = os.path.join(root, "routing.json")
+        with open(policy, "w") as f:
+            json.dump({"chains": chains}, f)
+        cfg = self.config(root, repo, binary)
+        cfg["policy"] = harness.load_policy(policy)
+        return cfg
+
+    def fake_cursor(self, path, exit_code=0):
+        code = """#!/usr/bin/env python3
+import json, os, sys
+if '--help' in sys.argv:
+    print('Cursor CLI\\n  -p, --print\\n  --output-format <text|json>')
+    raise SystemExit(0)
+if os.environ.get('BRIDGE_TEST_CAPTURE'):
+    with open(os.environ['BRIDGE_TEST_CAPTURE'], 'w') as f:
+        json.dump(sys.argv[1:], f)
+print('review complete')
+raise SystemExit(%d)
+""" % exit_code
+        with open(path, "w") as f:
+            f.write(code)
+        os.chmod(path, os.stat(path).st_mode | stat.S_IEXEC)
+
+    def test_disabled_gate_precedes_worktree_creation(self):
+        with tempfile.TemporaryDirectory() as d:
+            repo = self.setup_repo(d)
+            cfg = self.config(d, repo, "/missing/cursor-agent", enabled="0")
+            said = []
+            status = bridge.run_task(cfg, "agent: cursor\nrepo: %s\n\nreview" % repo, "disabled", said.append)
+            self.assertEqual(status, "rejected")
+            self.assertIn("BRIDGE_CURSOR_ENABLED=1", said[0])
+            self.assertFalse(os.path.exists(cfg["worktrees"]))
+
+    def test_missing_binary_is_blocked_before_worktree_creation(self):
+        with tempfile.TemporaryDirectory() as d:
+            repo = self.setup_repo(d)
+            cfg = self.config(d, repo, os.path.join(d, "missing"))
+            said = []
+            status = bridge.run_task(cfg, "agent: cursor\nrepo: %s\n\nreview" % repo, "missing", said.append)
+            self.assertEqual(status, "blocked (no route)")
+            self.assertIn("binary not found", said[0])
+            self.assertFalse(os.path.exists(cfg["worktrees"]))
+
+    def test_custom_cursor_chain_cannot_fall_back_to_codex(self):
+        with tempfile.TemporaryDirectory() as d:
+            repo = self.setup_repo(d)
+            binary = os.path.join(d, "cursor-agent")
+            self.fake_cursor(binary)
+            cfg = self.config_with_policy(d, repo, binary, {"cursor": ["cursor", "codex"]})
+            said = []
+            status = bridge.run_task(cfg, "agent: cursor\nrepo: %s\nfallback: allow\n\nReview." % repo,
+                                     "cursor-isolated", said.append)
+            self.assertEqual(status, "done")
+            self.assertIn("started: cursor", said[0])
+            self.assertNotIn("codex", said[-1])
+
+    def test_non_cursor_custom_chain_cannot_reach_unverified_cursor(self):
+        with tempfile.TemporaryDirectory() as d:
+            repo = self.setup_repo(d)
+            binary = os.path.join(d, "missing-cursor-agent")
+            cfg = self.config_with_policy(d, repo, binary, {"claude": ["claude", "cursor"]})
+            bin_dir = os.path.join(d, "bin")
+            os.makedirs(bin_dir)
+            claude = os.path.join(bin_dir, "claude")
+            with open(claude, "w") as f:
+                f.write("#!/bin/sh\necho '429 rate limit'\nexit 1\n")
+            os.chmod(claude, os.stat(claude).st_mode | stat.S_IEXEC)
+            old_path = os.environ["PATH"]
+            os.environ["PATH"] = bin_dir + os.pathsep + old_path
+            self.addCleanup(os.environ.__setitem__, "PATH", old_path)
+            said = []
+            status = bridge.run_task(cfg, "agent: claude\nrepo: %s\n\nReview." % repo,
+                                     "cursor-filtered", said.append)
+            self.assertEqual(status, "blocked (no route)")
+            self.assertNotIn("cursor:", said[-1])
+            self.assertNotIn("cursor-agent", said[-1])
+            self.assertIn("claude unavailable (rate_limit)", said[-1])
+
+    def test_grok_build_named_agent_is_rejected(self):
+        with tempfile.TemporaryDirectory() as d:
+            repo = self.setup_repo(d)
+            binary = os.path.join(d, "agent")
+            with open(binary, "w") as f:
+                f.write("#!/bin/sh\necho 'Grok Build TUI command line options -p --output-format text'\n")
+            os.chmod(binary, os.stat(binary).st_mode | stat.S_IEXEC)
+            cfg = self.config(d, repo, binary)
+            said = []
+            status = bridge.run_task(cfg, "agent: cursor\nrepo: %s\n\nreview" % repo, "grok-alias", said.append)
+            self.assertEqual(status, "rejected")
+            self.assertIn("did not identify itself as Cursor", said[0])
+            self.assertFalse(os.path.exists(cfg["worktrees"]))
+
+    def test_cursor_help_without_required_options_is_rejected(self):
+        with tempfile.TemporaryDirectory() as d:
+            repo = self.setup_repo(d)
+            binary = os.path.join(d, "cursor-agent")
+            with open(binary, "w") as f:
+                f.write("#!/bin/sh\necho 'Cursor CLI but no supported print mode'\n")
+            os.chmod(binary, os.stat(binary).st_mode | stat.S_IEXEC)
+            cfg = self.config(d, repo, binary)
+            said = []
+            status = bridge.run_task(cfg, "agent: cursor\nrepo: %s\n\nReview." % repo,
+                                     "cursor-unsupported", said.append)
+            self.assertEqual(status, "rejected")
+            self.assertIn("does not advertise required", said[0])
+            self.assertFalse(os.path.exists(cfg["worktrees"]))
+
+    def test_cursor_help_failure_is_blocked(self):
+        with tempfile.TemporaryDirectory() as d:
+            repo = self.setup_repo(d)
+            binary = os.path.join(d, "cursor-agent")
+            with open(binary, "w") as f:
+                f.write("#!/bin/sh\necho 'Cursor CLI'\nexit 2\n")
+            os.chmod(binary, os.stat(binary).st_mode | stat.S_IEXEC)
+            cfg = self.config(d, repo, binary)
+            said = []
+            status = bridge.run_task(cfg, "agent: cursor\nrepo: %s\n\nReview." % repo,
+                                     "cursor-help-failed", said.append)
+            self.assertEqual(status, "blocked (no route)")
+            self.assertIn("--help failed", said[0])
+            self.assertFalse(os.path.exists(cfg["worktrees"]))
+
+    def test_cursor_contract_runs_read_only_command_without_fallback(self):
+        with tempfile.TemporaryDirectory() as d:
+            repo = self.setup_repo(d)
+            binary, capture = os.path.join(d, "cursor-agent"), os.path.join(d, "args.json")
+            self.fake_cursor(binary)
+            cfg = self.config(d, repo, binary)
+            old_capture = os.environ.get("BRIDGE_TEST_CAPTURE")
+            os.environ["BRIDGE_TEST_CAPTURE"] = capture
+            self.addCleanup(lambda: os.environ.pop("BRIDGE_TEST_CAPTURE", None) if old_capture is None else os.environ.__setitem__("BRIDGE_TEST_CAPTURE", old_capture))
+            said = []
+            status = bridge.run_task(cfg, "agent: cursor\nrepo: %s\nmodel: gpt-test\n\nReview source." % repo,
+                                     "cursor-ok", said.append)
+            self.assertEqual(status, "done")
+            with open(capture) as f:
+                args = json.load(f)
+            self.assertEqual(args[:1], ["-p"])
+            self.assertIn("--output-format", args)
+            self.assertIn("text", args)
+            self.assertEqual(args[-2:], ["--model", "gpt-test"])
+            self.assertIn("read-only review", args[1])
+            self.assertIn("Do not edit, create, delete, commit, or publish files.", args[1])
+            self.assertIn("started: cursor", said[0])
+
+    def test_cursor_task_failure_does_not_fall_back(self):
+        with tempfile.TemporaryDirectory() as d:
+            repo = self.setup_repo(d)
+            binary = os.path.join(d, "cursor-agent")
+            self.fake_cursor(binary, exit_code=1)
+            cfg = self.config(d, repo, binary)
+            said = []
+            status = bridge.run_task(cfg, "agent: cursor\nrepo: %s\n\nReview source." % repo,
+                                     "cursor-fail", said.append)
+            self.assertEqual(status, "failed (exit 1)")
+            self.assertIn("review complete", said[-1])
+            self.assertNotIn("route:", said[-1])
+            self.assertNotIn("codex", said[-1])
+
     def test_unavailable_kind_only_on_failure(self):
         self.assertIsNone(harness.unavailable_kind(0, "429 rate limit"))
         self.assertEqual(harness.unavailable_kind(1, "x\nusage limit, resets at 5pm")[0], "rate_limit")
         self.assertEqual(harness.unavailable_kind(1, "Not logged in")[0], "auth")
         self.assertEqual(harness.unavailable_kind(1, "Error: Not signed in. run grok login")[0], "auth")
+        self.assertEqual(harness.unavailable_kind(1, "You've hit your session limit · resets 2:50pm (Asia/Tokyo)"),
+                         ("rate_limit", "You've hit your session limit · resets 2:50pm (Asia/Tokyo)"))
         self.assertEqual(harness.unavailable_kind(1, "API Error 529 overloaded")[0], "model_unavailable")
         self.assertIsNone(harness.unavailable_kind(1, "assertion failed"))
 
@@ -131,10 +327,10 @@ class FallbackRunTest(unittest.TestCase):
     def fake(self, d, name, code, text):
         path = os.path.join(d, name)
         with open(path, "w") as f:
-            f.write("#!/bin/sh\necho '%s'\nexit %d\n" % (text, code))
+            f.write("#!/bin/sh\necho %s\nexit %d\n" % (shlex.quote(text), code))
         os.chmod(path, os.stat(path).st_mode | stat.S_IEXEC)
 
-    def run_contract(self, header, claude=(1, "429 rate limit, resets at 17:10")):
+    def run_contract(self, header, claude=(1, "You've hit your session limit · resets 2:50pm (Asia/Tokyo)")):
         d = tempfile.mkdtemp()
         repo = os.path.join(d, "repo")
         os.makedirs(repo)
@@ -165,6 +361,7 @@ class FallbackRunTest(unittest.TestCase):
     def test_pinned_model_never_falls_back(self):
         status, said, _ = self.run_contract("model: claude-opus-5-5")
         self.assertEqual(status, "blocked (no route)")
+        self.assertIn("You've hit your session limit · resets 2:50pm (Asia/Tokyo)", said[-1])
         self.assertNotIn("codex", said[-1].split("```")[0].replace("fallback", ""))
 
     def test_real_failure_does_not_fall_back(self):
