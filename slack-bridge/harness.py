@@ -21,9 +21,18 @@ PREAMBLE = """\
 Task:
 """
 
+CURSOR_PREAMBLE = """\
+[dispatched read-only review] Analyze the assigned source and return findings in text.
+- Read files and source only. Do not edit, create, delete, commit, or publish files.
+- Do not delegate or perform actions outside this bounded review.
+- Report concrete findings with file and line references, or say none were found.
+
+Task:
+"""
+
 # Order matters: the first matching kind wins. Applied to the output tail of a non-zero exit only.
 UNAVAILABLE = (
-    ("rate_limit", re.compile(r"(?i)(\b429\b|rate.?limit|usage limit|quota|resets? at)")),
+    ("rate_limit", re.compile(r"(?i)(\b429\b|rate.?limit|session limit|usage limit|quota|resets? at)")),
     ("auth", re.compile(r"(?i)(not logged in|not signed in|grok login|/login\b|\b401\b|unauthori[sz]ed|invalid api key|authentication (failed|required))")),
     ("model_unavailable", re.compile(r"(?i)(overloaded|\b529\b|\b503\b|model.{0,40}(not found|not available|does not exist|unsupported)|no access to model)")),
 )

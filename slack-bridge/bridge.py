@@ -37,9 +37,9 @@ import harness
 
 API = "https://slack.com/api/"
 REPLY_LIMIT = 3500
-AGENTS = ("claude", "codex", "agy", "grok")
+AGENTS = ("claude", "codex", "agy", "grok", "cursor")
 APPROVAL_MARK = "NEEDS-APPROVAL:"
-RATE_LIMIT_RE = re.compile(r"(?i)(\b429\b|rate.?limit|usage limit|resets? at)")
+RATE_LIMIT_RE = re.compile(r"(?i)(\b429\b|rate.?limit|session limit|usage limit|resets? at)")
 
 
 def load_config(env=os.environ):
@@ -70,6 +70,8 @@ def load_config(env=os.environ):
         "grok_enabled": env.get("BRIDGE_GROK_ENABLED", "") == "1",
         "grok_bin": env.get("BRIDGE_GROK_BIN", "grok"),
         "grok_args": shlex.split(env.get("BRIDGE_GROK_ARGS", "--permission-mode acceptEdits")),
+        "cursor_enabled": env.get("BRIDGE_CURSOR_ENABLED", "") == "1",
+        "cursor_bin": env.get("BRIDGE_CURSOR_BIN", "cursor-agent"),
         "approval_label": env.get("BRIDGE_APPROVAL_LABEL", "needs-approval"),
         "policy": harness.load_policy(env.get("BRIDGE_ROUTING_FILE", os.path.join(os.path.dirname(os.path.abspath(__file__)), "routing.json"))),
         "cooldowns": env.get("BRIDGE_COOLDOWN_FILE", os.path.expanduser("~/.local/state/slack-bridge/cooldowns.json")),
@@ -107,6 +109,9 @@ def is_task(msg, cfg):
 
 
 def build_command(header, body, cfg):
+    if header["agent"] == "cursor":
+        cmd = [cfg["cursor_bin"], "-p", body, "--output-format", "text"]
+        return cmd + ["--model", header["model"]] if header.get("model") else cmd
     if header["agent"] == "claude":
         cmd = ["claude", "-p", body, "--permission-mode", cfg["claude_mode"]]
         if header.get("model"):
@@ -168,7 +173,37 @@ def run_task(cfg, text, task_id, say):
     if repo not in cfg["repos"]:
         say("rejected: repo not in BRIDGE_ALLOWED_REPOS: %s" % repo)
         return "rejected"
-    routes = [r for r in harness.plan_routes(cfg["policy"], header) if r[0] != "grok" or cfg["grok_enabled"]]
+    if header["agent"] == "cursor":
+        if not cfg["cursor_enabled"]:
+            say("rejected: agent cursor needs BRIDGE_CURSOR_ENABLED=1")
+            return "rejected"
+        try:
+            check = subprocess.run([cfg["cursor_bin"], "--help"], capture_output=True, text=True, timeout=10)
+        except FileNotFoundError:
+            say("blocked: Cursor CLI binary not found: %s" % cfg["cursor_bin"])
+            return "blocked (no route)"
+        except subprocess.TimeoutExpired:
+            say("blocked: Cursor CLI --help timed out after 10s")
+            return "blocked (no route)"
+        help_text = check.stdout + "\n" + check.stderr
+        if check.returncode != 0:
+            say("blocked: Cursor CLI --help failed (exit %d)" % check.returncode)
+            return "blocked (no route)"
+        # Cursor's documented CLI is called `agent`; require its own identity and
+        # the documented headless flags so an unrelated alias cannot pass as Cursor.
+        if not re.search(r"(?i)\bcursor\s+(?:cli|agent)\b", help_text):
+            say("rejected: configured binary did not identify itself as Cursor CLI")
+            return "rejected"
+        if not all(flag in help_text for flag in ("-p", "--output-format")) or not re.search(r"(?i)\btext\b", help_text):
+            say("rejected: Cursor CLI does not advertise required print/text options")
+            return "rejected"
+    if header["agent"] == "cursor":
+        routes = [("cursor", header.get("model", ""))]
+    else:
+        routes = [r for r in harness.plan_routes(cfg["policy"], header) if r[0] != "cursor"]
+    routes = [r for r in routes
+              if (r[0] != "grok" or cfg["grok_enabled"])
+              and (r[0] != "cursor" or cfg["cursor_enabled"])]
     if header["agent"] == "grok" and not cfg["grok_enabled"]:
         say("rejected: agent grok needs BRIDGE_GROK_ENABLED=1")
         return "rejected"
@@ -193,7 +228,8 @@ def run_task(cfg, text, task_id, say):
             subprocess.run(["git", "-C", workdir, "clean", "-fdq"], capture_output=True)
         used = route
         say("started: %s in %s (branch %s)" % (harness.route_id(route), workdir, name))
-        cmd = build_command(dict(header, agent=route[0], model=route[1]), harness.PREAMBLE + body, cfg)
+        preamble = harness.CURSOR_PREAMBLE if route[0] == "cursor" else harness.PREAMBLE
+        cmd = build_command(dict(header, agent=route[0], model=route[1]), preamble + body, cfg)
         env = dict(os.environ, CROSS_HARNESS_PEER="1")
         try:
             res = subprocess.run(cmd, cwd=workdir, capture_output=True, text=True,
