@@ -24,6 +24,14 @@ Then sync runtime mirrors with the local sync helper if available:
 ~/.agents/sync-skills.sh
 ```
 
+Skills whose canonical entry is a symlink into an upstream clone (restore the
+clone first, then re-link; `install.sh --apply` leaves existing symlinks alone):
+
+- `session-triage`: `git clone https://github.com/chaenmasahiro0425/claude-session-triage ~/workspace/claude-session-triage`,
+  then `ln -s ~/workspace/claude-session-triage/skills/session-triage ~/.agents/skills/session-triage`.
+  Config lives in `~/.claude/session-triage/config.json` (seed from `config.example.json`).
+  Runs only in the Claude desktop app Code tab (needs `mcp__ccd_session_mgmt__*`); the Codex mirror loads but stops.
+
 ## Instruction Files
 
 This repo is the canonical source for public-safe instruction files and scoped
