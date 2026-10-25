@@ -286,6 +286,8 @@ show_instruction_dry_run() {
   compare_symlink "$HOME/.claude/rules/swift" "$ROOT/claude/rules/swift" '~/.claude/rules/swift'
   compare_symlink "$HOME/.claude/rules/kotlin" "$ROOT/claude/rules/kotlin" '~/.claude/rules/kotlin'
   compare_symlink "$HOME/.codex/AGENTS.md" '../AGENTS.md' '~/.codex/AGENTS.md'
+  compare_symlink "$HOME/.agents/hooks/notify-mobile.sh" "$ROOT/agents/hooks/notify-mobile.sh" '~/.agents/hooks/notify-mobile.sh'
+  compare_symlink "$HOME/.codex/herdr-agent-state.sh" "$ROOT/codex/herdr-agent-state.sh" '~/.codex/herdr-agent-state.sh'
   printf 'materialized file: %s -> %s (%s)\n' "$ROOT/codex/hooks.json" "$HOME/.codex/hooks.json" '~/.codex/hooks.json'
 }
 
@@ -303,6 +305,8 @@ apply_instruction_symlinks() {
   apply_symlink "$ROOT/claude/rules/swift" "$HOME/.claude/rules/swift" '~/.claude/rules/swift'
   apply_symlink "$ROOT/claude/rules/kotlin" "$HOME/.claude/rules/kotlin" '~/.claude/rules/kotlin'
   apply_symlink '../AGENTS.md' "$HOME/.codex/AGENTS.md" '~/.codex/AGENTS.md'
+  apply_symlink "$ROOT/agents/hooks/notify-mobile.sh" "$HOME/.agents/hooks/notify-mobile.sh" '~/.agents/hooks/notify-mobile.sh'
+  apply_symlink "$ROOT/codex/herdr-agent-state.sh" "$HOME/.codex/herdr-agent-state.sh" '~/.codex/herdr-agent-state.sh'
   apply_materialized_file "$ROOT/codex/hooks.json" "$HOME/.codex/hooks.json" '~/.codex/hooks.json'
 
   if [ -n "$BACKUP_DIR" ]; then
