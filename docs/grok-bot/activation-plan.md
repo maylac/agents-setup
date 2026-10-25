@@ -1,161 +1,72 @@
-# 有効化計画
+# 有効化の経緯と復旧手順
 
-以下の操作とコマンドはすべて未実行の提案です。GitHub resource の作成、Cursor CLI の導入と認証、Mac mini の設定書き込み、launchd 登録を一つの確認可能な bundle にし、実行直前に一度だけまとめて承認を求めます。承認対象・許可 repo・戻し方・現在の診断結果を一つの依頼に示します。そこで承認されていない OAuth scope、human 2FA、別 resource、または共有 daemon の再起動が必要になった場合は止め、差分の操作だけ別に判断を求めます。
+この文書は、2026-10-25 に実施した有効化の記録と、壊れたときに状態を確認・復旧する手順です。下の「実施済み」の項目は再承認の対象ではありません。ただし、ここに無い新しい権限・OAuth scope・resource・課金や、共有 daemon の再起動が必要になった場合は、その操作だけ人の判断を求めます。
 
-## 現在確認できた状態（2026-10-25）
+## 実施済み（2026-10-25 の観測順）
 
-- bridge のソースと routing 設定は存在します。
-- ローカル bridge→Codex loopback は一度通り、依頼したマーカーファイルを読み戻せています。実際に指定モデルが処理した証明や cloud からの handoff の証明ではありません。
-- bridge の env ファイルと launchd 登録は見つかっていません。
-- dispatch 用 GitHub repository は現在の `gh` から解決できません。
-- Claude と Codex の認証状態はローカルで確認されています。Claude CLI は利用制限中（14:50 JST まで）と報告されました。認証済み状態だけでは実行可能と判断しません。
-- Cursor CLI は未導入です。PATH 上の `agent` は Grok Build TUI であり、Cursor CLI として扱いません。
-- Grok Bot の GitHub connector、Issue 起票、Mac mini までの実 handoff は未確認です。
+1. **以前の状態**: bridge→Codex のローカル loopback が一度通っただけで、env、launchd、dispatch repository、Cursor CLI、Grok Bot の handoff は未整備だった。
+2. **PR 16 の merge**: bridge の変更が main に入った（`f6885632d346798c9ac1cba1ecbccce88e84b47b`）。canonical checkout は clean。
+3. **dispatch repository**: private `maylac/agent-tasks` がある。
+4. **env と launchd**: `~/.config/slack-bridge/env`（権限 600、秘密値なし）と LaunchAgent `com.maylac.slack-bridge` が動いている。bridge が実行してよい repository は `agents-setup` だけ。
+5. **Cursor CLI**: 公式 CLI を導入しログイン済み。既存の Grok の `agent` alias を消さないよう、決まったパスに入れた。bridge はローカル wrapper（`~/.config/slack-bridge` 内）を呼び、wrapper は本物の git common dir と新しい bridge worktree のパスを確認してから `--mode ask --trust` だけで実行する。`--force`、yolo、全体 trust は使わない。
+6. **Grok Bot の接続**: 既存の[コード屋](https://grok.com/bot/df79e1fb-4c03-497f-811b-4ce9ddd45f2e)の GitHub 接続が既存の許可で動いた。connector から他の repository も見えるが、bridge の許可リストで `agents-setup` 以外は実行しない。
+7. **end-to-end smoke**: コード屋が [issue 1](https://github.com/maylac/agent-tasks/issues/1)（Codex Luna）、[issue 2](https://github.com/maylac/agent-tasks/issues/2)（Cursor 読み取り）、[issue 3](https://github.com/maylac/agent-tasks/issues/3)（Claude Opus）を起票し、実際の結果と GitHub を読み戻して元の会話へ報告した。3件とも closed。記録はローカルの `~/tasks/grokbot-integration-20261025/activation-final-receipt.json`。
 
-現在値を再確認する提案コマンド:
+`doctor.py` の `end_to_end` は実装上 `unknown` のままです。一般的な preflight の結果は、上の独立した smoke 結果を打ち消しません。
+
+8. **コード屋の説明欄**: 常設指示を保存し、開き直して全文一致を確認した。内容はプロンプト上の運用ルールで、システムによる権限の強制ではない。
+9. **手動 dashboard**: root が [issue 6](https://github.com/maylac/agent-tasks/issues/6)（ラベル `manual` `ops-hub`、本文に `<!-- grokbot-mission-hub:v1 -->`）を作った。実行用 Issue ではない。10-25 に root が UI で本文の最新手動 snapshot と両ラベルを再確認した。日次 routine は登録済みだが、初回実行はまだ確認されていない。
+10. **MissionHub collector**: 読み取り専用の `slack-bridge/mission_hub.py` を追加した。現在 bridge テスト44件が通過（うち MissionHub 新規11件）。これは private queue のその時点の読み取り結果で、常時稼働の monitor や scheduler ではない。使い方は [Bot の役割分担](bot-roles.md#missionhub-collector)。
+
+11. **smoke report の独立照合**: [issue 4 の原文コメント](https://github.com/maylac/agent-tasks/issues/4#issuecomment-6394204858)にある UTF-8 原文を Dispatcher が [issue 7](https://github.com/maylac/agent-tasks/issues/7) の本文へ JSON 文字列でそのまま移し、URL・取得時刻・source head・SHA256 を添えた。受領側でも #4 コメントを GitHub API から読み、デコード後3,551 byteの本文とバイト一致、SHA256 `a6206c53faadb3afbfde073094f7772ff83bd35713bd6bd34799eba70f59e239` を確認した。#4/#5/#7 の worktree はすべて source head `f6885632d346798c9ac1cba1ecbccce88e84b47b` で clean。[#7 の最終 report](https://github.com/maylac/agent-tasks/issues/7#issuecomment-6394276470) は closed / transport `done` / verdict **要修正**。原文搬送の照合は成功したが、原文の案内文に修正点がある。
+
+## 未完了
+
+- **追加の3 Bot**（検品係・運用ハブ・Bot設計係）: 規約同意待ち・未作成。Create Bot 画面が追加の利用規約への同意を求め、その場で人の確認が必要。規約同意への返答はまだない。
+- **順番に行う smoke**: [issue 4](https://github.com/maylac/agent-tasks/issues/4)（Claude 作成）は closed。[issue 5](https://github.com/maylac/agent-tasks/issues/5) は closed だが、Codex report は Bridge `done` / agent outcome `BLOCKED`（GitHub の原文に直接接続できず、独立照合は未完）。後続の Dispatcher `VERIFIED:` コメントは部分確認を記録するが、Codex report を成功へ変更した扱いにはしない。
+
+  #4 の原文には5件すべての checks と実出力がある。#5 の依頼本文では `checks` が `[5件: ...]` という無効な JSON へ短縮されていたため、輸送時の要約欠落と作成者レポートの不足を分けて扱う。#7 は #4 原文のバイト一致を確認して closed、transport `done` / verdict **要修正**。#4 の案内文自体は200字を超え（バッククォート込み221字、除外213字）、fallback の条件（route 不可判定時のみ、`model:` / `fallback: off` で route 固定）と Grok CLI の `BRIDGE_GROK_ENABLED=1` 条件を省いている。
+- **日次 routine**: 「Maylac 開発運用点検」が毎日8時頃に有効。code屋が報告した次回時刻は2026-10-26 08:07 JST（native scheduler は0〜15分の幅）。root が Runs を確認した時点で実行履歴はなく、初回 callback は未確認。同一 routine の初回実行記録・issue 6 の更新・コード屋の報告を確認する一回限りの確認を予約した。
+- **全体の検証**: `scripts/validate.sh` は終了コード 1。既存の live parity 11 件（worktree と canonical の symlink 先の不一致10件、Claude RTK PreToolUse hook の欠落1件）。詳細ログはローカルの `~/tasks/grokbot-operations-20261025/full-validation.log`。この live-home 差分は今回の変更で修正していない。
+- **code の PR**: default branch への merge は人の承認待ち。
+
+この変更は bridge・harness・実行時の認証・launchd に触れていません。Bot の指示を反映するための再起動や source の有効化は不要です。
+
+## 状態の確認
+
+読み取りだけのコマンドです。出力に秘密値は出ません。
 
 ```sh
-python3 slack-bridge/doctor.py
 python3 slack-bridge/doctor.py --check-github
-```
-
-出力は JSON で、secret 値は表示しません。`end_to_end: unknown` は cloud connector と本物の handoff が未検証であることを示します。
-
-## 承認後に実行するコマンド案
-
-### 1. GitHub dispatch repository とラベル
-
-まず読み取り確認を行います。失敗は「存在しない」と決めつけず、認証・権限エラーと not found を分けます。
-
-```sh
-command -v gh
+launchctl print "gui/$(id -u)/com.maylac.slack-bridge" | grep state
 gh repo view maylac/agent-tasks --json nameWithOwner,isPrivate
+gh label list -R maylac/agent-tasks --json name --jq '.[].name'
+stat -f '%Lp' "$HOME/.config/slack-bridge/env"
+git -C "$HOME/workspace/maylac/agents-setup" status --short
 ```
 
-repository が not found と確認できた場合にだけ、以下を実行します。これは private repository の作成です。
+期待値: LaunchAgent が running、repository が private、ラベル `agent-task` `needs-approval` `manual` `ops-hub` がある、env の権限が `600`、canonical checkout が clean。queue の一覧は `python3 slack-bridge/mission_hub.py --repo maylac/agent-tasks --format markdown` で読めます（読み取りのみ）。
 
-```sh
-gh repo create maylac/agent-tasks --private --description "Private agent task dispatch queue"
-gh repo view maylac/agent-tasks --json nameWithOwner,isPrivate
-```
+## 復旧
 
-不足しているラベルだけを追加し、最後に3つすべての存在を確認します。
+### ラベルが欠けている
+
+不足しているものだけを作ります。
 
 ```sh
 set -euo pipefail
 dispatch_repo="maylac/agent-tasks"
 existing_labels="$(gh label list -R "$dispatch_repo" --json name --jq '.[].name')"
-for label in agent-task needs-approval manual; do
+for label in agent-task needs-approval manual ops-hub; do
   if ! printf '%s\n' "$existing_labels" | grep -Fxq "$label"; then
     gh label create "$label" -R "$dispatch_repo"
   fi
 done
-gh label list -R "$dispatch_repo" --json name --jq '.[].name'
 ```
 
-### 2. ローカル env 候補
+### LaunchAgent が止まっている
 
-許可 repository は canonical `agents-setup` のみです。Vantik production は含めません。以下は shell の変数で実在する絶対パスを作り、展開済みの値を書き込みます。env ファイル自体には `$HOME` や token を保存しません。
-
-```sh
-set -eu
-repo_root="$(cd "$HOME/workspace/maylac/agents-setup" && pwd -P)"
-codex_bin="$(command -v codex)"
-test -d "$repo_root"
-test -x "$codex_bin"
-config_dir="$HOME/.config/slack-bridge"
-mkdir -p "$config_dir"
-test ! -e "$config_dir/env"
-umask 077
-set -C
-{
-  printf 'BRIDGE_TRANSPORT=github\n'
-  printf 'BRIDGE_GITHUB_REPO=maylac/agent-tasks\n'
-  printf 'BRIDGE_ALLOWED_SENDERS=maylac\n'
-  printf 'BRIDGE_ALLOWED_REPOS=%s\n' "$repo_root"
-  printf 'BRIDGE_CODEX_BIN=%s\n' "$codex_bin"
-  printf 'BRIDGE_CURSOR_ENABLED=0\n'
-  printf 'BRIDGE_GROK_ENABLED=0\n'
-  printf 'BRIDGE_TASK_TIMEOUT_SECONDS=3600\n'
-} > "$config_dir/env"
-chmod 600 "$config_dir/env"
-```
-
-この候補に GitHub token、Slack token、Cursor API key、その他の secret は含めません。bridge は既存の `gh` login を利用します。
-
-### 3. Cursor CLI 導入と確認
-
-Cursor はこの統合に必要な読み取り専用レビュー route です。CLI の identity、print/text flags、認証、実際の read-only review が確認できるまで route を無効にします。Grok Build の `agent` を代用しません。
-
-Cursor の公式 CLI install URL は [Cursor CLI installation](https://cursor.com/docs/cli/installation) にある `https://cursor.com/install` です。公式 install command は `curl https://cursor.com/install -fsS | bash` ですが、この計画では未実行です。installer 実行前に次で既存ファイルと現在の `agent` を確認します。
-
-```sh
-command -v agent || true
-cursor_bin="$HOME/.local/bin/agent"
-if [ -e "$cursor_bin" ] || [ -L "$cursor_bin" ]; then
-  printf 'STOP: install destination already exists: %s\n' "$cursor_bin"
-else
-  printf 'Install destination is clear: %s\n' "$cursor_bin"
-fi
-```
-
-install は衝突が無いことを確認した後にだけ、承認済み bundle の一部として行います。PATH 上の `agent` が別製品でも上書きせず、env では検証済みの Cursor 実行ファイルを絶対パスで指定します。公式 Cursor sign-in はローカル CLI の提供する flow を使い、API key を env や Grok Bot に移しません。新しい OAuth scope や human 2FA が必要と表示されたら操作を止め、その内容だけ別に報告します。
-
-```sh
-"$HOME/.local/bin/agent" --help
-"$HOME/.local/bin/agent" -p "Read-only review: summarize README structure; do not modify files." --output-format text
-```
-
-出力で `Cursor CLI` または `Cursor Agent` identity、`-p`、`--output-format`、`text` が確認でき、作業 tree に変更がなく、レビュー結果が得られた後に限り env の `BRIDGE_CURSOR_ENABLED=1` と検証済み binary path を設定します。
-
-headless mode は [公式説明](https://cursor.com/docs/cli/headless) に従い `-p` を使い、`--force` / `--yolo` を付けません。bridge の実行でもこの print-only command を使います。
-
-### 4. plist の materialize と launchd
-
-canonical repo の template から実ユーザーの home path を埋め込んで plist を生成します。`$HOME` はコマンド実行時に展開され、生成物には絶対パスが入ります。
-
-承認済み PR head を main に取り込んだ後、canonical checkout の revision を照合します。placeholder はレビュー時に記録した commit SHA に置き換えます。
-
-```sh
-set -eu
-repo_root="$(cd "$HOME/workspace/maylac/agents-setup" && pwd -P)"
-reviewed_commit="<reviewed-and-approved-commit-sha>"
-current_commit="$(git -C "$repo_root" rev-parse HEAD)"
-git -C "$repo_root" merge-base --is-ancestor "$reviewed_commit" "$current_commit"
-git -C "$repo_root" rev-parse HEAD
-```
-
-source revision が期待したレビュー済み変更を含まなければ先に進みません。merge 方法で ancestry が残らない場合は、PR merge 結果との対応を確認したうえで実際の main commit SHA を新たに記録します。
-
-```sh
-set -eu
-repo_root="$(cd "$HOME/workspace/maylac/agents-setup" && pwd -P)"
-mkdir -p "$HOME/Library/LaunchAgents" "$HOME/.local/state/slack-bridge"
-python3 - "$repo_root/launchd/com.maylac.slack-bridge.plist.template" \
-  "$HOME/Library/LaunchAgents/com.maylac.slack-bridge.plist" "$HOME" <<'PY'
-import plistlib
-import sys
-
-source, destination, home = sys.argv[1:]
-with open(source, "rb") as file:
-    data = plistlib.load(file)
-
-def expand(value):
-    if isinstance(value, str):
-        return value.replace("$" + "HOME", home)
-    if isinstance(value, list):
-        return [expand(item) for item in value]
-    if isinstance(value, dict):
-        return {key: expand(item) for key, item in value.items()}
-    return value
-
-with open(destination, "xb") as file:
-    plistlib.dump(expand(data), file)
-PY
-plutil -lint "$HOME/Library/LaunchAgents/com.maylac.slack-bridge.plist"
-```
-
-launchd は既に loaded でない場合にだけ bootstrap します。既に loaded のときは状態を読み、再起動や置換をしません。違う revision/config が動いていたらそこで止めて別途報告します。
+既に loaded なら状態を読むだけにし、再起動や置換はしません。違う revision や設定で動いていたら止めて報告します。
 
 ```sh
 service="gui/$(id -u)/com.maylac.slack-bridge"
@@ -166,32 +77,29 @@ else
 fi
 ```
 
-read-only verification は以下です。
+plist は canonical checkout の `launchd/com.maylac.slack-bridge.plist.template` から作られています。作り直しが必要なときは、既存の plist を上書きせず、まず差分を確認して報告します。
 
-```sh
-launchctl print "gui/$(id -u)/com.maylac.slack-bridge" | grep state
-python3 slack-bridge/doctor.py --check-github
-```
+### Cursor の review が失敗する
 
-### 5. ingress と成果の確認
+PATH 上の `agent` は Grok Build の場合があるため、代わりに使いません。wrapper と公式 CLI のパスを確認し、`--force` や yolo を足して回避しません。再ログインに新しい OAuth scope や人の 2FA が必要なら止めて報告します。API key を env や Grok Bot に移しません。
 
-GitHub ingress の smoke Issue は Dispatcher だけが起票します。最初に `agents-setup` の読み取り確認を行い、次に限定された harmless な成果物マーカーを作る契約を起票します。Issue コメント、PR がある場合の head と checks、実ファイルを確認します。ローカル bridge→Codex loopback は別の確認で、dispatch repo に Issue を作りません。cloud Grok Bot connector と実 handoff の証拠が得られるまで「接続済み」と報告しません。
+### Grok Bot が Issue を作れない
 
-## ロールバック案
+connector の許可を広げたり作り直したりせず、エラー内容と最後に成功した Issue を添えて報告します。権限の変更は人の判断が必要です。
 
-- bridge に task がないことを launchd と bridge worktree の状態で確認します。実行中の agent があれば停止せず、完了を待ちます。task がない場合のみ次の操作で LaunchAgent を unload します。
-- private dispatch repository は未処理 Issue と監査履歴を保持するため削除しません。今回追加したラベルのうち、未処理 Issue が使っていないものだけを選び、必要な場合に削除します。
-- env と plist は自動削除・上書きしません。後で再有効化する可能性を残し、状態を診断してから手で扱います。
+## 停止（ロールバック）
+
+1. bridge に実行中の task が無いことを確認します。実行中なら止めずに完了を待ちます。
+2. task が無いときだけ LaunchAgent を unload します。
+3. dispatch repository は Issue と監査履歴を残すため削除しません。env と plist も自動で削除・上書きしません。
 
 ```sh
 launchctl print "gui/$(id -u)/com.maylac.slack-bridge"
 find "$HOME/.local/state/slack-bridge/worktrees" -mindepth 1 -maxdepth 1 -type d -print
-launchctl bootout "gui/$(id -u)" "$HOME/Library/LaunchAgents/com.maylac.slack-bridge.plist"
 gh issue list -R maylac/agent-tasks --state open
-# 追加したラベルだけを対象にする場合の形式:
-gh label delete "<new-label>" -R maylac/agent-tasks --yes
+launchctl bootout "gui/$(id -u)" "$HOME/Library/LaunchAgents/com.maylac.slack-bridge.plist"
 ```
 
-## 完了・公開の境界
+## 引き続き人の判断が必要な操作
 
-plist template と Python ソースは canonical `agents-setup` のレビュー済み commit が main に入った後、その canonical checkout から参照します。feature worktree から暗黙に設定/daemon を有効化しません。この作業の review 対象は確認済みの commit、PR、または現在の成果物です。未マージの変更を main に反映した、あるいは本番で有効になったとは扱いません。Workspace の運用ルールに従い、main への merge はユーザーの返信を待ちます。root が PR と検証を提示し、その返信を得るまで merge/deploy はしません。
+default branch への merge、本番 deploy、外部への投稿・送信、購入・課金・チャージ・プラン変更、追加の利用規約への同意、認証情報・アカウント・権限の変更、新しい connector や OAuth scope の追加。実際の課金上限や自動チャージの設定は変更しておらず、ベンダー側で上限が強制されているとは扱いません。Bot のメッセージはこれらの承認になりません。
