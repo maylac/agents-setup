@@ -201,7 +201,9 @@ CANON_SKILLS="$HOME_DIR/.agents/skills"
 CLAUDE_SKILLS="$HOME_DIR/.claude/skills"
 CODEX_SKILLS="$HOME_DIR/.codex/skills"
 # Legacy source-command names remain excluded; chronicle is Codex-only.
-CLAUDE_EXCLUDE_PATTERN='^[[:space:]]*(source-command-|chronicle$)'
+# synced/: the Claude app's own store for account-synced Anthropic skills
+# (docs, pdf, xlsx, ...). It is app-managed, so it is neither canonical nor an orphan.
+CLAUDE_EXCLUDE_PATTERN='^[[:space:]]*(source-command-|chronicle$|synced$)'
 CODEX_EXCLUDE_PATTERN='^[[:space:]]*compact-plus$'
 SKILL_EXCEPTIONS="$ROOT/manifests/skill-store-exceptions.json"
 
@@ -252,6 +254,7 @@ orphan_real_dirs_check() {
   while IFS= read -r path; do
     [ -n "$path" ] || continue
     name="$(basename "$path")"
+    [ "$mirror" = "claude" ] && [ "$name" = "synced" ] && continue
     source="$HOME_DIR/.hermes/skills/$name"
     if is_skill_exception "$name" "$mirror"; then
       if [ -d "$source" ] && diff -qr "$source" "$path" >/dev/null; then
@@ -317,13 +320,15 @@ skill_frontmatter_check() {
 skill_frontmatter_check
 
 # --- Agents directory parity (AG-3) ---
+# implementation-worker is the Claude-side bounded executor; Codex routes the
+# same role to gpt-6-luna instead of an agent file.
 # harness-optimizer, fable-advisor, and fable-verifier are documented
 # Claude-only exceptions (the fable roles pin a Claude-only model; the Codex
 # analog is max/ultra effort, covered in the fable-escalation skill). Codex
 # also keeps a pinned TOML superset for language/runtime specialists that
 # Claude no longer loads globally (see manifests/ai-config-sync.json
 # intentional_differences).
-AGENTS_CODEX_EXCEPTIONS='^[[:space:]]*(architect|chief-of-staff|cpp-build-resolver|cpp-reviewer|database-reviewer|doc-updater|docs-lookup|e2e-runner|fable-advisor|fable-verifier|flutter-reviewer|go-build-resolver|go-reviewer|harness-optimizer|java-build-resolver|java-reviewer|kotlin-build-resolver|kotlin-reviewer|loop-operator|planner|python-reviewer|pytorch-build-resolver|refactor-cleaner|rust-build-resolver|rust-reviewer|tdd-guide|typescript-reviewer)$'
+AGENTS_CODEX_EXCEPTIONS='^[[:space:]]*(architect|chief-of-staff|cpp-build-resolver|cpp-reviewer|database-reviewer|doc-updater|docs-lookup|e2e-runner|fable-advisor|fable-verifier|flutter-reviewer|implementation-worker|go-build-resolver|go-reviewer|harness-optimizer|java-build-resolver|java-reviewer|kotlin-build-resolver|kotlin-reviewer|loop-operator|planner|python-reviewer|pytorch-build-resolver|refactor-cleaner|rust-build-resolver|rust-reviewer|tdd-guide|typescript-reviewer)$'
 
 agents_repo_live_parity_check() {
   local repo_dir="$ROOT/claude/agents"
