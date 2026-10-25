@@ -230,4 +230,4 @@ sent      660 bytes  2bd8196675754dfc0b04e4fe43dfa6910af099f5dbdadd29c3bd60212dd
 refetched 661 bytes  6d7af6b3c630f66179e898af0346a9a017bb0aa6086f49cda7c782b9835636ef
 ```
 
-どちらも依頼文の値と一致しました。現行(HEAD)の `bridge.parse_contract` は、どちらの本文からも `{'agent': 'claude', 'repo': '/Users/gotasasaki/workspace/maylac/agents-setup', 'model': 'claude-opus-5-5', 'fallback': 'off'}` を返し、本文の 1 行目は `Goal: 改行保持の試験。これは実行契約ではない。` でした。
+どちらも依頼文の値と一致しました。現行(HEAD)の `bridge.parse_contract` は、どちらの本文からも `{'agent': 'claude', 'repo': '<home>/workspace/maylac/agents-setup', 'model': 'claude-opus-5-5', 'fallback': 'off'}` を返し、本文の 1 行目は `Goal: 改行保持の試験。これは実行契約ではない。` でした。
