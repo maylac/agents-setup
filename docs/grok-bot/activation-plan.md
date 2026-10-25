@@ -15,7 +15,7 @@
 `doctor.py` の `end_to_end` は実装上 `unknown` のままです。一般的な preflight の結果は、上の独立した smoke 結果を打ち消しません。
 
 8. **コード屋の説明欄**: 常設指示を保存し、開き直して全文一致を確認した。内容はプロンプト上の運用ルールで、システムによる権限の強制ではない。
-9. **手動 dashboard**: root が [issue 6](https://github.com/maylac/agent-tasks/issues/6)（ラベル `manual` `ops-hub`、本文に `<!-- grokbot-mission-hub:v1 -->`）を作った。実行用 Issue ではない。自動更新や scheduler は無い。
+9. **手動 dashboard**: root が [issue 6](https://github.com/maylac/agent-tasks/issues/6)（ラベル `manual` `ops-hub`、本文に `<!-- grokbot-mission-hub:v1 -->`）を作った。実行用 Issue ではない。10-25 に root が UI で本文の最新手動 snapshot と両ラベルを再確認した。日次 routine は登録済みだが、初回実行はまだ確認されていない。
 10. **MissionHub collector**: 読み取り専用の `slack-bridge/mission_hub.py` を追加した。現在 bridge テスト44件が通過（うち MissionHub 新規11件）。これは private queue のその時点の読み取り結果で、常時稼働の monitor や scheduler ではない。使い方は [Bot の役割分担](bot-roles.md#missionhub-collector)。
 
 11. **smoke report の独立照合**: [issue 4 の原文コメント](https://github.com/maylac/agent-tasks/issues/4#issuecomment-6394204858)にある UTF-8 原文を Dispatcher が [issue 7](https://github.com/maylac/agent-tasks/issues/7) の本文へ JSON 文字列でそのまま移し、URL・取得時刻・source head・SHA256 を添えた。受領側でも #4 コメントを GitHub API から読み、デコード後3,551 byteの本文とバイト一致、SHA256 `a6206c53faadb3afbfde073094f7772ff83bd35713bd6bd34799eba70f59e239` を確認した。#4/#5/#7 の worktree はすべて source head `f6885632d346798c9ac1cba1ecbccce88e84b47b` で clean。[#7 の最終 report](https://github.com/maylac/agent-tasks/issues/7#issuecomment-6394276470) は closed / transport `done` / verdict **要修正**。原文搬送の照合は成功したが、原文の案内文に修正点がある。
@@ -26,7 +26,7 @@
 - **順番に行う smoke**: [issue 4](https://github.com/maylac/agent-tasks/issues/4)（Claude 作成）は closed。[issue 5](https://github.com/maylac/agent-tasks/issues/5) は closed だが、Codex report は Bridge `done` / agent outcome `BLOCKED`（GitHub の原文に直接接続できず、独立照合は未完）。後続の Dispatcher `VERIFIED:` コメントは部分確認を記録するが、Codex report を成功へ変更した扱いにはしない。
 
   #4 の原文には5件すべての checks と実出力がある。#5 の依頼本文では `checks` が `[5件: ...]` という無効な JSON へ短縮されていたため、輸送時の要約欠落と作成者レポートの不足を分けて扱う。#7 は #4 原文のバイト一致を確認して closed、transport `done` / verdict **要修正**。#4 の案内文自体は200字を超え（バッククォート込み221字、除外213字）、fallback の条件（route 不可判定時のみ、`model:` / `fallback: off` で route 固定）と Grok CLI の `BRIDGE_GROK_ENABLED=1` 条件を省いている。
-- **日次 routine**: 未設定。Skill の有無と scheduler の設定は別の状態として扱い、手作業の成功 → Skill → 実行確認 → schedule → 初回結果の確認の順で進める。
+- **日次 routine**: 「Maylac 開発運用点検」が毎日8時頃に有効。code屋が報告した次回時刻は2026-10-26 08:07 JST（native scheduler は0〜15分の幅）。root が Runs を確認した時点で実行履歴はなく、初回 callback は未確認。同一 routine の初回実行記録・issue 6 の更新・コード屋の報告を確認する一回限りの確認を予約した。
 - **全体の検証**: `scripts/validate.sh` は終了コード 1。既存の live parity 11 件（worktree と canonical の symlink 先の不一致10件、Claude RTK PreToolUse hook の欠落1件）。詳細ログはローカルの `~/tasks/grokbot-operations-20261025/full-validation.log`。この live-home 差分は今回の変更で修正していない。
 - **code の PR**: default branch への merge は人の承認待ち。
 

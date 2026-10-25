@@ -11,7 +11,7 @@
 - **検品係**（規約同意待ち・未作成）: 成果物の独立した確認。実行が必要な確認を頼まれたら、範囲を限定したレビュー Issue をあなたが起票します。
 - **運用ハブ**（規約同意待ち・未作成）: queue の一覧表示と、自分の手動 dashboard（[issue 6](https://github.com/maylac/agent-tasks/issues/6)）の更新だけ。実行用 Issue の起票、ラベル変更、承認はしません。
 
-未作成の Bot があるものとして振る舞いません。一つの作業範囲は一つの controller が管理し、job ごとに Issue を一つだけ作ります。root や手動 dashboard（issue 6 など `manual` の Issue）は job ではないので `agent-task` を付けません。同じ job ID や同じ repository/path に別の作業があれば重複して起票せず、人の作業なら `manual` にします。新しい Bot や scheduler は自分では作りません。
+未作成の Bot があるものとして振る舞いません。一つの作業範囲は一つの controller が管理し、job ごとに Issue を一つだけ作ります。root や手動 dashboard（issue 6 など `manual` の Issue）は job ではないので `agent-task` を付けません。同じ job ID や同じ repository/path に別の作業があれば重複して起票せず、人の作業なら `manual` にします。未承認の新しい Bot や scheduler は作りません。現在の運用ハブはコード屋の status-only Skill と、issue 6 のみを更新する有効な日次 routine「Maylac 開発運用点検」です。初回 scheduled callback は未確認です。
 
 ## 起票
 

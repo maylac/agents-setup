@@ -11,7 +11,7 @@ Grok Bot を用途ごとに分け、各 Bot の仕事・使う道具・手順・
 | 運用ハブ | 規約同意待ち・未作成 |
 | Bot設計係 | 規約同意待ち・未作成 |
 
-追加の3 Bot は作成していません。Create Bot の追加規約への同意待ちで、返答はまだありません。Bot URL、初回の結果、実行スケジュールはいずれもありません。下の説明欄案は、同意を得たら使えるように用意したものです。
+追加の3 Bot は作成していません。Create Bot の追加規約への同意待ちで、返答はまだありません。下の説明欄案は、同意を得たら使えるように用意したものです。コード屋の既存運用ハブ Skill と日次 routine は別途設定済みです。
 
 Tibo Monitor と汎用の Grok Bot は変更しません。
 
@@ -41,7 +41,7 @@ Tibo Monitor と汎用の Grok Bot は変更しません。
 - **道具**: GitHub の読み取り、読み取り専用の MissionHub collector（下の「MissionHub collector」）、手動 dashboard [issue 6](https://github.com/maylac/agent-tasks/issues/6) の本文更新。
 - **やってよい書き込み**: 自分の手動 dashboard（issue 6、`<!-- grokbot-mission-hub:v1 -->` を含む本文）の更新だけ。
 - **やらないこと**: 実行用 Issue の起票、`agent-task` などのラベル変更、承認の代行、他の Issue の編集。
-- **定期実行**: まだ無い。手作業の成功 → Skill → 実行確認 → schedule → 初回結果の確認の順で、検証済みの日次 routine を一つだけ置く。
+- **定期実行**: 有効な日次 routine「Maylac 開発運用点検」がある（[routine](https://grok.com/automations?automationId=bot-routine%3Adf79e1fb-4c03-497f-811b-4ce9ddd45f2e%3Amaylac)）。毎日8時頃に status-only Skill を実行する。手作業成功と Skill の実行効果を確認してから登録した。root が Runs を確認した時点では履歴がなく、初回 scheduled callback は未確認。
 - **止まる条件**: queue が読めない、最終報告が想定より古い。この場合は異常として表示する。
 
 ### Bot設計係（案）
@@ -80,17 +80,17 @@ pending human judgment: <人が判断すべき正確な操作、無ければ non
 - #5 の依頼本文では #4 の checks が `[5件: ...]` という無効JSONに縮められていた。#4 の原文には配列と結果があるため、これは Dispatcher の転送時の欠落で、Claude 作成側の不足ではない。
 - [issue 7](https://github.com/maylac/agent-tasks/issues/7): #4 最終 comment を `original_comment` JSON文字列として URL・取得時刻・source head・UTF-8 SHA256とともに搬送。受領側で GitHub API の原文とバイト一致し、SHA256 `a6206c53faadb3afbfde073094f7772ff83bd35713bd6bd34799eba70f59e239` を確認した。#4/#5/#7 worktree はすべて source head `f6885632d346798c9ac1cba1ecbccce88e84b47b` で clean。[最終 report](https://github.com/maylac/agent-tasks/issues/7#issuecomment-6394276470) は closed / transport `done` / verdict **要修正**。下書きはバッククォート込み221字、除外213字で200字を超え、fallback条件（route 不可時のみ、`model:` / `fallback: off` 指定時は固定）と `BRIDGE_GROK_ENABLED=1` 条件の省略を検出した。
 
-これらの検品は原文の事実確認には成功しましたが、作成された案の内容は要修正です。追加3 Bot は規約同意待ちで未作成、日次 routine もありません。Skill の有無と scheduler の設定は別の状態として扱います。順番は「手作業の成功 → Skill → Skill の実行確認 → schedule → 初回結果の確認」です。どの段階も人の PC 操作を前提にしません。料金上限・自動チャージも変更していません。
+これらの検品は原文の事実確認には成功しましたが、作成された案の内容は要修正です。追加3 Bot は規約同意待ちで未作成です。運用ハブの status-only Skill はコード屋が保存・readback を報告し、実行効果を確認しました。日次 routine「Maylac 開発運用点検」は登録・有効化されていますが、root が Runs を開いた時点で実行履歴はなく、初回 scheduled callback は未確認です。初回の実行記録・issue 6 の鮮度・コード屋の報告を確認する一回限りの確認を予約しました。どの段階も人の PC 操作を前提にしません。料金上限・自動チャージも変更していません。
 
 ## 手動 dashboard（issue 6）
 
 root が [issue 6](https://github.com/maylac/agent-tasks/issues/6) を private の手動 dashboard として作りました。ラベルは `manual` と `ops-hub`、本文に `<!-- grokbot-mission-hub:v1 -->` を含みます。実行用の Issue ではなく、`agent-task` は付けません。
 
-本文に記録しているのは、規約同意待ちの実態、Bot の設定状況（現在はコード屋のみ）、smoke の開始・最終報告と完了確認待ちのスナップショットです。自動更新や scheduler はまだありません。
+本文には規約同意待ち、Bot の設定状況、smoke の開始・最終報告と確認待ちを記録します。root は 2026-10-25 に GitHub UI で本文の最新手動 snapshot と `manual` / `ops-hub` ラベルを確認しました。現在の routine はこの本文だけを更新する設定ですが、Runs に実行履歴はなく、初回 callback は未確認です。
 
 ## MissionHub collector
 
-`slack-bridge/mission_hub.py` は実行用の `agent-task` Issue を読み取って一覧にするだけのツールです。`gh` の読み取りコマンドだけを使い、daemon や watchdog ではありません。出力はその時点のスナップショットで、取り直さなければ古くなります。bridge テストは44件（MissionHub 新規11件）が通過しています。collector の exit 0 は queue を読み取れたことだけを示し、全タスクの検証済みや常時監視を意味しません。
+`slack-bridge/mission_hub.py` は実行用の `agent-task` Issue を読み取って一覧にするだけのツールです。`gh` の読み取りコマンドだけを使い、daemon や watchdog ではありません。routine はこの collector を使って定期実行する設定ですが、CLI 自体はその時点の snapshot で、取り直さなければ古くなります。bridge テストは44件（MissionHub 新規11件）が通過しています。collector の exit 0 は queue を読み取れたことだけを示し、全タスクの検証済みや常時監視を意味しません。
 
 ```sh
 python3 slack-bridge/mission_hub.py --repo maylac/agent-tasks --format markdown
@@ -112,7 +112,7 @@ python3 slack-bridge/mission_hub.py --input-json path/to/issues.json --now 2026-
 1. **用途ごとに Bot を分ける**: 上の4役。仕事が重なる Bot は作らない。現在作成済みはコード屋だけ。
 2. **説明欄に役割を固定する**: 各 Bot の仕事・やらないこと・止まる条件。コード屋は保存と全文一致を確認済み。
 3. **引き継ぎと独立レビュー**: 上の引き継ぎ形式。通常は Claude が作成し、Codex（`gpt-6-luna` 固定、読み取り専用）がレビューする。作成が Codex に fallback した場合は Claude がレビューし、それもできなければ blocked と記録する。自己採点はしない。最終統合は root が行う。
-4. **承認と、手作業 → Skill → routine**: 下書き・差分・確認結果を揃えてから人に一度だけ判断を求める。一度手作業で成功した手順だけを Skill にし、実行結果を確認してから schedule する。初回の結果は確認する。
+4. **承認と、手作業 → Skill → routine**: 下書き・差分・確認結果を揃えてから人に一度だけ判断を求める。一度手作業で成功した手順だけを Skill にし、実行効果を確認してから schedule する。現在の初回 callback は未確認で、確認待ち。
 5. **実物の確認と運用ハブ・古さ**: `done` を受けたら GitHub や成果物を開き直す。合格は `VERIFIED:` コメントで記録する。運用ハブと collector が判断待ち・異常・成果物・最終報告と古さを表示する。
 6. **共有環境と秘密の境界**: 下の「安全と承認の境界」。
 7. **予算の上限と自動チャージ**: 実際の課金上限や自動チャージの設定は確認・変更していません。現在の請求状況も不明です。料金・購入・プラン・scope の変更は人の承認なしに行いません。ベンダー側で上限 0 が強制されているとは扱いません。

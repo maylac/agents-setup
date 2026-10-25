@@ -21,13 +21,13 @@ Grok Bot アプリを依頼の入口と報告窓口にし、private の GitHub I
 `python3 slack-bridge/doctor.py` は実装上 `end_to_end: unknown` のままです。この表示は上の独立した smoke 結果を否定しません。
 
 6. コード屋の説明欄に常設指示を保存し、開き直して全文一致を確認した（プロンプト上の運用ルールで、システムによる権限の強制ではない）。
-7. root が手動 dashboard [issue 6](https://github.com/maylac/agent-tasks/issues/6)（`manual` `ops-hub`）を作った。実行用 Issue ではなく、自動更新は無い。
+7. root が手動 dashboard [issue 6](https://github.com/maylac/agent-tasks/issues/6)（`manual` `ops-hub`）を作った。実行用 Issue ではない。2026-10-25 に root が UI を開き直し、本文が最新の手動 snapshot、ラベルが `manual` と `ops-hub` であることを確認した。
 8. 読み取り専用の collector `python3 slack-bridge/mission_hub.py --repo maylac/agent-tasks --format markdown`（または `--format json`）を追加した。
 
 9. [issue 4 の最終コメント](https://github.com/maylac/agent-tasks/issues/4#issuecomment-6394204858)には Claude の全5 checks と各出力がある。引き継ぎ後の [issue 5 本文](https://github.com/maylac/agent-tasks/issues/5)では checks が `[5件: ...]` に縮められ、JSONとして読めない。これは転送時の情報欠落で、Claude の原文に checks が無かったわけではない。Claude の下書きは約190字という見出しに反して、バッククォート込み221字（除外213字）で、200字を超える。また fallback が route 不可時だけ動く条件、`model:` / `fallback: off` による固定、Grok の `BRIDGE_GROK_ENABLED=1` 条件を省いているため、内容は要修正。
 10. issue 5 は closed だが、Codex の最終 report は `done` / agent outcome `BLOCKED`（GitHub 上の独立照合未完）。後の Dispatcher `VERIFIED:` comment は一部確認の記録であり、Codex の report を成功へ変更した扱いにはしない。[issue 7](https://github.com/maylac/agent-tasks/issues/7) の本文には issue 4 の原文を JSON 文字列でそのまま運び、UTF-8 SHA256 `a6206c53faadb3afbfde073094f7772ff83bd35713bd6bd34799eba70f59e239` と source head `f6885632d346798c9ac1cba1ecbccce88e84b47b` を添えた。独立照合で #4 の原文とバイト一致し、#4/#5/#7 の worktree はすべて同じ source head で clean。[issue 7 の最終 report](https://github.com/maylac/agent-tasks/issues/7#issuecomment-6394276470) は closed / transport `done` / verdict `要修正`。本文の raw artifact 搬送は確認済みだが、案内文の修正は必要。
 
-未完了: 検品係・運用ハブ・Bot設計係は規約同意待ち・未作成です。規約同意への返答はまだなく、Bot は作っていません。日次 routine は未設定です。issue 5 は closed / agent BLOCKED、issue 7 は closed / 要修正で、下書き案に指摘された不足が残っています。手動 dashboard [issue 6](https://github.com/maylac/agent-tasks/issues/6) は自動更新されません。料金上限・自動チャージも変更していません。詳細は [Bot の役割分担](bot-roles.md) を見てください。
+未完了: 検品係・運用ハブ・Bot設計係は追加規約への同意待ちで未作成です。コード屋の status-only Skill は保存・readback が報告され、実行効果を別途確認済みです。日次 routine「Maylac 開発運用点検」は登録・有効化され、issue 6 の本文だけを更新する設定です。root が Runs を開いた時点では実行履歴がなく、初回 scheduled callback は未確認です。初回 scheduled callback の一回限りの確認も予約済みです。issue 5 は closed / agent BLOCKED、issue 7 は closed / 要修正で、下書き案に指摘された不足が残っています。料金上限・自動チャージも変更していません。詳細は [Bot の役割分担](bot-roles.md) を見てください。
 
 ## 役割
 
