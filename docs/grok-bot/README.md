@@ -1,35 +1,48 @@
-# Grok Bot を Dispatcher にする構成案
+# Grok Bot を Dispatcher にする構成
 
-この構成では Grok Bot アプリを依頼の入口と報告・承認窓口にし、GitHub Issue を Mac mini への指示経路にします。設定と接続はまだ完了していません。2026-10-25 時点で、ローカルの bridge→Codex loopback が一度通り、依頼したマーカーファイルを読み戻せています。これはローカル bridge/CLI 経路だけの確認で、実際に指定モデルが処理した証明ではありません。bridge の env 設定ファイルと launchd 登録はなく、dispatch 用 GitHub リポジトリは解決できず、Cursor アプリ/CLI も見つかっていません。Grok Bot の connector と実際の handoff も未確認です。Claude と Codex の認証済み状態はローカルホスト上で観測されていますが、この文書では秘密値やアカウント識別子を扱いません。
+Grok Bot アプリを依頼の入口と報告窓口にし、private の GitHub Issue キュー（`maylac/agent-tasks`）を Mac mini への指示経路にします。Bot ごとの役割は [Bot の役割分担](bot-roles.md) にまとめています。
 
-Grok Bot は xAI の説明上、Bot 同士が同じクラウド PC とブラウザを共有します。Mac mini の SSH 鍵、NAS 認証情報、その他の秘密を Bot に渡さないでください。[Grok Bot の公式説明](https://cursor.com/docs/grok-bot) にある共有環境と delegation の説明を前提に、クラウド側は契約の作成と証拠確認を担当します。
+## 使い方
+
+1. Grok Bot の「コード屋」に、やりたいことを普通の文章で送る。
+2. コード屋が Issue を作り、Mac mini の bridge が Claude / Codex / Cursor に処理させる。
+3. コード屋が GitHub と成果物を開き直して確認し、元の会話に5行以内で報告する。
+
+正常に終わったものは短い完了報告だけが届きます（Grok や GitHub の通知設定は変えていません）。返事が必要なのは、人の判断待ちとエラーのときだけです。Bot のメッセージは承認になりません。merge・本番 deploy・外部への投稿・購入や課金・認証情報の変更は、あなたの返信が必要です。
+
+## 確認済みの経緯（2026-10-25）
+
+1. PR 16 が main に merge された（`f6885632d346798c9ac1cba1ecbccce88e84b47b`）。canonical checkout は clean。
+2. private の `maylac/agent-tasks` があり、bridge の env（権限 600）と launchd の `com.maylac.slack-bridge` が動いている。
+3. Cursor 公式 CLI を導入しログインした。既存の Grok の `agent` alias は消さずに、決まったパスへ入れた。bridge からは `~/.config/slack-bridge` のローカル wrapper 経由で呼び、本物の git common dir と新しい bridge worktree のパスを確認し、`--mode ask --trust` だけで実行する（`--force` / yolo / 全体 trust は使わない）。
+4. 既存の[コード屋](https://grok.com/bot/df79e1fb-4c03-497f-811b-4ce9ddd45f2e)の GitHub 接続は既存の許可で動く。connector からは他の repository も見えるが、bridge が実行してよいのは `agents-setup` だけ。
+5. コード屋が [issue 1](https://github.com/maylac/agent-tasks/issues/1)（Codex Luna）、[issue 2](https://github.com/maylac/agent-tasks/issues/2)（Cursor 読み取り）、[issue 3](https://github.com/maylac/agent-tasks/issues/3)（Claude Opus）を起票し、実際の結果と GitHub を読み戻して元の会話へ報告した。3件とも closed。記録はローカルの `~/tasks/grokbot-integration-20261025/activation-final-receipt.json`。
+
+`python3 slack-bridge/doctor.py` は実装上 `end_to_end: unknown` のままです。この表示は上の独立した smoke 結果を否定しません。
+
+6. コード屋の説明欄に常設指示を保存し、開き直して全文一致を確認した（プロンプト上の運用ルールで、システムによる権限の強制ではない）。
+7. root が手動 dashboard [issue 6](https://github.com/maylac/agent-tasks/issues/6)（`manual` `ops-hub`）を作った。実行用 Issue ではなく、自動更新は無い。
+8. 読み取り専用の collector `python3 slack-bridge/mission_hub.py --repo maylac/agent-tasks --format markdown`（または `--format json`）を追加した。
+
+9. [issue 4 の最終コメント](https://github.com/maylac/agent-tasks/issues/4#issuecomment-6394204858)には Claude の全5 checks と各出力がある。引き継ぎ後の [issue 5 本文](https://github.com/maylac/agent-tasks/issues/5)では checks が `[5件: ...]` に縮められ、JSONとして読めない。これは転送時の情報欠落で、Claude の原文に checks が無かったわけではない。Claude の下書きは約190字という見出しに反して、バッククォート込み221字（除外213字）で、200字を超える。また fallback が route 不可時だけ動く条件、`model:` / `fallback: off` による固定、Grok の `BRIDGE_GROK_ENABLED=1` 条件を省いているため、内容は要修正。
+10. issue 5 は closed だが、Codex の最終 report は `done` / agent outcome `BLOCKED`（GitHub 上の独立照合未完）。後の Dispatcher `VERIFIED:` comment は一部確認の記録であり、Codex の report を成功へ変更した扱いにはしない。[issue 7](https://github.com/maylac/agent-tasks/issues/7) の本文には issue 4 の原文を JSON 文字列でそのまま運び、UTF-8 SHA256 `a6206c53faadb3afbfde073094f7772ff83bd35713bd6bd34799eba70f59e239` と source head `f6885632d346798c9ac1cba1ecbccce88e84b47b` を添えた。独立照合で #4 の原文とバイト一致し、#4/#5/#7 の worktree はすべて同じ source head で clean。[issue 7 の最終 report](https://github.com/maylac/agent-tasks/issues/7#issuecomment-6394276470) は closed / transport `done` / verdict `要修正`。本文の raw artifact 搬送は確認済みだが、案内文の修正は必要。
+
+未完了: 検品係・運用ハブ・Bot設計係は規約同意待ち・未作成です。規約同意への返答はまだなく、Bot は作っていません。日次 routine は未設定です。issue 5 は closed / agent BLOCKED、issue 7 は closed / 要修正で、下書き案に指摘された不足が残っています。手動 dashboard [issue 6](https://github.com/maylac/agent-tasks/issues/6) は自動更新されません。料金上限・自動チャージも変更していません。詳細は [Bot の役割分担](bot-roles.md) を見てください。
+
+## 役割
 
 | 役割 | 担当 |
 |---|---|
-| Grok Bot / Dispatcher | 依頼を Issue 契約にする。人の承認を求め、結果の PR・CI・成果物を確認して元の入口へ報告する。自分で実装しない。 |
-| Claude Code | 通常の実装、修正、調査。 |
-| Codex | Claude の利用制限時の実装、または独立したレビュー。 |
-| Cursor CLI | 明示的に導入・有効化した後の読み取り専用レビューと提案。bridge は Cursor に編集を依頼しない。 |
+| コード屋 / Dispatcher | 依頼を Issue 契約にし、結果を実物で確認して報告する。自分で実装しない。新しい `agent-task` Issue を作れるのはこの Bot だけ。 |
+| Claude Code | 通常の実装・修正・調査。model を省略すると Opus → Sonnet → Codex Luna の順に切り替わる。Grok CLI は無効なので除外される。 |
+| Codex | Claude が使えないときの実装、または読み取り専用のレビュー（`gpt-6-luna` 固定）。 |
+| Cursor CLI | 明示的に指定したときだけの読み取り専用レビュー。編集は頼まない。 |
 
-## 作業の流れ
-
-```text
-Grok Bot アプリ ──依頼──> Dispatcher ──agent-task Issue──> GitHub
-                                                        │
-                                   Mac mini bridge <─────┘
-                                         │
-                               Claude / Codex / Cursor review
-                                         │
-                                  Issue 結果・PR・checks
-                                         │
-                          Dispatcher が証拠を確認して報告
-```
-
-依頼ごとに一つの Issue を使います。Issue には担当 agent、repo ref、目的、編集可能なファイル、実行可能な完了条件、制限時間、仮定を記します。単一 controller を維持し、同じファイルに別経路の作業がある場合は `manual` 扱いにして重複指示を止めます。無関係な Bot の大量作成や、新しい scheduler/dashboard は追加しません。繰り返し処理は接続と安全性を確認した後に必要なものだけ設定します。
+大事な成果物は、作った harness とは別の harness がレビューします。自己採点はしません。最終統合は root が行います。root や手動のダッシュボードは実行タスクではありません。
 
 ## 契約例
 
-本文の先頭は機械判読可能なヘッダーです。行末コメントを付けず、空行の後に依頼本文を置きます。repo の `<user>` は実際の Mac mini のユーザー名に置き換えます。
+本文の先頭は機械判読できるヘッダーです。行末コメントを付けず、空行の後に依頼本文を置きます。
 
 ```text
 agent: claude
@@ -45,22 +58,20 @@ Assumptions: リンク先の内容は変更しない。
 Report: status、変更ファイル、各チェック結果、PR URL、未解決事項を5行以内で記録する。
 ```
 
-モデル指定を空のまま送らず、省略する場合は `model:` 行ごと削除します。必要な時だけ `fallback: off` など routing の契約オプションを別の有効なヘッダー行として使います。
+通常は `model:` 行と `fallback:` 行を書きません。`model:` や `fallback: off` を明示した場合はその route だけを使います。
 
 ## 結果の判定
 
-`done` のコメントが届いたら、終了コードだけで完了扱いにしません。PR がある場合は head revision、必須 CI/check、対象変更を照合します。成果物がある場合はリンクを開き、存在と内容を確認します。結果リンクがない、条件未達、証拠が不明な場合は Dispatcher が追加確認を一度だけ契約にし、なお不明なら blocked と報告します。利用制限はコメントの route と再開時刻をそのまま伝え、別 controller が同じ作業を起票しないようにします。
+Bridge の `done` は実行プロセスの結果です。MissionHub は最新の done コメントで、コードフェンス出力の先頭行にある明示的な `status: blocked|failed|needs-approval` または `**状態: ...**` も別の `agent_outcome` として表示します。たとえば `done (agent blocked)` は注意対象で、完了成功とは読みません。`VERIFIED:` は後続のトップレベルコメントに記録されたことだけを示し、コメント作成者や独立検証を collector が認証するものではありません。PR があれば head revision・必須 check・変更内容を、成果物があればリンク先の中身を開き直して確認します。証拠が足りなければ追加確認を一度だけ起票し、それでも不明なら blocked と報告します。
 
-人の判断が必要な場合は、理由、対象の正確な操作、最後に確認できた時刻を添えて一度だけ尋ねます。返答を待っている間、無関係で安全な調査は続けます。沈黙は承認ではありません。
+## 安全
 
-## 接続・有効化
+Grok Bot は Bot 同士で同じクラウド PC とブラウザを共有します。これは Bot ごとのセキュリティ境界になりません。Mac mini の SSH 鍵、NAS 認証情報、API key などの秘密はクラウドへ移しません。
 
-具体的な順序と承認対象は [有効化計画](activation-plan.md) に記載しています。bridge 側の読み取り診断は `python3 slack-bridge/doctor.py`、GitHub への読み取り確認を含める場合は `python3 slack-bridge/doctor.py --check-github` です。この診断だけでは Bot connector や end-to-end handoff の成功は確認できません。
+## 関連文書
 
-## 公式資料
-
-- [Cursor CLI headless mode](https://cursor.com/docs/cli/headless): `--print` の出力形式と、変更適用に関するフラグを確認する資料。
-- [Grok Bot](https://cursor.com/docs/grok-bot): Bot の共有クラウド PC と委任機能の説明。
-- [xAI changelog](https://x.ai/changelog/bot): GitHub connector の機能更新。
-
-これらの資料は製品仕様の根拠です。この環境で connector が有効か、Grok Bot が実際に Issue を作れるかの証拠にはなりません。
+- [Bot の役割分担](bot-roles.md): 4つの Bot、引き継ぎ形式、`VERIFIED:` の記録、運用ハブ、collector、投稿の7項目との対応。
+- [Dispatcher instructions](dispatcher-instructions.md): コード屋の説明欄に入れる指示。
+- [有効化の経緯と復旧手順](activation-plan.md): 実施済みの手順と、壊れたときの戻し方。
+- 参考にした運用例: [dansyu_callenge の投稿](https://x.com/dansyu_callenge/status/2114110194963841236)
+- 製品仕様: [Grok Bot](https://cursor.com/docs/grok-bot)、[Cursor CLI headless mode](https://cursor.com/docs/cli/headless)、[xAI changelog](https://x.ai/changelog/bot)
