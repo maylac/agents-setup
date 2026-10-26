@@ -28,7 +28,12 @@ Turns a large imported pool (typically ExamTopics past exams) into a short study
 - `--unreliable`: no choice-level AI explanation; top community vote ≠ displayed answer; or top vote share < 0.6 (`--min-share`).
 - `--dedupe`: one question per identical correct-answer text. Recognition exams (CLF, AIF-style "use case → service") lose almost no coverage this way: CLF went from 609 to 373. The kept representative is a previously missed question if there is one, else the one with the most votes (the canonical wording, usually with the richest discussion).
 - `--max-low-vote N`: also drop never-missed questions with ≤ N total votes. Use this only when the user wants still fewer questions; report the resulting count first.
-- Questions the user has answered wrong are never dropped by dedupe or low-vote rules.
+- `--target N --weights "分野 1:32,分野 2:26,…"`: when the pool has no votes or AI explanations
+  (DVA-C02 on 2026-10-27: 473/481 lacked choice-level AI explanations and none had votes, so
+  `--unreliable` would keep 8 and `--max-low-vote` does nothing), cap the pool at N. Quotas follow the
+  official domain weights (DB `weight_percent` may be 0, so pass them); missed questions always stay;
+  the rest are kept newest source number first. Ask the user for N (offer ~2–3 full mocks).
+- Questions the user has answered wrong are never dropped by dedupe, low-vote or target rules.
 - Answer-text dedupe is weaker for scenario-heavy exams (SAP/DOP-style, where the same service answers different problems). There, prefer `--unreliable` and stale terms, and show sample groups before deduping.
 
 ## Report
