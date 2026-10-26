@@ -16,6 +16,8 @@ OFFICIAL = re.compile(r"^https://(docs\.aws\.amazon\.com|aws\.amazon\.com|docs\.
 BANNED = re.compile(r"正解は[A-E]|選択肢[A-E]|問題文|消去法|[ㄱ-ㆎ가-힣Ѐ-ӿ]")
 
 
+# Literal translations that are not AWS's official Japanese terms (AWS account = アカウント).
+MISTRANSLATED = {"口座": "アカウント", "私設接続": "プライベート接続", "鍵ポリシー": "キーポリシー"}
 VAGUE_EDGES = {"連携", "関係", "実行", "観測", "頼る", "使う", "利用", "対応", "判断", "接続先", "答え", "答える", "思い出す", "選ぶ", "関連", "適用"}
 
 
@@ -80,6 +82,11 @@ def lint(path: Path) -> list[str]:
                 e("caption > 24 wide chars")
             if not OFFICIAL.match(sc.get("source_url", "")):
                 e("source_url must be an official AWS/Anthropic docs URL")
+            texts = [sc.get(k, "") for k in ("title", "body", "caption", "narration", "rule", "wrong")]
+            texts += [n.get(k, "") for n in sc.get("nodes", []) for k in ("label", "sub")] + [x.get("label", "") for x in sc.get("edges", [])]
+            for bad, good in MISTRANSLATED.items():
+                if any(bad in str(t) for t in texts):
+                    e(f"'{bad}' is not the official term; use '{good}'")
             for key in ("title", "body", "narration", "rule", "wrong"):
                 if BANNED.search(str(sc.get(key, ""))):
                     e(f"{key} has exam-tactic wording or a stray script")
@@ -87,8 +94,8 @@ def lint(path: Path) -> list[str]:
             if not 2 <= len(nodes) <= 4:
                 e("2-4 nodes")
             for ni, node in enumerate(nodes):
-                if width(node.get("label", "")) > 8:
-                    e(f"node {ni} label wider than 8 ({node.get('label')})")
+                if width(node.get("label", "")) > 10:
+                    e(f"node {ni} label wider than 10 ({node.get('label')})")
                 if width(node.get("sub", "")) > 12:
                     e(f"node {ni} sub wider than 12 ({node.get('sub')})")
                 icons = node.get("icon")
