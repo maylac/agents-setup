@@ -43,7 +43,7 @@ arrows, muted accent pills. Do not reintroduce bordered cards, drop shadows or a
    - `scripts/finish_exam.sh <exam>` waits for the final audit, reruns it once if Codex exited on MCP
      auth noise, applies the remaining defects (usually 1–9) and touches `evidence/READY-<exam>`.
    - **Official Japanese terminology (mandatory before audio).** The user caught 「口座」 for AWS
-     account in published clips (2026-10-26). Run `scripts/term_round.sh <exam>` with `ROUND=1..4`
+     account in published clips (2026-10-26). Run `ROUND=n scripts/term_round.sh <exam> [files]` for n=1..4
      (audit with `scripts/term-audit-brief-template.txt` → fix → lint). Rounds kept finding new real
      defects (口座, 鍵→キー, CWエージェント, 指標→メトリクス, partition, 閾値→しきい値, 待機系→スタンバイ,
      呼出→呼び出し, IAM IC); run at least 4 rounds, then grep the usual literal terms yourself.
