@@ -36,6 +36,10 @@ def main() -> None:
     ap.add_argument("--dedupe", action="store_true", help="keep one question per identical correct-answer text")
     ap.add_argument("--max-low-vote", type=int, default=0,
                     help="with --dedupe: also drop never-missed questions whose total votes <= N (0 = off)")
+    ap.add_argument("--target", type=int, default=0,
+                    help="after the other rules, keep at most N questions: every missed one, then the newest per domain")
+    ap.add_argument("--weights", default="",
+                    help='official domain weights for --target, e.g. "分野 1:32,分野 2:26,分野 3:24,分野 4:18" (substring match)')
     ap.add_argument("--apply", action="store_true")
     ap.add_argument("--list", action="store_true", help="print every dropped question")
     args = ap.parse_args()
@@ -105,6 +109,29 @@ def main() -> None:
             for it in items:
                 if it["id"] not in drop and it["wrong"] == 0 and it["votes"] and it["total"] <= args.max_low_vote:
                     drop[it["id"]] = (it, f"低優先: 投票{it['total']}票のみ")
+
+    if args.target:
+        # Quotas follow the official weights; missed questions always stay, the rest go newest first
+        # (a higher source number was added to the source later, so it is closer to the current exam).
+        weights = {k.strip(): float(v) for k, v in (pair.rsplit(":", 1) for pair in args.weights.split(",") if pair)}
+        if not weights:
+            raise SystemExit("--target needs --weights")
+        def bucket(domain: str) -> str:
+            return next((k for k in weights if k in domain), "")
+        def number(sq: str) -> int:
+            digits = re.findall(r"\d+", sq or "")
+            return int(digits[-1]) if digits else 0
+        total = sum(weights.values())
+        quota = {k: round(args.target * w / total) for k, w in weights.items()}
+        pool = defaultdict(list)
+        for it in items:
+            if it["id"] not in drop:
+                pool[bucket(it["domain"])].append(it)
+        for key, members in pool.items():
+            members.sort(key=lambda x: (x["wrong"] == 0, -number(x["sq"])))
+            limit = max(quota.get(key, 0), sum(1 for m in members if m["wrong"]))
+            for it in members[limit:]:
+                drop[it["id"]] = (it, f"件数調整: 目標{args.target}問に向け分野内で古い番号から除外")
 
     kept = [it for it in items if it["id"] not in drop]
     print(f"{'APPLY' if args.apply else 'DRY-RUN'} exam={args.exam} source={args.source}")
