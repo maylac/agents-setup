@@ -1,0 +1,20 @@
+Goal: write 12 Japanese vertical "鉄則ショート" episodes for exam {EXAM} ({LABEL}) into content/{EXAM}.json (a JSON list). Each episode teaches ONE exam decision rule in 4 scenes (~40 s, VOICEVOX ずんだもん narration). The user approved the style of content/pilot.json (3 SAP episodes) — copy its structure, tone and density exactly.
+
+You own ONLY content/{EXAM}.json. Other workers concurrently write other content/*.json files; do not touch anything else.
+
+Sources (read-only; use nothing else for facts):
+- Field manual: {GUIDES}
+- Audited flashcards (with official source_url per card): {FLASHCARDS}
+Every claim must be stated in those sources; each scene's source_url must be an official URL taken from them (flashcard source_url or a URL cited in the guide) that supports that scene. Do not invent numbers, limits or dates. No copyrighted exam question stems, no answer letters, no exam-taking tactics (消去法 etc.) — knowledge only.
+
+Episode schema (see content/pilot.json):
+- id "{PREFIX}-r01".."{PREFIX}-r12"{IDNOTE}, exam_code "{EXAM}", exam_label "{LABEL}", series_label "鉄則", title (<=18 wide chars).
+- scenes s1..s4 with kickers: s1 "場面" (the requirement/condition that triggers the rule), s2 usually "罠" (tempting wrong design; set "wrong" and "wrong_tag":"✕ 罠") or a contrast kicker, s3 usually "鉄則" (correct design; "rule" + "rule_tag":"✓ 鉄則"), s4 "確認" (one recall question; title is the question, narration asks then answers; "rule" = answer, "rule_tag":"✓ 答え").
+- Each scene: title (one line, <= 11 wide chars), body (2 lines joined by "\n", each <= 21 wide), caption (<= 24), narration (45-95 chars, natural spoken Japanese, ends with "のだ。"; ずんだもん voice, speak AWS service names as written), nodes 2-4 {label <= 8 wide, sub <= 12 wide, icon}, edges [{from,to,label<=6}] (two-way: label only one direction), source_url.
+- Width rule: full-width char = 1, ASCII = 0.55. Rewrite to fit; never truncate words.
+- icon: EVERY node needs one official AWS icon name from assets/ICON_INDEX.txt (file name without .svg). Use the specific service icon (Arch_*_64) or resource icon (Res_*_48); for people/questions/documents/servers use the general icons ending "_Light" (e.g. Res_Users_48_Light, Res_Question_48_Light, Res_Servers_48_Light, Res_Document_48_Light). Never put a random service icon on a generic box.
+
+Coverage: spread the 12 rules across the exam domains roughly by weight (see flashcards "domains"); pick the highest-value, most frequently tested decision rules; no two episodes on the same rule.{EXTRA}
+
+Acceptance (run it, fix until it passes): python3 tools/lint_content.py content/{EXAM}.json  → prints "content ok".
+Reply in <= 15 lines: the 12 episode titles, and any claim you were unsure about (with its source_url).

@@ -1,0 +1,407 @@
+[
+ {
+  "id": "sap-r01",
+  "exam_code": "aws-sap-c02",
+  "exam_label": "AWS SAP-C02",
+  "series_label": "鉄則",
+  "title": "サンドボックスの出費を止める",
+  "scenes": [
+   {
+    "id": "s1",
+    "kicker": "場面",
+    "title": "検証口座が使いすぎる",
+    "body": "開発者が自由に試せる口座で\n高額な利用を防ぎたい",
+    "caption": "組織 → サンドボックス口座",
+    "narration": "開発者が自由に試せるサンドボックス口座。でも高いインスタンスを立てっぱなしにされると困る。どう止めるかが問われるのだ。",
+    "nodes": [
+     {
+      "label": "Organizations",
+      "sub": "サンドボックスOU",
+      "icon": "Arch_AWS-Organizations_64"
+     },
+     {
+      "label": "検証口座",
+      "sub": "開発者が自由に使う",
+      "icon": "Res_AWS-Organizations_Account_48"
+     }
+    ],
+    "edges": [
+     {
+      "from": 0,
+      "to": 1,
+      "label": "管理"
+     }
+    ],
+    "source_url": "https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_scps.html"
+   },
+   {
+    "id": "s2",
+    "kicker": "罠",
+    "title": "通知だけでは止まらない",
+    "body": "予算超過のメールを受けても\n誰かが見るまで課金は続く",
+    "caption": "Budgets → メール通知",
+    "narration": "予算を超えたらメールで知らせる。それだけでは、誰かが気づいて手で止めるまで課金が続くのだ。人に頼る案は外れやすいのだ。",
+    "nodes": [
+     {
+      "label": "Budgets",
+      "sub": "しきい値を監視",
+      "icon": "Arch_AWS-Budgets_64"
+     },
+     {
+      "label": "メール",
+      "sub": "人が気づくまで放置",
+      "icon": "Res_Email_48_Light"
+     }
+    ],
+    "edges": [
+     {
+      "from": 0,
+      "to": 1,
+      "label": "通知"
+     }
+    ],
+    "wrong": "通知だけ送って、止めるのは人の手",
+    "wrong_tag": "✕ 罠",
+    "source_url": "https://docs.aws.amazon.com/cost-management/latest/userguide/budgets-controls.html"
+   },
+   {
+    "id": "s3",
+    "kicker": "鉄則",
+    "title": "拒否・予算・自動停止",
+    "body": "SCPで高額サービスを拒否し\nBudgetsのアクションで自動で止める",
+    "caption": "SCP拒否 ＋ 予算 ＋ 自動停止",
+    "narration": "鉄則は三点セット。SCPで高額なサービスを最初から拒否。口座ごとに予算を置き、超えたら予算アクションでSCPを適用したり、インスタンスを止めたりするのだ。",
+    "nodes": [
+     {
+      "label": "SCP",
+      "sub": "高額サービスを拒否",
+      "icon": "Arch_AWS-Organizations_64"
+     },
+     {
+      "label": "Budgets",
+      "sub": "口座ごとの予算",
+      "icon": "Arch_AWS-Budgets_64"
+     },
+     {
+      "label": "EC2を停止",
+      "sub": "予算アクションで自動",
+      "icon": "Arch_Amazon-EC2_64"
+     }
+    ],
+    "edges": [
+     {
+      "from": 1,
+      "to": 2,
+      "label": "超過"
+     },
+     {
+      "from": 0,
+      "to": 2,
+      "label": "事前に拒否"
+     }
+    ],
+    "rule": "SCPで拒否＋口座ごとの予算＋予算アクションで自動停止",
+    "rule_tag": "✓ 鉄則",
+    "source_url": "https://docs.aws.amazon.com/cost-management/latest/userguide/budgets-controls.html"
+   },
+   {
+    "id": "s4",
+    "kicker": "確認",
+    "title": "三点セットは？",
+    "body": "サンドボックスの出費を\n人手なしで抑える組み合わせは？",
+    "caption": "問い → 答え",
+    "narration": "問題。サンドボックスの出費を人手なしで抑える三点セットは？答えは、SCPで拒否、口座ごとの予算、予算アクションで自動停止なのだ。",
+    "nodes": [
+     {
+      "label": "問い",
+      "sub": "出費を自動で抑える",
+      "icon": "Res_Question_48_Light"
+     },
+     {
+      "label": "答え",
+      "sub": "SCP＋予算＋自動停止",
+      "icon": "Arch_AWS-Budgets_64"
+     }
+    ],
+    "edges": [
+     {
+      "from": 0,
+      "to": 1,
+      "label": "思い出す"
+     }
+    ],
+    "rule": "SCP拒否 ＋ 予算 ＋ 予算アクション",
+    "rule_tag": "✓ 答え",
+    "source_url": "https://docs.aws.amazon.com/cost-management/latest/userguide/budgets-controls.html"
+   }
+  ]
+ },
+ {
+  "id": "sap-r02",
+  "exam_code": "aws-sap-c02",
+  "exam_label": "AWS SAP-C02",
+  "series_label": "鉄則",
+  "title": "複数リージョンのデータベース",
+  "scenes": [
+   {
+    "id": "s1",
+    "kicker": "場面",
+    "title": "世界中から速く使いたい",
+    "body": "海外の利用者にも低遅延で\nデータを返したい",
+    "caption": "利用者 → 各リージョンのDB",
+    "narration": "世界中の利用者に、低い遅延でデータを返したい。まず確かめるのは、各リージョンで読むだけか、書き込みもするかなのだ。",
+    "nodes": [
+     {
+      "label": "海外の利用者",
+      "sub": "低遅延が必要",
+      "icon": "Res_Users_48_Light"
+     },
+     {
+      "label": "近いリージョン",
+      "sub": "読む？書く？",
+      "icon": "Region_32"
+     }
+    ],
+    "edges": [
+     {
+      "from": 0,
+      "to": 1,
+      "label": "アクセス"
+     }
+    ],
+    "source_url": "https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-global-database.html"
+   },
+   {
+    "id": "s2",
+    "kicker": "読むだけ",
+    "title": "読むだけならAurora",
+    "body": "書き込みはプライマリ、\n他のリージョンは読み取り",
+    "caption": "プライマリ → セカンダリ",
+    "narration": "読むだけならAurora Global Database。書き込みはプライマリのリージョンに集め、ストレージ層で複製されたセカンダリから近くで読むのだ。",
+    "nodes": [
+     {
+      "label": "プライマリ",
+      "sub": "読み書き",
+      "icon": "Arch_Amazon-Aurora_64"
+     },
+     {
+      "label": "セカンダリ",
+      "sub": "読み取り専用",
+      "icon": "Arch_Amazon-Aurora_64"
+     }
+    ],
+    "edges": [
+     {
+      "from": 0,
+      "to": 1,
+      "label": "複製"
+     }
+    ],
+    "rule": "各リージョンで読むだけ → Aurora Global Database",
+    "rule_tag": "✓ 鉄則",
+    "source_url": "https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-global-database.html"
+   },
+   {
+    "id": "s3",
+    "kicker": "書き込みも",
+    "title": "書くならDynamoDB",
+    "body": "どのリージョンでも書き込める\nマルチアクティブ構成",
+    "caption": "東京 ⇄ バージニア",
+    "narration": "各リージョンで書き込みもしたいなら、DynamoDBのグローバルテーブル。どのリージョンのテーブルにも書けて、互いに複製されるのだ。",
+    "nodes": [
+     {
+      "label": "東京",
+      "sub": "読み書き",
+      "icon": "Arch_Amazon-DynamoDB_64"
+     },
+     {
+      "label": "バージニア",
+      "sub": "読み書き",
+      "icon": "Arch_Amazon-DynamoDB_64"
+     }
+    ],
+    "edges": [
+     {
+      "from": 0,
+      "to": 1,
+      "label": "相互に複製"
+     },
+     {
+      "from": 1,
+      "to": 0
+     }
+    ],
+    "rule": "各リージョンで書き込みも → DynamoDBグローバルテーブル",
+    "rule_tag": "✓ 鉄則",
+    "source_url": "https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GlobalTables.html"
+   },
+   {
+    "id": "s4",
+    "kicker": "確認",
+    "title": "書き込みもするなら？",
+    "body": "各リージョンで読み書きしたい。\n選ぶのは？",
+    "caption": "問い → 答え",
+    "narration": "問題。各リージョンで読み書きの両方をしたい。選ぶのは？答えはDynamoDBのグローバルテーブル。読むだけならAuroraのグローバルデータベースなのだ。",
+    "nodes": [
+     {
+      "label": "問い",
+      "sub": "各リージョンで読み書き",
+      "icon": "Res_Question_48_Light"
+     },
+     {
+      "label": "答え",
+      "sub": "グローバルテーブル",
+      "icon": "Arch_Amazon-DynamoDB_64"
+     }
+    ],
+    "edges": [
+     {
+      "from": 0,
+      "to": 1,
+      "label": "思い出す"
+     }
+    ],
+    "rule": "書くならDynamoDB、読むだけならAurora Global",
+    "rule_tag": "✓ 答え",
+    "source_url": "https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GlobalTables.html"
+   }
+  ]
+ },
+ {
+  "id": "sap-r03",
+  "exam_code": "aws-sap-c02",
+  "exam_label": "AWS SAP-C02",
+  "series_label": "鉄則",
+  "title": "本番を止めないDRテスト",
+  "scenes": [
+   {
+    "id": "s1",
+    "kicker": "場面",
+    "title": "DRを定期的に試したい",
+    "body": "災害対策が本当に動くか\n本番を止めずに確かめたい",
+    "caption": "本番 → 復旧先",
+    "narration": "災害対策の仕組みが、いざという時に本当に動くか。本番を止めずに、定期的に確かめたい。この条件が出たら次の鉄則なのだ。",
+    "nodes": [
+     {
+      "label": "本番サーバー",
+      "sub": "止められない",
+      "icon": "Res_Servers_48_Light"
+     },
+     {
+      "label": "復旧先",
+      "sub": "AWSリージョン",
+      "icon": "Region_32"
+     }
+    ],
+    "edges": [
+     {
+      "from": 0,
+      "to": 1,
+      "label": "複製"
+     }
+    ],
+    "source_url": "https://docs.aws.amazon.com/drs/latest/userguide/what-is-drs.html"
+   },
+   {
+    "id": "s2",
+    "kicker": "罠",
+    "title": "本番を止めて切り替える",
+    "body": "テストのたびに本番を止める案は\n「止めずに」に反する",
+    "caption": "本番停止 → 切替テスト",
+    "narration": "テストのために本番を止めて、実際に切り替えてみる案。確かに試せるけれど、本番を止めないという条件に反するのだ。",
+    "nodes": [
+     {
+      "label": "本番を停止",
+      "sub": "利用者に影響",
+      "icon": "Res_Servers_48_Light"
+     },
+     {
+      "label": "切替テスト",
+      "sub": "毎回ダウンタイム",
+      "icon": "Arch_Amazon-Route-53_64"
+     }
+    ],
+    "edges": [
+     {
+      "from": 0,
+      "to": 1,
+      "label": "停止"
+     }
+    ],
+    "wrong": "テストのたびに本番を止めて切り替える",
+    "wrong_tag": "✕ 罠",
+    "source_url": "https://docs.aws.amazon.com/drs/latest/userguide/what-is-drs.html"
+   },
+   {
+    "id": "s3",
+    "kicker": "鉄則",
+    "title": "訓練起動と手動切替",
+    "body": "DRSのドリルで復旧先だけ起動し\n切替はARCのルーティング制御で",
+    "caption": "DRSドリル ＋ ARC",
+    "narration": "Elastic Disaster Recoveryなら、複製を続けたまま復旧先だけを訓練として起動できる。本番の切り替えは、ARCのルーティング制御で確実に手動で行うのだ。",
+    "nodes": [
+     {
+      "label": "DRS",
+      "sub": "ドリルで訓練起動",
+      "icon": "Arch_AWS-Elastic-Disaster-Recovery_64"
+     },
+     {
+      "label": "復旧先EC2",
+      "sub": "本番は動いたまま",
+      "icon": "Arch_Amazon-EC2_64"
+     },
+     {
+      "label": "ARC",
+      "sub": "ルーティング制御",
+      "icon": "Arch_Amazon-Application-Recovery-Controller_64"
+     }
+    ],
+    "edges": [
+     {
+      "from": 0,
+      "to": 1,
+      "label": "訓練起動"
+     },
+     {
+      "from": 2,
+      "to": 1,
+      "label": "手動切替"
+     }
+    ],
+    "rule": "DRSのドリルで試し、切替はARCのルーティング制御",
+    "rule_tag": "✓ 鉄則",
+    "source_url": "https://docs.aws.amazon.com/r53recovery/latest/dg/routing-control.html"
+   },
+   {
+    "id": "s4",
+    "kicker": "確認",
+    "title": "止めずに試すには？",
+    "body": "本番を止めずにDRを試し\n確実に手動で切り替えるには？",
+    "caption": "問い → 答え",
+    "narration": "問題。本番を止めずに災害対策を試し、確実に手動で切り替えるには？答えは、DRSのドリルと、ARCのルーティング制御なのだ。",
+    "nodes": [
+     {
+      "label": "問い",
+      "sub": "止めずにDRテスト",
+      "icon": "Res_Question_48_Light"
+     },
+     {
+      "label": "答え",
+      "sub": "DRSドリル＋ARC",
+      "icon": "Arch_AWS-Elastic-Disaster-Recovery_64"
+     }
+    ],
+    "edges": [
+     {
+      "from": 0,
+      "to": 1,
+      "label": "思い出す"
+     }
+    ],
+    "rule": "DRSのドリル ＋ ARCのルーティング制御",
+    "rule_tag": "✓ 答え",
+    "source_url": "https://docs.aws.amazon.com/drs/latest/userguide/what-is-drs.html"
+   }
+  ]
+ }
+]

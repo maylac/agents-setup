@@ -1,0 +1,23 @@
+{
+  "name": "exam-rule-shorts-renderer",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "HyperFrames renderer for dark, icon-led Japanese exam rule shorts (1080x1920)",
+  "scripts": {
+    "doctor": "node render.mjs doctor",
+    "validate": "node render.mjs validate --all",
+    "lint": "node render.mjs lint --all",
+    "render": "node render.mjs render",
+    "render:all": "node render.mjs render --all --keep-going"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@ffprobe-installer/ffprobe": "2.1.2",
+    "ffmpeg-static": "5.3.0",
+    "gsap": "3.13.0",
+    "hyperframes": "0.8.60"
+  }
+}
