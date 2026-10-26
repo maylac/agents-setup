@@ -1,0 +1,7 @@
+Goal: fix content/{EXAM}.json using the independent audit in evidence/audit-{EXAM}.json (JSON list of defects: where "<id>/s<n>", field, problem, fix; node indexes are 0-based).
+You own ONLY content/{EXAM}.json. Sources (only these): {GUIDES} and {FLASHCARDS}.
+Rules:
+1. Resolve every defect. Use the suggested fix when the sources support it; otherwise write a correction the sources do support. A "wrong" (罠) must be a design that is actually wrong for the stated condition; a "rule" must be the best answer and keep its boundary conditions.
+2. Icons: a node gets a service/resource icon ONLY when its label/sub names that AWS service or resource (EC2 → Arch_Amazon-EC2_64, DAX → Res_Amazon-DynamoDB_Amazon-DynamoDB-Accelerator_48, VPC → Arch_Amazon-Virtual-Private-Cloud_64 …; names are in assets/ICON_INDEX.txt). Generic concepts (data, metric, model, step, choice, question, answer that is a method, people, documents, settings, time, network, API in general) use a general icon from assets/GENERAL_ICONS.txt (e.g. Res_Data-Table_48_Light, Res_Metrics_48_Light, Res_Gear_48_Light, Res_Document_48_Light, Res_Question_48_Light, Res_Users_48_Light, Res_Globe_48_Light). Apply this to the WHOLE file, not only the listed defects.
+3. Keep all ids, scene count and the style of content/pilot.json; narration still ends 「のだ。」.
+Acceptance: python3 tools/lint_content.py content/{EXAM}.json → "content ok". Reply in <= 10 lines: defects fixed, any defect you rejected and why.

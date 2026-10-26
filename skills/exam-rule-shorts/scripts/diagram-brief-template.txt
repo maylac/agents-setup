@@ -1,0 +1,10 @@
+Goal: redraw the DIAGRAMS of content/{EXAM}.json so every scene's picture explains that scene, at the level of the approved examples in content/pilot.json (read all 3 first). You own ONLY content/{EXAM}.json.{AUDIT}
+Scene diagram rules:
+- s1 場面: the situation — the actors and existing components and where the pain is (e.g. アプリ → DynamoDB with edge "大量の読み取り").
+- s2 (usually 罠): draw the tempting WRONG design itself (what the learner would wrongly build), not the correct service.
+- s3 (usually 鉄則): draw the CORRECT architecture as a flow, usually 3 nodes when 3 components exist (e.g. アプリ → DAX → DynamoDB with "読み取り", "キャッシュミス時"). 
+- s4 確認: 問い (Res_Question_48_Light) → 答え (icon of the answer service), as now.
+- s1, s2, s3 must be three different diagrams. Edge labels say what flows or happens (書き込み, 非同期複製, イベント, 失敗分だけ再送, 証跡を保存 …); never vague words (連携, 関係, 実行, 観測, 頼る, 使う, 対応, 判断).
+- Icons: service/resource icons only for nodes that are that AWS service/resource; generic actors/concepts use general icons from assets/GENERAL_ICONS.txt. Use the most specific official icon (assets/ICON_INDEX.txt).
+- Only change nodes, edges and, if needed to match the new diagram, caption. Do not change narration, rule, wrong, title, body or source_url unless an audit item requires it.
+Acceptance: python3 tools/lint_content.py content/{EXAM}.json → "content ok". Reply in <= 8 lines.
