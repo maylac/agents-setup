@@ -1,0 +1,11 @@
+Read-only Japanese terminology and translation audit of {FILES} (Japanese "鉄則ショート" video scripts for AWS certification exam {EXAM}; fields per scene: title, body, caption, narration, rule, wrong, nodes[].label/sub, edges[].label, and episode title).
+The learner reads AWS in Japanese. Every term must be the one AWS uses in its official Japanese documentation and console (docs.aws.amazon.com/ja_jp, AWS 日本語ドキュメント). Flag:
+1. Wrong or invented Japanese renderings of AWS concepts. Known bad example already found: 「口座」 for AWS account — must be 「アカウント」(e.g. メンバーアカウント, 管理アカウント, 検証用アカウント). Others to check: リージョン, アベイラビリティーゾーン, ロール, ポリシー, バケット, インスタンス, エンドポイント, 証跡, ゲートウェイ, ルートテーブル, サブネット, セキュリティグループ, 暗号化キー/KMS キー, レプリカ, スナップショット, フェイルオーバー, デプロイ, パイプライン, etc.
+2. Literal or unnatural machine-like translations a Japanese engineer would not say (e.g. 「私設接続」 for private connectivity, 「読取」 vs 「読み取り」 mixed style, 「鍵」 where AWS says 「キー」, 「証跡」 used for logs that are not CloudTrail trails).
+3. Service and feature names that must stay in their official form (Amazon S3, AWS Lambda, Savings Plans, Direct Connect の仮想インターフェイス (VIF), etc.); English left where AWS Japanese docs use Japanese, or vice versa when it hurts recognition.
+4. Inconsistent terms for the same thing within the file.
+5. Narration only: words VOICEVOX will likely misread (note them; suggest a reading-friendly rewrite only if needed).
+6. Unofficial abbreviations or shortened feature names (e.g. 「IAM IC」 → 「IAM Identity Center」, 「アクセス許可」 for a permission set → 「アクセス許可セット」, 「SP」 → 「Savings Plans」). Node labels may now be up to 10 wide (ASCII 0.55), so official names usually fit; if not, use the official short form AWS itself uses.
+Round {N}: earlier rounds were applied; report only what is still wrong.
+Do not flag facts or style unrelated to terminology. Keep within the width limits when proposing fixes (scene title <= 11 full-width chars, node label <= 10, node sub <= 12, edge label <= 6; ASCII counts 0.55).
+Output ONLY a JSON array: [{"file":"...","where":"<id>/s<n> or <id>","field":"...","current":"exact current text","fix":"replacement text","reason":"official term / why"}]. Empty array if none.

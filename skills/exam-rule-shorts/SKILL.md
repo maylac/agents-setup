@@ -42,6 +42,14 @@ arrows, muted accent pills. Do not reintroduce bordered cards, drop shadows or a
    - The linter must print `content ok` after every step; it rejects identical diagrams in s1–s3 and vague edge labels.
    - `scripts/finish_exam.sh <exam>` waits for the final audit, reruns it once if Codex exited on MCP
      auth noise, applies the remaining defects (usually 1–9) and touches `evidence/READY-<exam>`.
+   - **Official Japanese terminology (mandatory before audio).** The user caught 「口座」 for AWS
+     account in published clips (2026-10-26). Run `ROUND=n scripts/term_round.sh <exam> [files]` for n=1..4
+     (audit with `scripts/term-audit-brief-template.txt` → fix → lint). Rounds kept finding new real
+     defects (口座, 鍵→キー, CWエージェント, 指標→メトリクス, partition, 閾値→しきい値, 待機系→スタンバイ,
+     呼出→呼び出し, IAM IC); run at least 4 rounds, then grep the usual literal terms yourself.
+     The linter bans known mistranslations (`MISTRANSLATED`) and allows node labels up to 10 wide so
+     official names fit. Codex returns 429 above ~3 concurrent jobs and Astra may be rate-limited:
+     the script uses a slot lock (max 3) and `gpt-6-luna` for audits.
 4. **Produce in one go:** copy `scripts/produce.sh` to `<batch>/tools/` and run it with every READY
    content file (plus earlier exams). It lints, merges into `content/episodes.json`, synthesizes,
    builds, runs frame QA (stops on any issue), renders only episodes whose content hash changed
