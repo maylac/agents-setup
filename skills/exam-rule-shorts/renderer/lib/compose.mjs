@@ -83,8 +83,8 @@ function layoutEdges(edges, boxes) {
 // Largest size (max 88px) that keeps the title on one 936px line; bold Latin is wider than 0.55em.
 function titleSize(t) {
   let em = 0;
-  for (const ch of String(t)) em += ch.charCodeAt(0) > 0xff ? 1.02 : /[A-Z]/.test(ch) ? 0.7 : ch === " " ? 0.3 : 0.6;
-  return Math.max(56, Math.min(88, Math.floor(920 / Math.max(em, 1))));
+  for (const ch of String(t)) em += ch.charCodeAt(0) > 0xff ? 1.02 : /[A-Z]/.test(ch) ? 0.8 : ch === " " ? 0.3 : 0.64;
+  return Math.max(56, Math.min(88, Math.floor(900 / Math.max(em, 1))));
 }
 // Largest size at which the label fits on one line of the box (bold Latin ~0.66-0.8em,
 // full-width ~1em); below the floor it wraps to two lines at the floor size.

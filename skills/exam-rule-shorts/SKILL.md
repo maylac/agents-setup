@@ -40,19 +40,26 @@ arrows, muted accent pills. Do not reintroduce bordered cards, drop shadows or a
      s4 問い→答え, and edge labels that name what flows. `scripts/orchestrate_diagrams.sh <exams…>`
      chains diagram pass + final audit per exam once each fix receipt exists.
    - The linter must print `content ok` after every step; it rejects identical diagrams in s1–s3 and vague edge labels.
-4. **Audio.** Merge the approved exams into `content/episodes.json`, then
+   - `scripts/finish_exam.sh <exam>` waits for the final audit, reruns it once if Codex exited on MCP
+     auth noise, applies the remaining defects (usually 1–9) and touches `evidence/READY-<exam>`.
+4. **Produce in one go:** copy `scripts/produce.sh` to `<batch>/tools/` and run it with every READY
+   content file (plus earlier exams). It lints, merges into `content/episodes.json`, synthesizes,
+   builds, runs frame QA (stops on any issue), renders only episodes whose content hash changed
+   (2 renders in parallel; a "render_cancelled" failure is transient — rerun picks it up) and
+   decode-checks every MP4. Steps 5–6 below are what it does.
+5. **Audio.** Merge the approved exams into `content/episodes.json`, then
    `python3 synthesize.py --input content/episodes.json --all --timed-output audio/episodes-timed.json`.
    The renderer only merges diagrams from `content/episodes.json` when the timed file is named
    `episodes-timed.json`.
-5. **Build + frame QA.** `node render.mjs build --input ../audio/episodes-timed.json --all`, then
+6. **Build + frame QA.** `node render.mjs build --input ../audio/episodes-timed.json --all`, then
    `node shorts-frames.cjs <batch> <ids…>` → must print `no layout issues`; look at a 4-scene contact
    sheet per exam (`ffmpeg -i <id>-s%d.png -vf scale=360:-1,tile=4x1`).
-6. **Render** `node render.mjs render --input ../audio/episodes-timed.json --episode a,b,c --keep-going`
+7. **Render** `node render.mjs render --input ../audio/episodes-timed.json --episode a,b,c --keep-going`
    in groups; `ffmpeg -v error -i x.mp4 -f null -` must be silent for every file.
-7. **Deliver** to the learner's iCloud `Vantik/<EXAM>/<date>-rule-shorts/`. Publishing to the NAS
+8. **Deliver** to the learner's iCloud `Vantik/<EXAM>/<date>-rule-shorts/`. Publishing to the NAS
    library / Vantik review-videos feed is a production write: follow `vantik-weakness-shorts` step 6
    and only with the user's explicit OK.
-8. **Report** (Japanese): clips per exam, total minutes, lint/audit/QA results, what was not published.
+9. **Report** (Japanese): clips per exam, total minutes, lint/audit/QA results, what was not published.
 
 ## Known failure modes
 
@@ -64,6 +71,8 @@ arrows, muted accent pills. Do not reintroduce bordered cards, drop shadows or a
 - Workers given several exams at once give up or pad; one exam per worker.
 - Requiring an icon on every node pushes writers to put service icons on concepts ("学習データ" with the
   SageMaker icon). Generic concepts take the general `_Light` icons; the audit checks this.
-- Titles of exactly 11 full-width characters wrapped at 88 px; the renderer now shrinks the title to fit one line.
+- Titles of exactly 11 full-width characters wrapped at 88 px, and Latin-heavy titles
+  ("CodeDeployで段階展開") wrapped even after shrinking; the renderer budgets 0.8 em per capital and
+  0.64 em per lowercase letter. Frame QA flags any remaining title wrap.
 - Codex consult runs can exit 1 on unrelated MCP auth noise; rerun the same brief.
 - Claude-certification exams have no official icon set; do not dress them in AWS service icons.
