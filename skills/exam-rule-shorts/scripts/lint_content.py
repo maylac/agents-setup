@@ -16,6 +16,9 @@ OFFICIAL = re.compile(r"^https://(docs\.aws\.amazon\.com|aws\.amazon\.com|docs\.
 BANNED = re.compile(r"正解は[A-E]|選択肢[A-E]|問題文|消去法|[ㄱ-ㆎ가-힣Ѐ-ӿ]")
 
 
+VAGUE_EDGES = {"連携", "関係", "実行", "観測", "頼る", "使う", "利用", "対応", "判断", "接続先", "答え", "答える", "思い出す", "選ぶ", "関連", "適用"}
+
+
 def width(text: str) -> float:
     """Full-width characters count 1, ASCII 0.55 (same rule as the renderer)."""
     return sum(1 if ord(ch) > 0xFF else 0.55 for ch in str(text))
@@ -50,6 +53,9 @@ def lint(path: Path) -> list[str]:
         if len(scenes) != 4 or kickers[0] != "場面" or kickers[3] != "確認" or any(width(k or "") > 6 for k in kickers):
             err("4 scenes: 場面, two middle kickers (usually 罠, 鉄則; <= 6 wide), 確認")
             continue
+        diagrams = [tuple(sorted(n.get("label", "") for n in sc.get("nodes", []))) for sc in scenes[:3]]
+        if len(set(diagrams)) < 3:
+            err("scenes 1-3 must each draw a different diagram (situation, wrong design, correct design)")
         if not any(sc.get("rule") for sc in scenes[1:3]):
             err("scene 2 or 3 must state the rule")
         for index, sc in enumerate(scenes):
@@ -99,6 +105,8 @@ def lint(path: Path) -> list[str]:
                 if (b, a) in pairs and edge.get("label"):
                     e("label only one direction of a two-way edge")
                 pairs.add((a, b))
+                if index < 3 and edge.get("label") in VAGUE_EDGES:
+                    e(f"edge label '{edge.get('label')}' says nothing; name what flows or happens")
                 if width(edge.get("label", "")) > 6:
                     e(f"edge label wider than 6 ({edge.get('label')})")
             if sc["kicker"] == "罠" and not sc.get("wrong"):

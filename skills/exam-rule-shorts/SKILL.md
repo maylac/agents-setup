@@ -26,12 +26,20 @@ arrows, muted accent pills. Do not reintroduce bordered cards, drop shadows or a
 1. **Batch dir** `~/tasks/rule-shorts-<YYYYMMDD>/` with `content/ audio/ videos/ evidence/ assets/icons/ tools/ briefs/ receipts/`.
 2. **Content (Codex workers, one exam each).** Sources are only the exam's Vantik field manual(s)
    (`vantik-content/exam_guides/`) and audited flashcards (`vantik-content/flashcards/<exam>.json`);
-   every scene's `source_url` comes from them. Dispatch with `cross-harness-collab`
-   `--mode work --owned-path content/<exam>.json --timeout 2400`, ~5 in parallel. Scenes:
-   場面 → 罠 (wrong) → 鉄則 (rule) → 確認 (question + answer). 12 episodes per exam.
-3. **Lint + audit.** `python3 tools/lint_content.py content/<exam>.json` must print `content ok`.
-   Then an independent fact audit (Codex `--mode consult` or a Claude reviewer) against the cited
-   pages; fix or drop any claim not stated in the source. Wrong icons on generic boxes count as defects.
+   every scene's `source_url` comes from them. Fill `scripts/brief-template.txt` per exam and dispatch
+   with `cross-harness-collab` `--mode work --owned-path content/<exam>.json --timeout 2400`, ~5 in
+   parallel (they finish in 3–6 min). Scenes: 場面 → 罠 (wrong) → 鉄則 (rule) → 確認. 12 episodes per exam.
+3. **Audit → fix → diagram pass → final audit (all Codex).** Copy `scripts/{audit,fix,diagram}-brief-template.txt`
+   to `briefs/{audit,fix,diagram}-template.txt` (fill `{GUIDES}`/`{GUIDE_DIR}`/`{FLASHCARDS}`).
+   - Audit: `--mode consult --effort medium --timeout 1200`; it returns a JSON defect list → `evidence/audit-<exam>.json`.
+     First audits found 4–65 defects per exam, mostly service icons on generic boxes, plus "罠" that were
+     actually valid and rules that dropped boundary conditions. Always run it.
+   - Fix: `--mode work` with the fix brief.
+   - Diagram pass: first drafts reuse one diagram for all scenes ("アプリ → DAX 連携" ×4). The diagram
+     brief requires s1 situation / s2 the wrong design / s3 the correct flow (3 nodes when 3 components) /
+     s4 問い→答え, and edge labels that name what flows. `scripts/orchestrate_diagrams.sh <exams…>`
+     chains diagram pass + final audit per exam once each fix receipt exists.
+   - The linter must print `content ok` after every step; it rejects identical diagrams in s1–s3 and vague edge labels.
 4. **Audio.** Merge the approved exams into `content/episodes.json`, then
    `python3 synthesize.py --input content/episodes.json --all --timed-output audio/episodes-timed.json`.
    The renderer only merges diagrams from `content/episodes.json` when the timed file is named
@@ -54,4 +62,8 @@ arrows, muted accent pills. Do not reintroduce bordered cards, drop shadows or a
 - Both directions of a two-way edge labelled → labels overlap; label one direction only.
 - Line-style general icons are black: use the `_Light` name so the renderer picks the `_Dark` file.
 - Workers given several exams at once give up or pad; one exam per worker.
+- Requiring an icon on every node pushes writers to put service icons on concepts ("学習データ" with the
+  SageMaker icon). Generic concepts take the general `_Light` icons; the audit checks this.
+- Titles of exactly 11 full-width characters wrapped at 88 px; the renderer now shrinks the title to fit one line.
+- Codex consult runs can exit 1 on unrelated MCP auth noise; rerun the same brief.
 - Claude-certification exams have no official icon set; do not dress them in AWS service icons.

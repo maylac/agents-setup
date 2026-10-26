@@ -15,6 +15,7 @@ const { chromium } = require('playwright'); const path = require('path'); const 
         const st = sc.querySelector('.stage').getBoundingClientRect(), v = sc.querySelector('.verdicts').getBoundingClientRect();
         sc.querySelectorAll('.node').forEach(n => { const b = n.getBoundingClientRect(); if (b.bottom > v.top && v.height > 0) r.push(sid + ' node overlaps verdict'); });
         sc.querySelectorAll('.node-label').forEach(e => { if (e.getBoundingClientRect().height > parseFloat(getComputedStyle(e).fontSize) * 1.5) r.push(sid + ' label wraps: ' + e.textContent); });
+        const tt = sc.querySelector('.title'); if (tt.getBoundingClientRect().height > parseFloat(getComputedStyle(tt).fontSize) * 1.5) r.push(sid + ' title wraps');
         const body = sc.querySelector('.text-block').getBoundingClientRect(); if (body.bottom > st.top - 16) r.push(sid + ' text block touches diagram');
         const cap = sc.querySelector('.caption').getBoundingClientRect(); if (v.height > 0 && v.bottom > cap.top - 12) r.push(sid + ' verdict touches caption');
         return r; }, `s${i + 1}`).then(r => r.map(x => id + ' ' + x)));
