@@ -56,9 +56,22 @@ arrows, muted accent pills. Do not reintroduce bordered cards, drop shadows or a
    sheet per exam (`ffmpeg -i <id>-s%d.png -vf scale=360:-1,tile=4x1`).
 7. **Render** `node render.mjs render --input ../audio/episodes-timed.json --episode a,b,c --keep-going`
    in groups; `ffmpeg -v error -i x.mp4 -f null -` must be silent for every file.
-8. **Deliver** to the learner's iCloud `Vantik/<EXAM>/<date>-rule-shorts/`. Publishing to the NAS
-   library / Vantik review-videos feed is a production write: follow `vantik-weakness-shorts` step 6
-   and only with the user's explicit OK.
+8. **Deliver + publish** (publishing needs the user's explicit OK; it was given on 2026-10-26).
+   - iCloud: `Vantik/<EXAM>/<date>-rule-shorts/<id>_<title>.mp4`.
+   - Video library: `curl <origin>/catalog.json > evidence/live-catalog.json`, then
+     `VIDEO_LIBRARY_ORIGIN=<origin> python3 tools/build_library_package.py --live-catalog evidence/live-catalog.json`
+     → `package/dist` (content-addressed media/posters/captions + merged catalog, one collection
+     `<exam>-rules-<date>` per exam, poster = rule scene) and `package/rule-shorts-manifest.json`.
+     On the NAS (`/volume1/docker/vantik-video-library`): check `readlink current` and the live catalog
+     sha, `cp -al releases/<current> releases/<new>`, `rm` the hard-linked `dist/catalog.json`, tar-stream
+     `package/dist` in, `sha256sum -c` every asset, `ln -sfn` + `mv -T` to switch `current`, then
+     `cd current/deploy && docker compose -p vantik-video-library up -d --force-recreate video-library`
+     (without `-p` compose picks project "deploy" and fails on the container name). Smoke: catalog sha,
+     Range 206 on a new mp4, 200 `text/vtt`, an old asset still 200. Rollback = switch `current` back.
+   - Vantik: copy the manifest to `vantik-content/rule_shorts/manifest.json` with `chapters` emptied
+     (chapter chips cover the burned-in captions), `python3 tools/validate.py`, commit, push,
+     `bash tools/sync-to-nas.sh`. The app lists them under 復習 → 鉄則ショート for the selected exam
+     (`GET /api/rule-shorts?exam_code=`), separate from 動画で復習 because they are input, not review.
 9. **Report** (Japanese): clips per exam, total minutes, lint/audit/QA results, what was not published.
 
 ## Known failure modes
