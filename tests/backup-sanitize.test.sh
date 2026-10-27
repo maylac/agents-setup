@@ -38,7 +38,8 @@ cat > "$HOME_FIXTURE/.claude/settings.json" <<'JSON'
     "claude-sonnet-5": {"effortLevel": "medium"}
   },
   "promptSuggestionEnabled": false,
-  "remoteControlAtStartup": true
+  "remoteControlAtStartup": true,
+  "sandbox": {"enabled": true, "allowUnsandboxedCommands": false}
 }
 JSON
 
@@ -67,7 +68,9 @@ jq -e '
   .modelSettings["claude-opus-5-5"].effortLevel == "medium" and
   .modelSettings["claude-sonnet-5"].effortLevel == "medium" and
   .promptSuggestionEnabled == false and
-  .remoteControlAtStartup == true
+  .remoteControlAtStartup == true and
+  .sandbox.enabled == true and
+  .sandbox.allowUnsandboxedCommands == false
 ' "$claude_settings" >/dev/null || fail 'Claude model settings were not projected as expected'
 
 jq 'del(.effortLevel)' "$HOME_FIXTURE/.claude/settings.json" > "$HOME_FIXTURE/.claude/settings.tmp"
