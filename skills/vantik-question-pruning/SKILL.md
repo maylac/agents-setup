@@ -33,6 +33,8 @@ Turns a large imported pool (typically ExamTopics past exams) into a short study
   `--unreliable` would keep 8 and `--max-low-vote` does nothing), cap the pool at N. Quotas follow the
   official domain weights (DB `weight_percent` may be 0, so pass them); missed questions always stay;
   the rest are kept newest source number first. Ask the user for N (offer ~2–3 full mocks).
+  Domain names differ per exam (DVA is Japanese 「分野 1: …」, SAP/DOP are English); the script now
+  refuses weights that do not cover every domain, because an unmatched domain would get quota 0.
 - Questions the user has answered wrong are never dropped by dedupe, low-vote or target rules.
 - Answer-text dedupe is weaker for scenario-heavy exams (SAP/DOP-style, where the same service answers different problems). There, prefer `--unreliable` and stale terms, and show sample groups before deduping.
 
