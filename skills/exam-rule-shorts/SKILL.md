@@ -82,7 +82,32 @@ arrows, muted accent pills. Do not reintroduce bordered cards, drop shadows or a
      (`GET /api/rule-shorts?exam_code=`), separate from 動画で復習 because they are input, not review.
 9. **Report** (Japanese): clips per exam, total minutes, lint/audit/QA results, what was not published.
 
+## Coverage batches (whole exam scope)
+
+Used on 2026-10-27 to cover every official task of 13 exams (123 new clips). Coverage unit =
+the flashcards' `domains[].tasks[]`; for Claude exams (one task per domain) a per-domain quota.
+- `scripts/make_briefs.py` writes write/audit/fix/diagram/term briefs per exam. Edit its constants
+  first (`OLD` = previous batch `content/episodes.json`, the AWS list, the Claude quotas). AWS briefs
+  hand the worker the published episodes (`evidence/existing/<exam>.json`) and ask for one new clip per
+  uncovered task plus `evidence/coverage-<exam>.json`; every episode carries `"task"`.
+- `scripts/pipeline.sh <exam>` runs write → coverage gap-fill (`scripts/check_coverage.py`) → audit+fix →
+  diagram → final audit+fix → 4 terminology rounds, resumable through `evidence/step-*` markers, max 3
+  concurrent Codex jobs. Never edit `pipeline.sh` while instances run (bash reads it incrementally):
+  stop them, edit, restart — finished steps are skipped.
+- Republish: `build_library_package.py` merges the previous batch with the new one (same-id clips from
+  the newer batch win) under the existing collection ids.
+
 ## Known failure modes
+
+- **Template filler passes every fact audit.** Workers produced identical s2/s3/s4 titles, bodies and
+  narration sentences across all episodes of an exam (AIP ×15, ANS ×6, and the published SOA s1
+  narration ×12). The linter now rejects any scene line (> 6 chars) or narration sentence reused in
+  3+ episodes and doubled 「。。」; run it on earlier batches too before republishing.
+- Claude exams: sources live on platform.claude.com / code.claude.com / support.claude.com /
+  modelcontextprotocol.io (the linter accepts them) and nodes may use only neutral general icons
+  (`GENERAL_ICONS.txt` names without "AWS"); the linter enforces both for `exam_code` starting "cc".
+- Switching the NAS library `current` and recreating its container is gated as a production deploy
+  in auto mode: stage + checksum the release, then ask the user to run the switch.
 
 - A long English service name wraps mid-word ("Organization/s") without overflowing — the frame QA
   checks label height, not only overflow; shorten the label.

@@ -12,7 +12,10 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 ICONS = ROOT / "assets" / "icons"
-OFFICIAL = re.compile(r"^https://(docs\.aws\.amazon\.com|aws\.amazon\.com|docs\.anthropic\.com|docs\.claude\.com|www\.anthropic\.com|support\.anthropic\.com)/")
+OFFICIAL = re.compile(r"^https://(docs\.aws\.amazon\.com|aws\.amazon\.com|docs\.anthropic\.com|docs\.claude\.com|www\.anthropic\.com|support\.anthropic\.com|support\.claude\.com|platform\.claude\.com|code\.claude\.com|modelcontextprotocol\.io)/")
+# Claude certifications have no official icon set: only neutral general icons, never AWS-branded ones.
+GENERAL = set((ROOT / "assets" / "GENERAL_ICONS.txt").read_text().split())
+NEUTRAL = {name for name in GENERAL if "AWS" not in name}
 BANNED = re.compile(r"正解は[A-E]|選択肢[A-E]|問題文|消去法|[ㄱ-ㆎ가-힣Ѐ-ӿ]")
 
 
@@ -104,6 +107,8 @@ def lint(path: Path) -> list[str]:
                 for name in icons if isinstance(icons, list) else [icons] if icons else []:
                     if not (ICONS / f"{name}.svg").exists():
                         e(f"node {ni} icon not in the official package: {name}")
+                    if str(ep.get("exam_code", "")).startswith("cc") and name not in NEUTRAL:
+                        e(f"node {ni} Claude exams use only neutral general icons: {name}")
             pairs = set()
             for edge in sc.get("edges", []):
                 a, b = edge.get("from"), edge.get("to")
@@ -123,6 +128,24 @@ def lint(path: Path) -> list[str]:
             for key in ("rule", "wrong"):
                 if sc.get(key) and width(sc[key]) > 40:
                     e(f"{key} wider than 40")
+    # Template filler: the same scene line or narration sentence reused across episodes says nothing specific.
+    lines, sentences = {}, {}
+    for ep in episodes if isinstance(episodes, list) else []:
+        eid = ep.get("id", "?")
+        for sc in ep.get("scenes", []):
+            for key in ("title", "body"):
+                for line in str(sc.get(key, "")).split("\n"):
+                    if len(line.strip()) > 6:
+                        lines.setdefault(line.strip(), set()).add(eid)
+            narration = str(sc.get("narration", ""))
+            if "。。" in narration:
+                errors.append(f"{path.name}:{eid}/{sc.get('id')}: doubled 。 in narration")
+            for sentence in re.split(r"(?<=[。？])", narration):
+                if len(sentence.strip()) > 8:
+                    sentences.setdefault(sentence.strip(), set()).add(eid)
+    for text, ids in list(lines.items()) + list(sentences.items()):
+        if len(ids) >= 3 and text not in ("問い → 答え",):
+            errors.append(f"{path.name}: template text reused in {len(ids)} episodes ({', '.join(sorted(ids)[:4])}): {text}; write it for each episode's own rule")
     return errors
 
 
