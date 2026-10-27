@@ -121,6 +121,10 @@ def main() -> None:
         def number(sq: str) -> int:
             digits = re.findall(r"\d+", sq or "")
             return int(digits[-1]) if digits else 0
+        unmatched = sorted({it["domain"] for it in items if not bucket(it["domain"])})
+        if unmatched:
+            # An unmatched domain would get a zero quota and lose every question in it.
+            raise SystemExit(f"--weights does not cover these domains: {unmatched}")
         total = sum(weights.values())
         quota = {k: round(args.target * w / total) for k, w in weights.items()}
         pool = defaultdict(list)
