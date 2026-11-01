@@ -12,6 +12,14 @@
 - 処理済みの印: **`agent-task` ラベルを外すこと**の一つに決めます。GitHub と同じく、実行前に外します(3 章)。
 - 契約のヘッダー 4 行は Linear に保存されても変わりませんでした。現行の `parse_contract` も、取り直した本文をそのまま読めました(付録 A)。
 
+### 改訂履歴
+
+- 2026-11-01: Codex の読み取り検品(maylac/agent-tasks#10、判定「要修正」)の指摘 4 件に対応しました。どの指摘への対応かは本文中に「検品#10 指摘N」と書いてあります。
+  - 指摘1(Linear の鍵が子 agent に渡る): 5 章「子プロセスへの鍵の継承を防ぐ」、7 章テスト 13・14
+  - 指摘2(creator の許可リストだけでは編集者を制限できない): 4 章「信頼境界と起票後の改変検出」、7 章テスト 15〜18
+  - 指摘3(状態遷移の途中でクラッシュするとタスクが監視から消える): 6 章「状態遷移ごとの失敗と回復」、7 章テスト 19〜26、8 章 51 行目
+  - 指摘4(Linear API の実仕様が未検証): 10 章「実装前の API 検証と smoke 受け入れ条件」、7 章「段階的な導入」の 2a
+
 ## 1. bridge.py に linear 経路を足す方式(併用)
 
 ### 現行の構造(HEAD f688563)
@@ -108,10 +116,28 @@ Linear は保存するときに説明欄を Markdown として正規化します
 - 前提: Grok Bot のコネクタは Gota 本人の OAuth で動くので、Dispatcher が作った issue の creator は Gota 本人です(報告にあった ID は `34c874b1-7e9e-492f-afda-9375e8f845a8`。コード屋は未確認)。そのため、**Gota 本人が手で作った issue と区別できません**。
 - 誤起票のリスクと対策:
   - 本人が手で `agent-task` を付けると実行される → ラベルは Dispatcher だけが付けるという運用規則にする。対象を専用 project に絞り、普段使う project とは混ぜない。
-  - 起票後に説明欄が書き換えられる → bridge は処理する時点の本文を使う。workspace のメンバーが本人だけである限り、書き換えられるのも本人だけ。`doctor.py --check-linear` で workspace の有効メンバー数を見て、2 人以上なら警告する。メンバーを増やすときは、この設計を見直すことを条件にする。
+  - 起票後に説明欄が書き換えられる、別の人がラベルを付ける → 下の「信頼境界と起票後の改変検出」で fail closed にする(警告だけでは済ませない)。
   - 連携機能(メールからの起票、フォーム、Slack 連携など)で作られた issue → creator は連携側のユーザーになるので許可リストで弾かれる(Linear の具体的な挙動は未検証)。
   - bridge が自分のコメントに反応してしまう → bridge はコメントを読んでトリガーにしないので起きない。コメントの `[bridge]` は、人と Dispatcher が見分けるための目印。
 - 本文に入れる目印(例: `dispatched-by: grok`)は偽装を防ぎません。書ける人なら誰でも付けられるからです。認可には使わず、記録のためのメモとしてだけ扱います。
+
+### 信頼境界と起票後の改変検出(検品#10 指摘2)
+
+creator の許可リストは「誰が issue を作ったか」しか見ません。許可された creator が作った issue に、別のメンバーが後から `agent-task` を付けたり説明欄を書き換えたりしても、creator ID は許可リストに入ったままです。そこで信頼境界を次のように定め、2 つの仕組みを重ねます。
+
+**信頼境界の定義**: 実行してよいのは、「creator」「`agent-task` を付けた人」「説明欄を最後に書き換えた人」が全員 `BRIDGE_LINEAR_ALLOWED_CREATORS` に入っている issue だけです。対象 project(team)に編集権限を持つ人は全員、信頼境界の内側にいるものとして扱います。許可リストにない人が編集権限を持っているなら、その人が書き換えられない前提は成り立ちません。
+
+1. **起動時の検査(fail closed)**: `doctor.py --check-linear` と bridge の起動処理で、対象 team の有効メンバー(guest を含む。無効化されたユーザーは除く)を取得します。許可リストにないメンバーが 1 人でもいれば、**bridge は起動しません**(以前の設計の「警告」から変えました)。メンバーを増やすときは、その人を許可リストに入れて信頼境界に含めるか、bridge 専用の team を分けるかを本人が決めます。取得に失敗したときも起動しません。
+2. **実行直前の履歴照合(fail closed)**: ラベルを外す前に `issue.history`(10 章で実在と形を確かめる)を読み、次をすべて確かめます。1 つでも満たさない、または履歴を読めないときは実行しません。
+   - `agent-task` を足した履歴(`addedLabelIds` に `agent-task` のラベル ID が入っている最新の 1 件)があり、その `actor.id` が許可リストに入っている。
+   - その時点より後に、説明欄・タイトル・team・project を変えた履歴がない。
+   - creator から現在までに説明欄を変えた履歴の `actor.id` がすべて許可リストに入っている。
+   - 履歴の `actor` が null のもの(連携機能や自動化による変更など)がない。null は「誰か分からない」として拒否します。
+3. **本文ハッシュの照合(履歴の補強)**: 2 段階起票の 2 段目で、Dispatcher は `agent-task` を付ける直前に取り直した説明欄の SHA256(UTF-8、Linear が返したそのままのバイト列)を、`[dispatcher] body-sha256: <hex>` という 1 行のコメントにします。bridge は、ラベルを外した後に取り直した説明欄の SHA256 がこのコメントの値と一致することを確かめます。コメントの作者が許可リストにない、コメントが 2 件以上ある、値が一致しない、のどれかなら実行しません。
+   - このコメントも書ける人なら誰でも書けるので、ハッシュは単独では認可になりません。役割は、2 の履歴照合で見落とした変更(履歴に残らない種類の変更など)を拾うことです。認可の根拠は 1 と 2 です。
+   - `updatedAt` は照合に使いません。コメントやラベルの付け外しでも変わるので、本文の改変を区別できないからです。
+
+拒否したとき: ラベルは外したまま(処理済みの印。もう一度拾わない)にし、`[bridge] rejected: trust check failed (<理由>)` をコメントして Canceled にします。理由には actor の ID と変更されたフィールド名だけを書き、本文は書きません。再実行したいときは、本人か Dispatcher が新しい issue として起票し直します。
 
 ## 5. 認証
 
@@ -127,6 +153,24 @@ Linear は保存するときに説明欄を Markdown として正規化します
 
 - 鍵は Mac の `~/.config/slack-bridge/linear.env`(`chmod 600`)にだけ置き、`LINEAR_API_KEY=` で渡します。launchd は plist の中で `set -a; . linear.env` を実行して環境変数として読みます(既存の plist と同じやり方)。plist、リポジトリ、Issue、Linear、Slack、Grok Bot、チャットには書きません。
 - bridge は鍵をログや例外メッセージに出しません(`linear()` の例外にはステータスと GraphQL のエラーコードだけを入れる)。`doctor.py` は値を出さず、キーがあるかどうかだけを報告します(既存の方針どおり)。
+
+### 子プロセスへの鍵の継承を防ぐ(検品#10 指摘1)
+
+現行の `run_task` は、子 agent の環境を `env = dict(os.environ, CROSS_HARNESS_PEER="1")` で作っています(f688563 でも、この改訂時点の main `6e556ed` でも `slack-bridge/bridge.py` 233 行)。launchd が `LINEAR_API_KEY` を bridge の環境変数として読ませると、このままでは鍵が agent(`claude -p`、`codex exec`、`agy` など)の subprocess にそのまま引き継がれます。agent は外部の入力(契約本文)に従って動くので、鍵が見える状態にしてはいけません。
+
+要件:
+
+1. 子 agent の環境は、新しい関数 `agent_env(environ)` だけで作ります。233 行はこの関数の呼び出しに置き換えます。bridge から起動するほかの subprocess のうち、契約の内容に従って動くもの(cursor の `--help` 確認を含め、agent のバイナリを起動するものすべて)にも同じ関数を使います。
+2. `agent_env` は `os.environ` をコピーし、次に当てはまるキーを**値に関係なく**取り除きます。
+   - 名前が `LINEAR_` で始まるもの(大文字小文字を区別しない)。`LINEAR_API_KEY` のほか、将来足す `LINEAR_OAUTH_TOKEN`、`LINEAR_WEBHOOK_SECRET` なども含む。
+   - 名前が `BRIDGE_LINEAR_` で始まるもの(team、project、許可リストなど。秘密ではないが agent には要らない)。
+   - 明示的な除外リスト `AGENT_ENV_DENY`(初期値は上の 2 つの接頭辞)。Linear 以外の鍵を後で足すときもここに足す。
+   - 除外の判定はキーの名前だけで行います。値の中身を見て判定する処理は作りません(漏れを見落とす原因になるため)。
+3. 鍵の値そのものが、別名の環境変数(例: 本人が `linear.env` に誤って別の名前で書いた場合)に入っていないことも確かめます。`agent_env` は、取り除く前の `LINEAR_API_KEY` の値と同じ値を持つキーが残っていたら、それも取り除き、stderr にキーの名前だけを 1 行出します。
+4. `CROSS_HARNESS_PEER="1"` など、今 233 行で足している値は今のまま足します。GitHub 経路(`BRIDGE_TRANSPORT=github`)でも同じ関数を通しますが、Linear の変数がもともとないので動きは変わりません。
+5. launchd 側でも、Linear 用のジョブだけが `linear.env` を読みます。GitHub 用の plist には `linear.env` を読ませません(多重の防御。1〜4 が主な対策)。
+
+回帰テストは 7 章のテスト 13・14 です。
 
 本人に必要な操作(この工程では実行しません。承認後に本人が行います):
 
@@ -148,7 +192,51 @@ Linear は保存するときに説明欄を Markdown として正規化します
   - HTTP エラー、タイムアウト、`errors` が空でない、`data.issues.nodes` がない、のどれかなら例外を投げる。`main` の 323–324 行が stderr に出し、ループは続く。
   - 例外が出た poll では一件も実行しない。ラベル削除が失敗した issue も実行しない。
   - 最後に成功した時刻、最後のエラー、連続失敗回数を `~/.local/state/slack-bridge/linear-health.json` に書き、`doctor.py` で読めるようにする。
-  - 実行後にコメントの投稿に失敗した場合は、結果の全文を stderr に出し、issue は In Progress のまま残す。Dispatcher は「In Progress でラベルがなく、`[bridge]` の結果コメントもないまま、タイムアウト + 10 分を過ぎた issue」を blocked として報告する(8 章)。
+  - 実行後のコメント投稿や状態変更の失敗、および各遷移の間でのクラッシュは、下の「状態遷移ごとの失敗と回復」で扱う。
+
+### 状態遷移ごとの失敗と回復(検品#10 指摘3)
+
+以前の設計では、ラベル削除と In Progress 更新の間で bridge が止まると、issue はラベルなしで元の状態(Todo/Backlog)に残り、「In Progress かつ結果コメントなし」という blocked 判定に当たりませんでした。結果コメントの後で Done への更新に失敗した場合も、結果コメントがあるので同じ判定から漏れました。これを、(a) Mac 側の作業記録(journal)、(b) 遷移ごとに冪等な再試行、(c) Linear 側だけを見る判定の 3 つで塞ぎます。
+
+**journal**: `~/.local/state/slack-bridge/linear-journal.json`。issue の ID ごとに `{identifier, task_id, phase, status, result_path, attempts, last_error, updated}` を持ちます。書き込みは一時ファイルに書いて `fsync` してから `os.replace` で置き換えます。journal の更新は `linear.lock` を持つプロセスだけが行います。結果の全文は `~/.local/state/slack-bridge/linear-results/<task_id>.txt` に保存し、journal にはそのパスだけを書きます。
+
+**遷移の順番と phase**(各遷移の前に journal へ phase を書く。phase は前にしか進まない):
+
+| # | phase(書いてから行う) | 行う操作 | 冪等にする方法 |
+|---|---|---|---|
+| T0 | `claiming` | 4 章の履歴照合 → `agent-task` を外す | 外す前に取り直し、すでにラベルがなければ外したとみなす |
+| T1 | `claimed` | 取り直してラベルが消えたこと、本文ハッシュ(4 章)を確かめる | 読み取りだけ |
+| T2 | `started` | 状態を In Progress にし、`[bridge] claimed <task_id>` を親コメントにする | 状態は ID 指定なので何度送っても同じ。コメントは、同じ `<task_id>` を含む `[bridge]` コメントがすでにあれば投稿しない |
+| T3 | `running` | `run_task` を実行する | 再実行しない(下の回復表) |
+| T4 | `finished` | 結果を `result_path` に保存し、journal に `status` を書く | ローカルのみ |
+| T5 | `reported` | 結果コメント(`[bridge] result <task_id>` で始まる)を返信として投稿する | 投稿前にコメント一覧を取り、同じ先頭行の返信があれば投稿しない |
+| T6 | `closed` | Done/Canceled にする(`needs-approval` ならラベルを付けて In Progress のまま) | 状態とラベルは ID 指定なので何度送っても同じ。成功したら journal から消す |
+
+**API 呼び出しの失敗(プロセスは生きている)**: その遷移を失敗として journal の `attempts` と `last_error` を更新し、次の poll で同じ phase から再試行します。待ち時間は 6 章のレート制限と同じく倍々(上限 15 分)です。T0〜T2 の失敗で agent を走らせることはありません。T5・T6 の失敗では agent を再実行せず、保存した結果を使って投稿だけをやり直します。`attempts` が 10 回を超えた issue は再試行をやめ、`linear-health.json` に `stuck` として載せます(`doctor.py` と 8 章の Dispatcher 判定で拾う)。
+
+**クラッシュ後の回復**: bridge は起動するたびと、毎回の poll の最初に、journal に残っている issue をすべて取り直してから新しい issue を拾います。回復を終えるまで新しい issue は実行しません。
+
+| journal の phase | Linear 側の状態 | 回復の手順 |
+|---|---|---|
+| `claiming` | ラベルがまだある | まだ何もしていない。journal から消し、通常の流れで拾い直す |
+| `claiming` | ラベルがない | T0 は成功していた。`claimed` として T1 から続ける |
+| `claimed`/`started` | 問わない | agent はまだ走っていない。T1 の確認をやり直し、通れば T2 から続ける。T1 で拒否になれば 4 章の拒否処理をする |
+| `running` | 問わない | agent の結果は分からない。**再実行しない**。`blocked (bridge crashed during run)` を status として T5・T6 を行う(Canceled)。コメントには worktree のパスと branch 名を書き、worktree は消さない |
+| `finished` | 問わない | `result_path` から結果を読んで T5 から続ける。ファイルがなければ `running` と同じ扱いにする |
+| `reported` | 問わない | T6 から続ける |
+| journal にない | ラベルなし、状態が completed/canceled 以外、`[bridge] claimed` コメントがあり、`[bridge] result` コメントがない | journal が失われた場合。agent が走ったかどうか分からないので `running` と同じ扱いにする |
+| journal にない | ラベルなし、状態が completed/canceled 以外、`[bridge] result` コメントがある | コメントの 1 行目から status を読み、T6 だけを行う |
+
+最後の 2 行のために、bridge は poll のたびに「対象 project で、ラベルがなく、状態の type が completed/canceled 以外で、`[bridge]` コメントがある issue」も 1 回のクエリで取ります(`first: 20`)。`[bridge]` コメントが 1 つもない、ラベルのない issue は Dispatcher の起票途中(2 段階の 1 段目)と区別できないので、bridge は触らず、8 章の Dispatcher 側の判定に任せます。
+
+**Dispatcher 側の blocked 判定(Linear だけを見る。bridge が完全に止まっていても働く)**:
+
+- (B1) Dispatcher が `agent-task` を付けた issue で、10 分たってもラベルが付いたまま → bridge が拾っていない(停止、または起動時検査で起動していない)。
+- (B2) Dispatcher が `agent-task` を付けた issue で、ラベルがなく、状態の type が completed/canceled 以外、`[bridge] result` コメントがないまま、ラベルを付けてからタイムアウト + 10 分を過ぎた → 状態を問わず blocked。以前の「In Progress かつ」という条件は外します(T0 と T2 の間で止まった場合を拾うため)。
+- (B3) `[bridge] result` コメントがあるのに、10 分たっても状態が Done/Canceled にならない(`needs-approval` を除く) → 「状態更新が止まっている」として報告し、status はコメントの 1 行目を使う。
+- Dispatcher は、どの issue に `agent-task` を付けたかを自分で覚えています(2 段階起票の 2 段目)。B1〜B3 はその一覧だけを対象にするので、起票途中のラベルなし issue を誤って blocked にしません。
+
+テストは 7 章のテスト 19〜26 です。
 
 ## 7. テスト計画
 
@@ -167,10 +255,36 @@ Linear は保存するときに説明欄を Markdown として正規化します
 11. 例外メッセージや stderr に `LINEAR_API_KEY` の値が出ない。
 12. 既存の GitHub と Slack のテストがすべて変更なしで通る(`python3 -m unittest slack-bridge/test_bridge.py`)。
 
+子プロセスの環境(検品#10 指摘1):
+
+13. `run_task` が agent を起動するとき、`subprocess.run` に渡る `env` に `LINEAR_API_KEY`、`LINEAR_` / `BRIDGE_LINEAR_` で始まるキー、`LINEAR_API_KEY` と同じ値を持つ別名のキーが**含まれない**。`os.environ` にダミーの鍵(`lin_api_TEST_DO_NOT_USE` など)を入れ、`subprocess.run` をモックして渡された `env` を調べる。`CROSS_HARNESS_PEER=1` と `PATH`、`HOME` は残っている。route が複数ある場合(フォールバック)と cursor の `--help` 確認でも同じことを確かめる。
+14. 実際の子プロセスで確かめる: `build_command` を差し替えて `[sys.executable, "-c", "import os,json; print(json.dumps(sorted(os.environ)))"]` を走らせ、出力に Linear 関連のキーがなく、ダミーの鍵の値も出力のどこにも現れない。233 行を `dict(os.environ, ...)` に戻すとこのテストが落ちることを、実装時に一度確かめる。
+
+信頼境界(検品#10 指摘2):
+
+15. 起動時検査: 許可リストにない有効メンバー(guest を含む)がいる、またはメンバー一覧を取れないと、bridge が起動しない(`SystemExit`)。無効化されたユーザーは数えない。
+16. 履歴照合: (a) creator は許可済みだが `agent-task` を付けた actor が許可リスト外、(b) ラベルを付けた後に説明欄が変更された、(c) 説明欄を変えた actor が許可リスト外、(d) actor が null、(e) 履歴を取れない。どれも `run_task` を呼ばず、`rejected: trust check failed` をコメントして Canceled にする。
+17. 本文ハッシュ: `[dispatcher] body-sha256:` が一致しない、2 件ある、作者が許可リスト外、ない。どれも実行しない。一致して履歴も正しいときだけ実行する。
+18. 拒否時のコメントに本文や鍵が入らない。
+
+状態遷移の失敗と回復(検品#10 指摘3。`bridge.linear` のモックで特定の呼び出しを失敗させ、プロセスの停止は phase を書いた直後に例外で抜けることで再現する):
+
+19. T0(ラベル削除)の API が失敗: `run_task` を呼ばない。journal は `claiming` のまま。次の poll で取り直し、ラベルが残っていれば拾い直し、なければ T1 から続く。
+20. T0 の後、T2(In Progress)の前で停止: 再起動後の回復で T1 から続き、In Progress と `[bridge] claimed` コメントが 1 件だけになる。agent は 1 回だけ走る。
+21. T2 の状態変更またはコメントが失敗: 次の poll で再試行し、コメントは重複しない。T2 が終わるまで `run_task` を呼ばない。
+22. `running` で停止: 再起動後に agent を再実行せず、`blocked (bridge crashed during run)` の結果コメントを投稿して Canceled にする。worktree は残る。
+23. T5(結果コメント)が失敗: 保存した結果から投稿をやり直し、agent は再実行しない。投稿が成功していたのに応答が失われた場合(モックで「投稿はされたが例外」にする)も、結果コメントは 1 件だけになる。
+24. T6(Done/Canceled)が失敗: 次の poll で状態だけをやり直す。`attempts` が上限を超えると `linear-health.json` に `stuck` が出る。
+25. journal が失われた: Linear 側に `[bridge] claimed` だけがある issue は 22 と同じ扱い、`[bridge] result` がある issue は状態だけを直す。`[bridge]` コメントがないラベルなし issue には触らない。
+26. Dispatcher の判定規則(B1〜B3)を表にした fixture で、T0 と T2 の間で止まった issue(ラベルなし・Todo)が B2 に、結果コメントはあるが Done になっていない issue が B3 に当たる。これは判定ロジックを `slack-bridge/linear_watch.py`(新規)のような純粋関数にして、そこでテストする。
+
+モックのテストは、Linear API の実際の形(10 章)を確かめた後で、記録した実際の応答(鍵や個人情報を除いたもの)を fixture にして書きます。10 章の smoke を通る前に、モックのテストが通ったことを API 契約の証拠として扱いません(検品#10 指摘4)。
+
 ### 段階的な導入(各段階で承認を得る)
 
 1. PR を review し、merge する(本人の承認)。
 2. 本人が API キーを作って Mac に置く(5 章)。Linear に `agent-task` と `needs-approval` のラベルを作る(本人か Dispatcher。承認が要る)。
+2a. 10 章の API 検証と smoke を行い、受け入れ条件 S1〜S8 をすべて満たす(検品#10 指摘4)。満たすまで、bridge の Linear 経路は実装を merge しないか、merge しても launchd に登録しない。
 3. 読み取りだけの確認: `python3 slack-bridge/doctor.py --check-linear`(viewer、team、project、状態 ID を解決できるか)。
 4. bridge-test project で 1 件だけ: Dispatcher が 2 段階で害のない契約を起票する(例: agy で `git log -1 --oneline` を報告するだけ)。launchd は使わず、前景で 1 回だけ poll して終わる。`python3 -c 'import bridge; bridge.poll_linear_once(bridge.load_config())'`(env は `linear.env` から読む)。確かめること: ラベルが外れた、In Progress から Done に移った、コメントが親と返信の形になった、worktree の名前が `bridge-linCA1-…` になった。
 5. `com.maylac.linear-bridge` を launchd に登録する(新しいジョブなので既存 bridge の再起動ではない。ただし設定変更なので承認を得る)。bridge-test でもう 1 件確かめる。
@@ -201,7 +315,7 @@ Linear は保存するときに説明欄を Markdown として正規化します
 - 32 行目: `model:` と `fallback:` の扱いは今のまま。
 - 45 行目: 結果コメントは `[bridge]` で始まり、Linear では親コメントへの返信になる。
 - 49 行目: Linear の `needs-approval` は、ラベル付きで In Progress のまま。
-- 51 行目: 「In Progress でラベルがなく、結果コメントもない」ままの issue を blocked として報告する規則を足す。
+- 51 行目: 6 章の blocked 判定 B1〜B3 を足す(検品#10 指摘3。以前の「In Progress でラベルがなく、結果コメントもない」という条件は、状態を問わない B2 に置き換える)。Linear の 2 段階起票の 2 段目で `[dispatcher] body-sha256:` コメントを付ける手順も足す(4 章、検品#10 指摘2)。
 
 そのほかの文書:
 
@@ -220,6 +334,49 @@ Linear は保存するときに説明欄を Markdown として正規化します
 - コメントの中の複数行コードブロック(`run_task` の 260 行が出す ```` ``` ```` 囲み)が保たれるか(コメントの試験は 1 行だけだった)。
 - 連携機能(メール、フォーム、Slack)で作られた issue の creator がどうなるか。
 - Grok Bot の報告に書かれた Linear 側の事実(workspace と team の構成、状態の一覧、creator の ID、コメント API の挙動)。コード屋が独自に確かめたのは、付録 A の本文 2 件と SHA256 だけ。
+- `issue.history` で、ラベルの追加者、説明欄の変更、actor を取れるか(4 章の履歴照合の前提)。team メンバーの一覧で guest と無効化ユーザーを区別できるか。
+
+これらは 10 章の手順で、実装の前に確かめます。
+
+## 10. 実装前の API 検証と smoke 受け入れ条件(検品#10 指摘4)
+
+7 章のユニットテストは `bridge.linear` をモックするので、Linear の実際のスキーマや mutation が設計どおりかは確かめられません。そのため、**実装に入る前に**次の検証を行い、結果を記録します。この改訂(2026-11-01)では、手順と受け入れ条件を書いただけで、検証そのものは行っていません。Linear への書き込みを含むので、実行には本人の承認が要ります(7 章の段階 2a)。
+
+### 10.1 読み取りだけの検証(V1〜V5)
+
+使う鍵は 5 章で置いたものです。鍵はコマンドラインに書かず、`linear.env` から環境変数で読みます。応答は `~/.local/state/slack-bridge/linear-verify/` に保存し(`chmod 700`)、鍵と個人のメールアドレスを除いてから 7 章の fixture に使います。
+
+- V1 エンドポイントと認証: `https://api.linear.app/graphql` に `{ viewer { id name } }` を送り、`Authorization` ヘッダーの形(`<key>` か `Bearer <key>` か)と、返る viewer の ID が 4 章の creator ID と一致するかを記録する。
+- V2 スキーマの取得: introspection(`__schema` / `__type(name: "Mutation")`)で、次の実在と引数の型を記録する。introspection が無効なら、公式のスキーマ定義(Linear が公開している SDL)を取得し、取得元の URL と日付を記録する。
+  - ラベルの付け外し: `issueRemoveLabel` / `issueAddLabel` があるか。なければ `issueUpdate(input: {labelIds})` で全体を置き換える方式になるが、その場合は同時に付いた別ラベルを消しうるので、取り直し → 置き換え → 取り直しの手順を設計に足す。
+  - 状態変更: `issueUpdate(id, input: {stateId})`。
+  - コメント: `commentCreate(input: {issueId, body, parentId})` と、コメント一覧(`issue.comments`)で `parent` と `user` が取れるか。
+  - 履歴: `issue.history` の `actor`、`addedLabelIds`(またはそれに当たるフィールド)、`updatedDescription`(または説明欄の変更を示すフィールド)、`createdAt`。
+  - メンバー: `team.members` で `active`、`guest` が取れるか。
+  - 一覧の絞り込み: 6 章の filter(team、project、labels、state.type)がそのまま書けるか。
+- V3 レート制限の仕様: 公式ドキュメントの記載(リクエスト数と complexity の上限、期間)と、応答ヘッダー(`X-RateLimit-*` など、実在するもの)を記録する。上限に達したときの HTTP ステータスと `errors[].extensions.code` の実際の値を、ドキュメントか実際の応答で確かめる(実際に上限まで叩くことはしない)。6 章の `RATELIMITED` と待ち時間の規則を、記録した値に合わせて直す。
+- V4 エラーの形: 存在しない issue ID を読む、存在しない stateId で `issueUpdate` するといった、副作用のない失敗を起こし、HTTP 200 + `errors` になるのか、別のステータスになるのかを記録する。
+- V5 権限: 個人用 API キーで権限やチームを絞れるかを、作成画面と viewer の応答から記録する。
+
+### 10.2 書き込みを含む smoke(bridge-test project だけで行う)
+
+害のない issue を 1 件ずつ使い、終わったら Canceled にします(削除はしない)。
+
+- S1 成功の流れ: ラベルなしで作成 → 取り直し → `agent-task` を付ける → `[dispatcher] body-sha256:` コメント → ラベルを外す → 取り直してラベルが消えたことを確認 → In Progress → 親コメント → `parentId` 付きの返信 → Done。それぞれの mutation の応答と、取り直した状態が設計どおりであること。
+- S2 ラベルの付け外しが冪等か: すでにないラベルを外す、すでにあるラベルを付ける、の応答(エラーか成功か)を記録し、6 章の T0 の冪等性の前提が成り立つこと。別のラベルが付いている issue でラベルを外しても、別のラベルが残ること。
+- S3 部分失敗 1(ラベル削除の後で止まる): ラベルを外したところで手順を止め、issue がラベルなし・Todo のまま残ることを確かめる。そのうえで、6 章の回復手順(journal が `claiming`/`claimed` の場合)を手で再現し、T1 から続けて In Progress とコメント 1 件で終わること。
+- S4 部分失敗 2(状態変更の失敗): 存在しない stateId で `issueUpdate` を送ってエラーになることを確かめ、ラベルを外した状態と他のフィールドが変わっていないこと。続けて正しい ID でやり直して成功すること。
+- S5 部分失敗 3(結果コメントの後で止まる): 結果コメントを投稿したところで止め、Done にしないまま残す。6 章の回復(journal なしで `[bridge] result` がある場合)で、状態だけが直ること。B3 の判定に当たること。
+- S6 履歴: S1 の issue の `history` で、ラベルを付けた actor、説明欄の変更、actor が null にならないことを確かめる。説明欄を手で 1 回書き換え、その変更が履歴に actor 付きで出ること(4 章の照合がこの変更を拒否できること)。
+- S7 コメントの体裁: 複数行のコードブロック(```` ``` ```` 囲み)と `REPLY_LIMIT` 近い長さの返信が、取り直したときに保たれていること(9 章の未検証点)。
+- S8 子プロセスの環境: 前景で 1 回だけ poll するとき(7 章の段階 4)、agent に `env | cut -d= -f1` を報告させる無害な契約を使い、`LINEAR_` で始まるキーがないこと(検品#10 指摘1)。
+
+### 10.3 受け入れ条件
+
+- V1〜V5 と S1〜S8 の結果を、`docs/specs/` に新しいファイル(例: `2026-11-xx-linear-api-verification.md`)として記録し、各項目に「確かめた / 設計を直した / 未確認」のどれかを書く。鍵とメールアドレスを除いたものだけを載せる。
+- S1〜S8 がすべて「確かめた」になっていること。V2 で mutation の形が設計と違った場合は、この設計書の 3・4・6 章を直す PR を先に merge してから実装に入る。
+- 確かめた応答から作った fixture が、7 章のユニットテストで使われていること。
+- 「未確認」が残ったまま実装に入らない。どうしても確かめられない項目は、本人が承認したうえで、その項目に頼らない設計(例: 履歴が取れないなら、許可リスト外の編集者がいない単独メンバー team に限る)に変える。
 
 ## 付録 A: 試験本文の再計算
 
