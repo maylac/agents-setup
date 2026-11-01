@@ -71,6 +71,12 @@ check_json() {
   fi
 }
 
+check_phone_dispatcher_docs() {
+  if ! python3 -m unittest discover -s "$ROOT/tests" -p 'test_*.py' >/dev/null; then
+    fail "phone dispatcher docs or restore candidate checks failed"
+  fi
+}
+
 check_shell() {
   local script
   while IFS= read -r -d '' script; do
@@ -117,6 +123,7 @@ check_rules_lint() {
 check_no_paths
 check_skills
 check_json
+check_phone_dispatcher_docs
 check_shell
 check_rules_lint
 
