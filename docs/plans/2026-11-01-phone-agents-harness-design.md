@@ -17,7 +17,7 @@
 | 対話で直接やる作業（設計・調査・多 repo） | **Claude iOS の Remote Control** | `manual` 扱い。実装は worktree の host で |
 
 要点は三つ。
-1. 起票できる controller は同時に一つ（通常は Grok、Grok が止まったときだけ Duet）。bridge 側で owned files の重複を拒否し、二重編集を機械的に防ぐ。
+1. 起票できる controller は一つ（Grok コード屋）。Grok が止まったときは本人が GitHub Mobile から直接書く。bridge 側で owned files の重複を拒否し、同じ path への連続起票を防ぐ。
 2. 承認は人のタップだけ。通知は GitHub Mobile の push と Duet の二経路、返答は本人が GitHub Mobile から書く Issue コメント `APPROVED:` 一本に統一する。Bot には書かせない。
 3. 追加 Grok Bot 3 体（検品係・運用ハブ・Bot設計係）の計画は取り下げる。Duet と Mac 側 publisher で同じ役割を、規約同意なしで満たす。
 
@@ -29,9 +29,9 @@
 | F2 | 許可 repo は `agents-setup` だけ | `BRIDGE_ALLOWED_REPOS` | Vantik（reskilling-os）の作業は Remote Control の手動セッション頼み |
 | F3 | Grok の追加 3 Bot は規約同意待ちで未作成 | `docs/grok-bot/bot-roles.md` | 検品と運用ハブが人手か Grok 1 体の兼任 |
 | F4 | 運用ハブ（issue 6）の更新は Grok の日次 routine 依存、初回 callback 未確認 | 同上 | 台帳の鮮度を Grok の稼働に賭けている |
-| F5 | `needs-approval` は Issue に label が付くだけ。push 通知はなく、承認後の再開は再起票 | `bridge.py poll_github_once` | 承認 1 回に Grok との往復が 2〜3 回要る |
+| F5 | `needs-approval` は Issue に label が付くだけ。bridge の `gh` は本人と同じ login で動くので、GitHub は「自分の操作」として本人に通知せず、push もメールも来ない。承認後の再開は再起票 | `bridge.py poll_github_once`、`~/.config/gh/hosts.yml` | 承認 1 回に Grok との往復が 2〜3 回要る |
 | F6 | Bot 間の引き継ぎで本文が欠落した（issue 5 の `[5件: ...]`） | `docs/grok-bot/README.md` 9 | 検品が原文に届かない |
-| F7 | Remote Control host が 3 本。`agents-setup` host の stdout.log が 363 MB（監査 A10 未対応）。`vantik` host は `reskilling-os-rc` の trust 未承諾で起動失敗。`workspace` host は本日 13:11 作成 | `$HOME/.claude/remote-control/`、LaunchAgents | iPhone から Vantik を直接開けない。ディスクを食い続ける |
+| F7 | Remote Control host が 3 本。`agents-setup` host の stdout.log が 363 MB（監査 A10 未対応）。`vantik` host は稼働中（10/14 の trust エラーは古いログで、本日も session が作られている）。`workspace` host は本日 13:11 作成 | `$HOME/.claude/remote-control/`、LaunchAgents | ディスクを食い続ける。host の再起動は Hard Stop なので保守窓が要る |
 | F8 | Claude の 5 時間枠がボトルネック（監査 A7 / E） | `docs/harness-audit-2026-10-13.md` | Duet も同じ枠を消費する。設計で頻度を縛る必要がある |
 | F9 | Remote Control のサンドボックス内では `gh`（keyring）と Codex（`auth.json` 読み取り拒否）が使えない | 本セッションの観測 | 本設計の実装は bridge 契約か通常セッションで行う |
 
@@ -39,17 +39,17 @@
 
 1. **台帳は GitHub 一つ。** 依頼・契約・結果・承認・検品の記録はすべて `maylac/agent-tasks` の Issue に残す。チャットは入口と出口であって記録ではない。
 2. **実行は Mac だけ。** Grok（xAI）、Duet（Anthropic）、Muse（Meta）の VM はどれも Mac の SSH 鍵・NAS 認証・API key を持たない。クラウド側は読む・起票する・通知するまで。
-3. **controller は同時に一つ。** 起票は Grok コード屋。Duet は Grok が止まったときだけ `via: duet` を付けて起票する。bridge は owned files が重なる契約を機械的に拒否する。
+3. **controller は一つ。** 起票は Grok コード屋だけ。Duet と Muse は起票しない（Duet には GitHub の書き込み経路も無い）。Grok が止まったときは本人が GitHub Mobile から書く。bridge は owned files が重なる契約を機械的に拒否する。
 4. **人の判断は人のタップだけ。** Bot のメッセージは承認にならない。承認の返答は Issue コメント `APPROVED: <正確な操作>` に統一し、本人の GitHub login で書かれたものだけを bridge が認める。Grok と Duet の connector は本人の account で動くので、GitHub からは人と Bot を区別できない。だから Bot には `APPROVED:` を書かせず、通知と下書きまでにする（7.2）。
 5. **予算を分ける。** Grok Bot は独自の利用枠、Duet は Claude プランの枠（Claude Code と共有）、Mac の launchd は 0 トークン。頻繁なポーリングは Grok か launchd に、低頻度で判断が要るものだけ Duet に置く。
-6. **通知は push 二経路。** GitHub Mobile（assignee 通知）と Duet（Gmail 経由）。どちらか一方が止まっても承認待ちを見落とさない。
+6. **通知は push 二経路。** GitHub Mobile（assignee 通知）と Duet（Gmail 経由）。どちらか一方が止まっても承認待ちを見落とさない。ただし Mac 側の書き込みが本人 login のままでは GitHub は本人に何も通知しない。bridge と publisher の書き込みは別の bot identity で行う（7.0）。
 
 ## 3. 役割マトリクス
 
 | 仕事 | Grok Bot | Claude Duet | Muse | Claude iOS RC | Mac（bridge / launchd） |
 |---|---|---|---|---|---|
-| 依頼の入口 | 主（文章・音声） | 予備 | 個人用件のみ | 手動作業 | — |
-| 契約の起票 | 主 | Grok 停止時のみ | 禁止 | `manual` label | 重複 scope を拒否 |
+| 依頼の入口 | 主（文章・音声） | 通知と下書きのみ | 個人用件のみ | 手動作業 | — |
+| 契約の起票 | 主 | しない | しない | `manual` label | 重複 scope を拒否 |
 | 実行 | 禁止 | 禁止 | 禁止 | 対話で実行 | 唯一の実行場所 |
 | 監視・朝ブリーフ | 08:00 routine（差分要約） | 朝ブリーフ（Gmail の GitHub 通知から） | — | — | 30 分ごとに issue 6 を更新 |
 | 検品 | 依頼の読み戻し | `VERIFIED:` コメント（別ベンダーで独立） | — | — | Codex / Cursor の読み取り専用レビュー |
@@ -64,18 +64,18 @@ Grok は今のまま司令塔にする。変えるのは周辺で、Grok が「�
 
 ### 4.1 追加 3 Bot の計画を取り下げる
 - 検品係 → Claude Duet（5.4）と Mac 上の Codex / Cursor 読み取りレビュー。
-- 運用ハブ → Mac 側 publisher（7.4）。Grok の routine は一覧を作らず、publisher が書いた issue 6 を読んで差分だけ報告する。
+- 運用ハブ → Mac 側 publisher（7.4）。Grok の routine は一覧を作らず、publisher が書いた issue 6 を読んで差分だけ報告する。既存の日次 routine「Maylac 開発運用点検」は issue 6 の本文を書き換える設定なので、publisher と二重書きにならないよう読み取り専用（本文を書かず報告だけ）に変える（Phase 1）。
 - Bot設計係 → 不要。役割はこの文書と `bot-roles.md` で固定する。
 - 効果: 追加規約への同意という本人作業が消える。Grok は 1 体のまま。
 
 ### 4.2 引き継ぎは URL と SHA256 だけにする
 - 本文を Bot 間で転記しない。`source issue` の URL、comment ID、UTF-8 SHA256 だけを渡す。
-- 本文が必要な側（Mac 上の Claude / Codex / Cursor）は `gh api` で原文を取り、SHA256 を照合する。
-- `dispatcher-instructions.md` の「`original_comment` に JSON で格納」の節を「URL と SHA256 のみ、本文は Mac で取得」に書き換える。F6 の欠落を根絶する。
+- 本文が必要なときは、sandbox の外で動く bridge が `gh api` で原文を取り、SHA256 を照合してから契約本文の末尾に `Source comment:` として貼って agent に渡す。agent 自身は sandbox 内で `gh` を使えない（Codex は network 無しの workspace-write、Claude は keyring 不可、Cursor は ask mode）。契約には `source: <comment URL> sha256:<hex>` の 1 行を書く。
+- `dispatcher-instructions.md` の「`original_comment` に JSON で格納」の節を「URL と SHA256 のみ、本文は bridge が取得して契約に添付」に書き換える。F6 の欠落を根絶する。
 
 ### 4.3 許可 repo に `reskilling-os` を追加する
 - `BRIDGE_ALLOWED_REPOS` に `$HOME/workspace/maylac/reskilling-os` を追加（bridge 再起動が要るので 9 の承認項目）。
-- 追加後に smoke 契約 1 本（`Owned files: docs/` の無害な変更、`npm run lint` だけ）を通してから本番の依頼を流す。
+- 追加後に smoke 契約 1 本（`Owned files: docs/` の無害な変更、Acceptance は `npm ci && npm test`）を通してから本番の依頼を流す。`lint` script は無く、新しい worktree には `node_modules` も無いので `npm ci` から始める。
 - Vantik の本番確認は既存 skill `vantik-prod-verify` の手順を契約の Acceptance に書く。
 
 ### 4.4 Grok Skills は三つに絞る
@@ -99,7 +99,7 @@ Grok は今のまま司令塔にする。変えるのは周辺で、Grok が「�
 - 接続しない: SSH、NAS、Claude Code の Remote Control、`gh` のトークン。Duet は「読む・まとめる・本人が承認したものを送る」まで。
 
 ### 5.3 朝ブリーフ
-- 07:30 JST に Mac の publisher が ops-hub issue にコメントを 1 本書く（本文は issue 6 の最新 snapshot の先頭 20 行）。コメントは GitHub からメールで届く。
+- 07:30 JST に Mac の publisher が bot identity（7.0）で issue 6 にコメントを 1 本書く（件数、承認待ちの一覧、生成時刻）。本人は issue 6 の作成者なので GitHub からメールが届く。本人 login で書くとメールは来ない。
 - Duet の朝ブリーフが Gmail を読むとき、このメールが「判断待ち N 件、異常 M 件、実行中 K 件」として載る。
 - Grok の 08:00 routine と内容が重なるが、経路が違う（Gmail と GitHub connector）ので片方が止まっても届く。
 
@@ -109,19 +109,19 @@ Grok は今のまま司令塔にする。変えるのは周辺で、Grok が「�
 - 送信は Duet が本人の承認を求める。本人のタップが「人が検品結果を確認した」記録になる。Grok 製の下書きを Grok が採点する自己採点を避け、別ベンダーの独立確認になる。
 
 ### 5.5 承認の運び屋
-- bridge が `NEEDS-APPROVAL:` をコメントすると GitHub からメールが届く。Duet はこれを「要承認」として push 通知する。
+- bridge（bot identity）が `NEEDS-APPROVAL:` をコメントすると、本人に GitHub からメールが届く。Duet は次の定期確認でこれを「要承認」として知らせる（数時間遅れ得る）。即時の通知は GitHub Mobile の assignee push が担う。
 - Duet は Issue の URL と、そのまま貼れる `APPROVED: <操作>` の 1 行を添える。本人は GitHub Mobile を開いてその行をコメントする。bridge が本人 login の `APPROVED:` を検知して再開する（7.2）。Grok を経由しない最短経路。
 - Duet に書かせない理由: Duet の送信は Duet 側の確認を通るが、GitHub に残るのは本人 account の投稿で、bridge からは Bot の投稿と区別できない。Bot 用の別 GitHub account を作れば Duet 経由の返答も許可できる（9 の判断項目）。
 
-### 5.6 予備の司令塔
-- Grok Bot が rate limit や障害で止まったときだけ、Duet が同じ契約形式で起票する。ヘッダに `via: duet` を足す（`parse_contract` は未知のヘッダ行を受け付けるので bridge の変更は不要）。
-- 同じ job を Grok と Duet の両方が起票しても、bridge の scope 重複拒否（7.3）で 2 本目は `blocked (duplicate scope #N)` になる。
+### 5.6 Duet は起票しない
+- Duet には GitHub の書き込み経路が無く、起票できる controller は一つという原則（`AGENTS.md` の Single command path）にも反する。Grok が rate limit や障害で止まっても Duet は起票しない。
+- Grok が止まったら、Duet は reset 時刻とともに本人に知らせるまで。長く止まる場合は本人が GitHub Mobile から契約を書く。本人 login は `BRIDGE_ALLOWED_SENDERS` に入っているので bridge はそのまま実行する。
 
 ### 5.7 指示の単一ソース化
 - `docs/grok-bot/dispatcher-instructions.md` を正本にし、Grok の説明欄と Duet 用 skill（`skills/phone-dispatcher/SKILL.md`）を同じ本文から生成する。Duet は Claude account の skill を引き継ぐので、契約形式・Hard Stop・報告形式を Grok と同じ言葉で持てる。
 
 ### 5.8 予算ガード
-- Duet の background は朝ブリーフ 1 回とイベント駆動（メール到着）だけにする。定期ポーリングは Grok と launchd に置く。
+- Duet の background は朝ブリーフ 1 回と、数時間おきの定期確認だけにする。Duet はメール到着で即時に動かないので、即時性は GitHub Mobile に任せる。頻繁なポーリングは Grok と launchd に置く。
 - 検品は依頼時のみ。大きな生成物（資料・ダッシュボード）は Duet に頼まない。Claude Code の枠を守る。
 
 ## 6. Muse（個人用件専任）
@@ -143,31 +143,42 @@ Grok は今のまま司令塔にする。変えるのは周辺で、Grok が「�
 
 すべて `slack-bridge/` と `launchd/` の範囲。bridge のテストに fake executable を使う既存方式で回帰テストを足す。
 
+### 7.0 Mac 側の書き込みを bot identity に分ける（F5）
+- GitHub は自分の操作を自分に通知しない。bridge と publisher が本人 login で comment や assign をしても、push もメールも本人に届かない。
+- bot account（例 `maylac-bridge`）を作り、`agent-tasks` 限定の fine-grained token（Issues: write）を bridge の env に `GH_TOKEN` として置く。`gh` は `GH_TOKEN` を優先するので bridge のコード変更は要らない。Mac の既定の `gh` login（本人）はそのまま。
+- これで bridge の comment・assign・publisher の更新は bot 名義になり、本人に通知が届く。`BRIDGE_ALLOWED_SENDERS` は Issue の作成者（Grok connector = 本人 login）なので変えない。
+- account の作成と token の発行は本人の判断（9）。
+
 ### 7.1 `needs-approval` で assignee を付ける（F5）
 - `poll_github_once` の `needs-approval` 分岐で `gh issue edit <n> --add-assignee <login>` を実行する。login は `BRIDGE_APPROVAL_ASSIGNEE`（未設定なら何もしない）。
 - GitHub Mobile が assignee 通知を push する。0 トークン、即時。本人は `assignee:@me label:needs-approval` で承認待ちを一覧できる。
 
 ### 7.2 `APPROVED:` コメントで再開する（F5）
 - 毎 poll で `--label needs-approval` の open issue も読む。bridge の `NEEDS-APPROVAL:` コメントより後の top-level コメントのうち、`BRIDGE_APPROVERS` の login が書いた `APPROVED:` で始まるものを承認とみなす。
-- 再開時は `needs-approval` label を外し、契約ヘッダに `approved: <APPROVED: の本文>` を足して `run_task` を呼ぶ。`harness.PREAMBLE` に「`approved:` にある操作だけ、一度だけ実行してよい」を追記する。
+- 再開時は `needs-approval` label を外し、本文の先頭に `Approved action: <APPROVED: の本文>` を足して再実行する。agent に渡るのは preamble と本文だけなので、ヘッダ行に書いても届かない。
+- 再実行は、承認待ちになったときの worktree で行う。bridge は `needs-approval` にするとき worktree の path と branch を Issue コメントに記録し、再開時にそれを使う。HEAD から新しい worktree を切り直すと承認時と違う差分に操作が当たるので、元の worktree が無ければ再開せず `blocked (worktree missing)` にする。
+- `harness.PREAMBLE` に「`Approved action:` にある操作だけ、一度だけ実行してよい」を追記する。
 - 承認者は `BRIDGE_APPROVERS`（本人の GitHub login だけ。未設定なら再開機能は無効）で判定する。senders とは別にする。
-- 弱点: Grok と Duet の connector は本人 account で投稿するので、Bot が `APPROVED:` を書けば bridge は本人と区別できない。対策は二段。今すぐ: 説明欄と skill で Bot に `APPROVED:` を禁止し、本人は GitHub Mobile から書く。恒久: Bot の connector を別 GitHub account（例 `maylac-bot`）に付け替え、`BRIDGE_ALLOWED_SENDERS` にはその account、`BRIDGE_APPROVERS` には本人だけを入れる。これで login が人と Bot の境界になる。
+- 弱点: Grok と Duet の connector は本人 account で投稿するので、Bot が `APPROVED:` を書けば bridge は本人と区別できない。対策は二段。今すぐ: 説明欄と skill で Bot に `APPROVED:` を禁止し、本人は GitHub Mobile から書く。恒久: Grok の connector を別 GitHub account（例 `maylac-grok`）に付け替え、`BRIDGE_ALLOWED_SENDERS` にはその account、`BRIDGE_APPROVERS` には本人だけを入れる。これで login が人と Bot の境界になる（bridge 自身は 7.0 の `maylac-bridge` で書く）。
 
 ### 7.3 scope 重複を拒否する（原則 3）
-- 契約本文の `Owned files:` 行を読み、`repo + path` を `$HOME/.local/state/slack-bridge/inflight.json` に実行中の間だけ記録する。
-- 重なる契約が来たら実行せず、`blocked (duplicate scope #N)` をコメントして close する。Dispatcher は #N の完了後に再起票する。
+- bridge は逐次実行なので、同時に走る契約は常に 1 本。防ぐべきは「同じ path への契約が、前の結果を確認する前に続けて走る」ことと「承認待ちで止まっている契約の path を別の契約が触る」こと。
+- 実行前に、契約本文の `Owned files:` を、(a) open の `needs-approval` Issue と、(b) 直近 24 時間に close した Issue の `Owned files:` と照合する。重なれば実行せず `blocked (duplicate scope #N)` をコメントして close する。Dispatcher は #N の確認後に再起票する。
+- 状態は `$HOME/.local/state/slack-bridge/scopes.json`（Issue 番号、path、記録時刻）に置き、24 時間で消す。
 - `Owned files` が無い契約は実行前に `failed (no owned files)` で返す。契約の品質も上がる。
 
 ### 7.4 mission-hub publisher（F4）
-- `slack-bridge/publish_hub.sh`: `mission_hub.py --format markdown` の出力に `docs/grok-bot/ops-hub-header.md`（手書きの「本人の判断待ち」「管理範囲」）を前置し、`gh issue edit 6 --body-file` で更新する。
-- launchd `com.maylac.mission-hub-publish`: `StartInterval 1800`。07:30 JST の回だけ `gh issue comment 6 --body-file`（先頭 20 行）も行い、メールを発生させる（5.3）。
+- `slack-bridge/publish_hub.py`: `mission_hub.py --format json` を読み、open の承認待ち・異常・実行中の件数と一覧、生成時刻（JST）を自分で組み立てる。markdown 出力をそのまま使わない理由: 新しい順に 100 件しか読まないので古い承認待ちが落ちる、close 済みの失敗も attention に数え続ける、先頭 N 行で切ると件数が欠ける。承認待ちは `gh issue list --state open --label needs-approval` を別に読んで必ず全件載せる。
+- 本文は `docs/grok-bot/ops-hub-header.md`（手書きの「本人の判断待ち」「管理範囲」）を前置して `gh issue edit 6 --body-file` で更新する。
+- launchd `com.maylac.mission-hub-publish`: `StartCalendarInterval` で毎時 0 分と 30 分。script 側で 07:30〜07:59 の回だけ `gh issue comment 6 --body-file`（件数と承認待ち一覧だけ）を行い、メールを発生させる（5.3）。`StartInterval` はロード時刻基準なので使わない。
+- 書き込みは bot identity（7.0）。本人 login で書くと本人にメールが届かない。
 - session-triage の `latest.md` があれば末尾に「Claude iOS セッションの要確認」として連結する。スマホから見る一覧が一枚になる。
 
 ### 7.5 Remote Control host の整理（F7）
 | host | 設定 | 用途 |
 |---|---|---|
 | `workspace` | `--spawn=same-dir --capacity 4`、cwd `$HOME/workspace` | 設計・調査・多 repo。実装はしない（同一 dir で隔離が無い） |
-| `vantik` | `--spawn=worktree --capacity 3`、cwd `$HOME/workspace/maylac/reskilling-os-rc` | Vantik の実装。`reskilling-os-rc` を `~/.claude.json` の `projects` に `hasTrustDialogAccepted: true` で登録して起動失敗を直す |
+| `vantik` | `--spawn=worktree --capacity 3`、cwd `$HOME/workspace/maylac/reskilling-os-rc`（`reskilling-os` の worktree） | Vantik の実装。稼働中（本日も session が作られている）。触らない |
 | `agents-setup` | `--spawn=worktree --capacity 4` | `StandardOutPath` を `/dev/null` にして `stdout.log` 363 MB を消す。再起動が要るので 9 の承認項目 |
 
 - 規則: 「どの入口でも、実装は worktree の host で」。`workspace` host で始めた作業がコードに及ぶときは、契約を起票するか `vantik` / `agents-setup` host で開き直す。
@@ -193,11 +204,12 @@ git diff --check
 ```
 
 ### Phase 1（本人の判断が要る）
-1. `com.maylac.mission-hub-publish` を bootstrap する。
-2. bridge の env に `BRIDGE_APPROVAL_ASSIGNEE`、`BRIDGE_APPROVERS`、`reskilling-os` を足し、idle のときに 1 回だけ再起動する。
-3. `agents-setup` host の plist を `/dev/null` 化して再起動する（2 と同じ保守時間で）。
-4. `reskilling-os-rc` の trust を登録し、`vantik` host を再起動する。
+1. bot account を作り、`agent-tasks` 限定の token を bridge の env に `GH_TOKEN` として置く（7.0）。
+2. `com.maylac.mission-hub-publish` を bootstrap する。
+3. bridge の env に `BRIDGE_APPROVAL_ASSIGNEE`、`BRIDGE_APPROVERS`、`reskilling-os` を足し、idle のときに 1 回だけ再起動する。
+4. `agents-setup` host の plist を `/dev/null` 化して再起動する（3 と同じ保守時間で）。
 5. GitHub Mobile を入れ、assignee 通知を on にする（スマホ操作のみ）。承認はここから `APPROVED:` をコメントする。
+6. Grok の日次 routine「Maylac 開発運用点検」を、issue 6 の本文を書かず読んで報告するだけに変える。
 
 確認:
 ```sh
@@ -222,12 +234,14 @@ smoke: `NEEDS-APPROVAL:` を出す契約を 1 本流す → GitHub Mobile に pu
 ## 9. 本人の判断が必要な項目
 
 - bridge の再起動（env 変更と `reskilling-os` 追加）。実行中の agent を殺すので、idle のとき 1 回だけ。
-- `agents-setup` host と `vantik` host の再起動（plist と trust の変更）。
+- `agents-setup` host の再起動（stdout を `/dev/null` にする plist 変更）。
+- bridge / publisher 用の bot account（例 `maylac-bridge`）の作成と、`agent-tasks` 限定 token の発行（7.0）。
+- Grok の日次 routine を読み取り専用に変える Bot 設定の変更。`#inbox` を読むための Grok への Slack connector 追加（Phase 3 まで不要）。
 - 新 LaunchAgent `com.maylac.mission-hub-publish` の登録。
 - Duet の waitlist 登録と、Gmail / Slack の OAuth 接続。
 - Muse の利用可否と Slack `#inbox` の接続。
 - Grok の追加 3 Bot を作らない決定（規約同意をしない）。
-- Bot の GitHub connector を別 account（例 `maylac-bot`）に分けるか。分ければ Grok / Duet 経由の承認返答を login で区別して許可できる。分けないなら承認は GitHub Mobile からだけ。
+- Grok の GitHub connector を別 account（例 `maylac-grok`）に分けるか。分ければ Grok 経由の承認返答を login で区別して許可できる。分けないなら承認は GitHub Mobile からだけ。
 - 課金・プラン・自動チャージは一切変えない。
 
 ## 10. 参考
