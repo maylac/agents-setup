@@ -71,6 +71,7 @@ Grok Bot は Bot 同士で同じクラウド PC とブラウザを共有しま�
 ## 関連文書
 
 - [スマホ発・Mac mini ハーネスの摩擦レス設計](../plans/2026-11-01-phone-agents-harness-design.md): Grok Bot / Claude Duet / Muse の役割分担、承認経路、Mac 側の変更案と段階計画。
+- [承認ストレスを最小化する権限境界の設計](../plans/2026-11-01-approval-boundary-design.md): Claude Code と Codex を同じ workspace-write 境界に揃え、ツール権限の承認を 0 にする設定案。
 - [Bot の役割分担](bot-roles.md): 4つの Bot、引き継ぎ形式、`VERIFIED:` の記録、運用ハブ、collector、投稿の7項目との対応。
 - [Dispatcher instructions](dispatcher-instructions.md): コード屋の説明欄に入れる指示。
 - [有効化の経緯と復旧手順](activation-plan.md): 実施済みの手順と、壊れたときの戻し方。

@@ -4,6 +4,7 @@
 - 状態: 設計案。コードと launchd は未変更。
 - 対象: 「依頼 → 起票 → Mac mini で実行 → 検品 → 報告 → 承認」の往復を、スマホだけで完結させる。
 - 前提: 利用者は PC を触らない。Mac mini が唯一の実行場所。GitHub の private queue `maylac/agent-tasks` が唯一の台帳。
+- 姉妹文書: [承認ストレスを最小化する権限境界の設計](2026-11-01-approval-boundary-design.md)（ツール権限を設定で 0 にし、業務判断だけを人に残す）。
 
 ## 0. 結論
 
