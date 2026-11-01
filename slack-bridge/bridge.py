@@ -73,6 +73,9 @@ def load_config(env=os.environ):
         "cursor_enabled": env.get("BRIDGE_CURSOR_ENABLED", "") == "1",
         "cursor_bin": env.get("BRIDGE_CURSOR_BIN", "cursor-agent"),
         "approval_label": env.get("BRIDGE_APPROVAL_LABEL", "needs-approval"),
+        "approval_assignee": env.get("BRIDGE_APPROVAL_ASSIGNEE", "").strip(),
+        "approvers": set(split(env.get("BRIDGE_APPROVERS", ""))),
+        "scope_file": env.get("BRIDGE_SCOPE_FILE", os.path.expanduser("~/.local/state/slack-bridge/scopes.json")),
         "policy": harness.load_policy(env.get("BRIDGE_ROUTING_FILE", os.path.join(os.path.dirname(os.path.abspath(__file__)), "routing.json"))),
         "cooldowns": env.get("BRIDGE_COOLDOWN_FILE", os.path.expanduser("~/.local/state/slack-bridge/cooldowns.json")),
     }
@@ -159,7 +162,7 @@ def classify_output(returncode, output):
     return "done", ""
 
 
-def run_task(cfg, text, task_id, say):
+def run_task(cfg, text, task_id, say, existing_workdir=None):
     """Run one contract; `say(text)` posts a progress or result reply.
 
     Returns the status string ("done", "failed ...", "needs-approval", ...).
@@ -208,13 +211,21 @@ def run_task(cfg, text, task_id, say):
         say("rejected: agent grok needs BRIDGE_GROK_ENABLED=1")
         return "rejected"
     name = "bridge-" + task_id
-    workdir = os.path.join(cfg["worktrees"], name)
-    os.makedirs(cfg["worktrees"], exist_ok=True)
-    wt = subprocess.run(["git", "-C", repo, "worktree", "add", "-b", name, workdir],
-                        capture_output=True, text=True)
-    if wt.returncode != 0:
-        say("failed: git worktree add\n" + wt.stderr[-1000:])
-        return "failed (worktree)"
+    if existing_workdir:
+        workdir = existing_workdir
+        branch_result = subprocess.run(["git", "-C", workdir, "branch", "--show-current"], capture_output=True, text=True)
+        if branch_result.returncode:
+            say("blocked (worktree missing)")
+            return "blocked (worktree missing)"
+        name = branch_result.stdout.strip()
+    else:
+        workdir = os.path.join(cfg["worktrees"], name)
+        os.makedirs(cfg["worktrees"], exist_ok=True)
+        wt = subprocess.run(["git", "-C", repo, "worktree", "add", "-b", name, workdir],
+                            capture_output=True, text=True)
+        if wt.returncode != 0:
+            say("failed: git worktree add\n" + wt.stderr[-1000:])
+            return "failed (worktree)"
     cool = harness.Cooldowns(cfg["cooldowns"])
     trail, status, detail, output, used = [], "blocked (no route)", "", "", None
     for route in routes:
@@ -257,7 +268,10 @@ def run_task(cfg, text, task_id, say):
     elif trail:
         route_note = "route: %s\n" % " -> ".join(trail + ["ran %s" % harness.route_id(used)])
     tail = output[-(REPLY_LIMIT - 300):]
-    say("%s\n%s%sbranch: %s\n```\n%s\n```" % (status, route_note, detail + "\n" if detail else "", name, tail))
+    if status == "needs-approval":
+        say("NEEDS-APPROVAL: %s\nworktree: %s\nbranch: %s\n%s" % (detail, workdir, name, tail))
+    else:
+        say("%s\n%s%sbranch: %s\n```\n%s\n```" % (status, route_note, detail + "\n" if detail else "", name, tail))
     return status
 
 
@@ -270,7 +284,7 @@ def read_state(path):
 
 
 def write_state(path, ts):
-    os.makedirs(os.path.dirname(path), exist_ok=True)
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
     with open(path, "w") as f:
         f.write(ts)
 
@@ -299,19 +313,203 @@ def github_tasks(issues, cfg):
 
 def poll_github_once(cfg):
     repo, label = cfg["github_repo"], cfg["github_label"]
+    if cfg["approvers"]:
+        approvals = json.loads(gh("issue", "list", "-R", repo, "--label", cfg["approval_label"], "--state", "open",
+                                  "--json", "number,body,author", "--limit", "100"))
+        for issue in sorted(approvals, key=lambda i: i["number"]):
+            resume_approved_issue(cfg, issue)
     issues = json.loads(gh("issue", "list", "-R", repo, "--label", label, "--state", "open",
                            "--json", "number,body,author", "--limit", "20"))
+    approval_issues = json.loads(gh("issue", "list", "-R", repo, "--label", cfg["approval_label"], "--state", "open",
+                                    "--json", "number,body", "--limit", "100"))
+    executed = load_scopes(cfg["scope_file"])
     for issue in sorted(github_tasks(issues, cfg), key=lambda i: i["number"]):
         num = str(issue["number"])
+        try:
+            header, body = parse_contract(issue.get("body", ""))
+            scopes = owned_scopes(body, header["repo"])
+        except (ValueError, KeyError):
+            scopes = []
+        if not scopes:
+            gh("issue", "edit", num, "-R", repo, "--remove-label", label)
+            gh("issue", "comment", num, "-R", repo, "--body", "failed (no owned files)")
+            gh("issue", "close", num, "-R", repo)
+            continue
+        duplicate = find_duplicate(scopes, int(num), approval_issues, executed, cfg)
+        if duplicate:
+            gh("issue", "edit", num, "-R", repo, "--remove-label", label)
+            gh("issue", "comment", num, "-R", repo, "--body", "blocked (duplicate scope #%s)" % duplicate)
+            gh("issue", "close", num, "-R", repo)
+            continue
+        source = source_comment(cfg, issue.get("body", ""))
+        if source is False:
+            gh("issue", "edit", num, "-R", repo, "--remove-label", label)
+            gh("issue", "comment", num, "-R", repo, "--body", "failed (source mismatch)")
+            gh("issue", "close", num, "-R", repo)
+            continue
+        task_body = issue.get("body", "")
+        if source is not None:
+            task_body += "\n\nSource comment:\n" + source
         # Remove the label first: a crash never re-runs a task.
         gh("issue", "edit", num, "-R", repo, "--remove-label", label)
         say = lambda t, num=num: gh("issue", "comment", num, "-R", repo, "--body", t[:REPLY_LIMIT])
-        status = run_task(cfg, issue.get("body", ""), "gh%s-%d" % (num, int(time.time())), say)
+        status = run_task(cfg, task_body, "gh%s-%d" % (num, int(time.time())), say)
         if status == "needs-approval":
             # Leave the issue open for the dispatcher to collect the approval.
             gh("issue", "edit", num, "-R", repo, "--add-label", cfg["approval_label"])
+            if cfg["approval_assignee"]:
+                gh("issue", "edit", num, "-R", repo, "--add-assignee", cfg["approval_assignee"])
         else:
             gh("issue", "close", num, "-R", repo)
+            record_scopes(cfg["scope_file"], int(num), scopes)
+
+
+def owned_scopes(body, repo):
+    match = re.search(r"(?im)^Owned files:\s*(.*(?:\n(?!(?:[A-Za-z][A-Za-z0-9 _-]*):).*)*)", body)
+    if not match:
+        return []
+    paths = re.split(r"[,\s]+", match.group(1).strip())
+    root = os.path.realpath(os.path.expanduser(repo))
+    result = []
+    for path in filter(None, paths):
+        if any(char in path for char in "*?["):
+            prefix = path[:min((path.find(c) for c in "*?[" if c in path), default=len(path))]
+            path = os.path.dirname(prefix.rstrip(os.sep)) or "."
+        full = os.path.realpath(path if os.path.isabs(path) else os.path.join(root, path))
+        try:
+            if os.path.commonpath((root, full)) != root:
+                continue
+        except ValueError:
+            continue
+        rel = os.path.relpath(full, root).replace(os.sep, "/")
+        if rel != ".." and not rel.startswith("../"):
+            result.append((root, rel))
+    return result
+
+
+def scopes_overlap(left, right):
+    for lroot, lp in left:
+        for rroot, rp in right:
+            if lroot == rroot and (lp == rp or lp.startswith(rp.rstrip("/") + "/") or rp.startswith(lp.rstrip("/") + "/")):
+                return True
+    return False
+
+
+def load_scopes(path):
+    try:
+        rows = json.load(open(path, encoding="utf-8"))
+        return [r for r in rows if time.time() - float(r["recorded"]) <= 86400]
+    except (OSError, ValueError, KeyError, TypeError):
+        return []
+
+
+def record_scopes(path, number, scopes):
+    rows = [r for r in load_scopes(path) if int(r["number"]) != number]
+    rows.append({"number": number, "paths": [root + "/" + p for root, p in scopes], "recorded": time.time()})
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    temp = path + ".tmp"
+    with open(temp, "w", encoding="utf-8") as f:
+        json.dump(rows, f)
+        f.flush()
+        os.fsync(f.fileno())
+    os.replace(temp, path)
+
+
+def find_duplicate(scopes, number, approvals, executed, cfg):
+    for item in approvals:
+        other = int(item["number"])
+        if other == number:
+            continue
+        try:
+            h, b = parse_contract(item.get("body", ""))
+            if scopes_overlap(scopes, owned_scopes(b, h["repo"])):
+                return other
+        except ValueError:
+            continue
+    for row in executed:
+        if int(row["number"]) == number:
+            continue
+        paths = []
+        for p in row.get("paths", []):
+            paths.append(os.path.realpath(p))
+        for root, rel in scopes:
+            absolute = os.path.join(root, rel)
+            for p in paths:
+                try:
+                    common = os.path.commonpath((absolute, p))
+                except ValueError:
+                    continue
+                if common in (absolute, p):
+                    return int(row["number"])
+    return None
+
+
+def source_comment(cfg, body):
+    match = re.search(r"(?im)^source:\s*(https://github\.com/[^\s]+/issues/comments/\d+)\s+sha256:([0-9a-f]{64})\s*$", body)
+    if not match:
+        return None
+    url, expected = match.groups()
+    if not re.fullmatch(r"https://github\.com/[^/]+/[^/]+/issues/comments/\d+", url):
+        return False
+    result = subprocess.run(["gh", "api", url], capture_output=True)
+    if result.returncode:
+        return False
+    try:
+        raw = json.loads(result.stdout)["body"].encode("utf-8")
+    except (ValueError, KeyError, TypeError):
+        return False
+    import hashlib
+    return raw.decode("utf-8") if hashlib.sha256(raw).hexdigest() == expected else False
+
+
+def resume_approved_issue(cfg, issue):
+    num, repo = str(issue["number"]), cfg["github_repo"]
+    comments = json.loads(gh("api", "--paginate", "--slurp", "repos/%s/issues/%s/comments" % (repo, num)))
+    comments = [c for page in comments for c in page]
+    login = gh("api", "user", "--jq", ".login").strip()
+    marker = None
+    for i, c in enumerate(comments):
+        if c.get("user", {}).get("login") == login and (c.get("body") or "").startswith("NEEDS-APPROVAL:"):
+            marker = i
+    if marker is None:
+        return
+    approval = next((c for c in comments[marker + 1:] if c.get("user", {}).get("login") in cfg["approvers"]
+                     and next((line.strip() for line in (c.get("body") or "").splitlines() if line.strip()), "").startswith("APPROVED:")), None)
+    if not approval:
+        return
+    record = comments[marker].get("body", "")
+    workdir = re.search(r"(?m)^worktree: (.+)$", record)
+    branch = re.search(r"(?m)^branch: (.+)$", record)
+    if not workdir or not branch:
+        _block_resume(cfg, num, "blocked (worktree missing)")
+        return
+    path = os.path.realpath(workdir.group(1))
+    if not path.startswith(os.path.realpath(cfg["worktrees"]) + os.sep):
+        _block_resume(cfg, num, "blocked (worktree missing)")
+        return
+    try:
+        header, body = parse_contract(issue.get("body", ""))
+        repo_path = os.path.realpath(os.path.expanduser(header["repo"]))
+        if repo_path not in cfg["repos"]:
+            raise ValueError()
+        listed = subprocess.run(["git", "-C", repo_path, "worktree", "list", "--porcelain"], capture_output=True, text=True, check=True).stdout
+        if "worktree %s\n" % path not in listed or "branch refs/heads/%s\n" % branch.group(1) not in listed:
+            raise ValueError()
+    except Exception:
+        _block_resume(cfg, num, "blocked (worktree missing)")
+        return
+    action = next(line.strip()[len("APPROVED:"):].strip() for line in approval["body"].splitlines() if line.strip().startswith("APPROVED:"))
+    gh("issue", "edit", num, "-R", cfg["github_repo"], "--remove-label", cfg["approval_label"])
+    text = re.sub(r"\A(.*?\n\n)", lambda m: m.group(1) + "Approved action: %s\n\n" % action,
+                  issue.get("body", ""), count=1, flags=re.S)
+    status = run_task(cfg, text, "resume-%s" % num, lambda t: gh("issue", "comment", num, "-R", cfg["github_repo"], "--body", t[:REPLY_LIMIT]), existing_workdir=path)
+    if status != "needs-approval":
+        gh("issue", "close", num, "-R", cfg["github_repo"])
+
+
+def _block_resume(cfg, num, message):
+    gh("issue", "comment", num, "-R", cfg["github_repo"], "--body", message)
+    gh("issue", "close", num, "-R", cfg["github_repo"])
 
 
 def main():

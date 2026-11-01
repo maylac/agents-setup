@@ -34,3 +34,7 @@ Time budget: 30m
 bridge の `done` は agent process が終了コード 0 で終わったことを示します。Dispatcher はそれだけで利用者向けの完了とせず、報告された PR の head、CI/check 結果、成果物の存在と内容を確認し、必要なら agent-task を再開する前に追加の証拠を求めます。
 
 設定されていない接続先は未接続として扱います。`doctor.py` は設定の存在を診断しますが、Issue の作成、daemon の起動、エージェントの推論は行いません。
+
+GitHub transport の追加設定は任意です。`BRIDGE_APPROVAL_ASSIGNEE` は `needs-approval` 時に通知対象として assignee を追加します。`BRIDGE_APPROVERS` は承認再開を許可する GitHub login のカンマ区切りリストです。空の場合は再開しません。bridge が GitHub API に使う login は `gh api user --jq .login` で判定します。本人のスマホ login を承認者にし、bridge 用の bot identity は `GH_TOKEN` で分ける運用を推奨します。設定値や token は診断出力に表示しません。
+
+`BRIDGE_SCOPE_FILE` は既定で `~/.local/state/slack-bridge/scopes.json` です。完了した契約の Owned files は 24 時間重複確認に使われます。承認待ちコメントには bridge が worktree path と branch を記録し、承認再開ではその既存 worktree を検証して再利用します。任意の `source:` 行は GitHub issue comment URL と UTF-8 SHA256 を指定し、bridge が取得した本文のハッシュ一致後にだけ agent へ渡します。

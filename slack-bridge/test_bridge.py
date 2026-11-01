@@ -5,6 +5,7 @@ import stat
 import subprocess
 import tempfile
 import unittest
+from unittest import mock
 
 import harness
 
@@ -87,6 +88,121 @@ class BridgeTest(unittest.TestCase):
 
     def test_repo_allowlist_uses_realpath(self):
         self.assertIn(os.path.realpath("/tmp"), self.cfg["repos"])
+
+    def test_owned_scope_parses_until_next_key_and_rejects_escape(self):
+        with tempfile.TemporaryDirectory() as root:
+            got = bridge.owned_scopes("Goal: x\nOwned files: src/a.py, docs/\ncontinued.md\nAcceptance: test\n", root)
+            self.assertEqual([p for _, p in got], ["src/a.py", "docs", "continued.md"])
+            self.assertEqual(bridge.owned_scopes("Owned files: ../outside\nAcceptance: x", root), [])
+
+    def test_scope_parent_overlap(self):
+        root = os.path.realpath("/tmp/repo")
+        self.assertTrue(bridge.scopes_overlap([(root, "docs")], [(root, "docs/a.md")]))
+        self.assertFalse(bridge.scopes_overlap([(root, "docs")], [(root, "src/a.py")]))
+
+    def test_source_comment_hashes_exact_utf8_body(self):
+        import hashlib
+        body = "行1\n\n行2\n"
+        digest = hashlib.sha256(body.encode()).hexdigest()
+        contract = "source: https://github.com/org/repo/issues/comments/9 sha256:%s" % digest
+        with mock.patch("bridge.subprocess.run", return_value=mock.Mock(returncode=0, stdout=json.dumps({"body": body}).encode())):
+            self.assertEqual(bridge.source_comment(self.cfg, contract), body)
+        bad = contract.replace(digest, "0" * 64)
+        with mock.patch("bridge.subprocess.run", return_value=mock.Mock(returncode=0, stdout=json.dumps({"body": body}).encode())):
+            self.assertIs(bridge.source_comment(self.cfg, bad), False)
+
+    def test_resume_requires_enabled_approvers_and_latest_bridge_marker(self):
+        cfg = bridge.load_config(dict(ENV, BRIDGE_TRANSPORT="github", BRIDGE_GITHUB_REPO="org/tasks",
+                                      BRIDGE_APPROVERS="human", BRIDGE_WORKTREE_DIR="/tmp/wt"))
+        issue = {"number": 7, "body": "agent: claude\nrepo: /tmp\n\nGoal: x\nOwned files: a.py"}
+        comments = [
+            {"user": {"login": "bridge"}, "body": "NEEDS-APPROVAL: old\nworktree: /tmp/wt/x\nbranch: x"},
+            {"user": {"login": "human"}, "body": "APPROVED: old"},
+            {"user": {"login": "bridge"}, "body": "NEEDS-APPROVAL: latest\nworktree: /tmp/wt/x\nbranch: x"},
+            {"user": {"login": "other"}, "body": "APPROVED: wrong author"},
+        ]
+        calls = []
+        def fake_gh(*args):
+            calls.append(args)
+            if args[:1] == ("api",) and "comments" in args[-1]:
+                return json.dumps([comments])
+            if args[:1] == ("api",) and "user" in args:
+                return "bridge\n"
+            return ""
+        with mock.patch("bridge.gh", side_effect=fake_gh), mock.patch("bridge.subprocess.run") as run, \
+                mock.patch("bridge.run_task") as task:
+            run.return_value = mock.Mock(returncode=0, stdout="worktree /tmp/wt/x\nbranch refs/heads/x\n")
+            bridge.resume_approved_issue(cfg, issue)
+            task.assert_not_called()
+        self.assertFalse(any("--remove-label" in call for call in calls))
+
+    def test_approved_top_level_comment_reuses_recorded_worktree_once(self):
+        with tempfile.TemporaryDirectory() as d:
+            repo = os.path.join(d, "repo")
+            os.makedirs(repo)
+            subprocess.run(["git", "-C", repo, "init", "-q"], check=True)
+            subprocess.run(["git", "-C", repo, "-c", "user.name=t", "-c", "user.email=t@t",
+                            "commit", "-q", "--allow-empty", "-m", "init"], check=True)
+            worktrees = os.path.join(d, "worktrees")
+            os.makedirs(worktrees)
+            wt = os.path.join(worktrees, "approval")
+            subprocess.run(["git", "-C", repo, "worktree", "add", "-qb", "approval", wt], check=True)
+            cfg = bridge.load_config(dict(ENV, BRIDGE_TRANSPORT="github", BRIDGE_GITHUB_REPO="org/tasks",
+                                          BRIDGE_ALLOWED_REPOS=repo, BRIDGE_APPROVERS="human",
+                                          BRIDGE_WORKTREE_DIR=worktrees))
+            issue = {"number": 8, "body": "agent: claude\nrepo: %s\n\nGoal: x\nOwned files: a.py" % repo}
+            comments = [{"user": {"login": "bridge"}, "body": "NEEDS-APPROVAL: reboot\nworktree: %s\nbranch: approval" % wt},
+                        {"user": {"login": "human"}, "body": "APPROVED: reboot once"}]
+            order = []
+            def fake_gh(*args):
+                order.append(args)
+                if args[:1] == ("api",) and "comments" in args[-1]:
+                    return json.dumps([comments])
+                if args[:1] == ("api",) and "user" in args:
+                    return "bridge\n"
+                return ""
+            with mock.patch("bridge.gh", side_effect=fake_gh), mock.patch("bridge.run_task", return_value="done") as task:
+                bridge.resume_approved_issue(cfg, issue)
+            task.assert_called_once()
+            self.assertEqual(task.call_args.kwargs["existing_workdir"], os.path.realpath(wt))
+            self.assertIn("Approved action: reboot once", task.call_args.args[1])
+            self.assertLess(next(i for i, c in enumerate(order) if "--remove-label" in c), len(order))
+
+    def test_missing_recorded_worktree_blocks_and_closes(self):
+        cfg = bridge.load_config(dict(ENV, BRIDGE_TRANSPORT="github", BRIDGE_GITHUB_REPO="org/tasks",
+                                      BRIDGE_ALLOWED_REPOS="/tmp", BRIDGE_APPROVERS="human"))
+        issue = {"number": 9, "body": "agent: claude\nrepo: /tmp\n\nGoal: x"}
+        comments = [{"user": {"login": "bridge"}, "body": "NEEDS-APPROVAL: x\nworktree: /missing/wt\nbranch: b"},
+                    {"user": {"login": "human"}, "body": "APPROVED: x"}]
+        calls = []
+        def fake_gh(*args):
+            calls.append(args)
+            if args[:1] == ("api",) and "comments" in args[-1]: return json.dumps([comments])
+            if args[:1] == ("api",) and "user" in args: return "bridge\n"
+            return ""
+        with mock.patch("bridge.gh", side_effect=fake_gh), mock.patch("bridge.run_task") as task:
+            bridge.resume_approved_issue(cfg, issue)
+        task.assert_not_called()
+        self.assertTrue(any("blocked (worktree missing)" in c for c in calls))
+        self.assertTrue(any(c[:2] == ("issue", "close") for c in calls))
+
+    def test_unset_assignee_does_not_call_add_assignee(self):
+        with tempfile.TemporaryDirectory() as d:
+            repo = os.path.join(d, "repo")
+            os.makedirs(repo)
+            cfg = bridge.load_config(dict(ENV, BRIDGE_TRANSPORT="github", BRIDGE_GITHUB_REPO="org/tasks",
+                                          BRIDGE_ALLOWED_REPOS=repo, BRIDGE_SCOPE_FILE=os.path.join(d, "scopes.json")))
+            issue = {"number": 12, "author": {"login": "maylac"},
+                     "body": "agent: claude\nrepo: %s\n\nGoal: x\nOwned files: src/a.py" % repo}
+            calls = []
+            def fake_gh(*args):
+                calls.append(args)
+                if args[:3] == ("issue", "list", "-R"):
+                    return json.dumps([issue] if "agent-task" in args else [])
+                return ""
+            with mock.patch("bridge.gh", side_effect=fake_gh), mock.patch("bridge.run_task", return_value="needs-approval"):
+                bridge.poll_github_once(cfg)
+            self.assertFalse(any("--add-assignee" in c for c in calls))
 
 
 class RoutingTest(unittest.TestCase):

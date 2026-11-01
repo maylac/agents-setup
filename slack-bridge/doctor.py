@@ -41,6 +41,7 @@ def main(argv=None):
     args = parser.parse_args(argv)
 
     checks = []
+    home = Path.home()
     env = read_env(args.env_file)
     checks.append(check("env_file", "present" if env is not None else "missing",
                         "read as data; shell expressions are not evaluated"))
@@ -114,6 +115,55 @@ def main(argv=None):
     else:
         checks.append(check("github_repo", "disabled", "use --check-github to query"))
 
+    gh = shutil.which("gh")
+    if gh:
+        try:
+            auth = subprocess.run([gh, "auth", "status"], capture_output=True, text=True, timeout=15)
+            checks.append(check("github_auth", "present" if auth.returncode == 0 else "missing",
+                                "gh auth status succeeded" if auth.returncode == 0 else "gh auth status failed; output omitted"))
+        except (OSError, subprocess.TimeoutExpired):
+            checks.append(check("github_auth", "unknown", "gh auth status unavailable; output omitted"))
+        try:
+            who = subprocess.run([gh, "api", "user", "--jq", ".login"], capture_output=True, text=True, timeout=15)
+            login = who.stdout.strip() if who.returncode == 0 else ""
+            checks.append(check("github_login", "present" if re.fullmatch(r"[A-Za-z0-9-]+", login) else "unknown",
+                                "login available" if re.fullmatch(r"[A-Za-z0-9-]+", login) else "login unavailable; output omitted"))
+        except (OSError, subprocess.TimeoutExpired):
+            checks.append(check("github_login", "unknown", "login unavailable; output omitted"))
+    else:
+        checks.extend((check("github_auth", "missing", "gh executable unavailable"),
+                       check("github_login", "unknown", "gh executable unavailable")))
+
+    if sys_platform_is_macos():
+        uid = os.getuid()
+        plist_dir = home / "Library/LaunchAgents"
+        plists = sorted(plist_dir.glob("*claude.remote-control-*.plist"))
+        for plist in plists:
+            label = plist.stem
+            try:
+                proc = subprocess.run(["launchctl", "print", "gui/%d/%s" % (uid, label)],
+                                      capture_output=True, text=True, timeout=5)
+                state_match = re.search(r"\bstate\s*=\s*(\w+)", str(proc.stdout or ""))
+                checks.append(check("remote_control:" + label, "present" if proc.returncode == 0 else "missing",
+                                    "state=%s" % (state_match.group(1) if state_match else "unknown")))
+            except (OSError, subprocess.TimeoutExpired):
+                checks.append(check("remote_control:" + label, "unknown", "launchctl status unavailable"))
+        log = home / ".claude/remote-control/stdout.log"
+        try:
+            checks.append(check("remote_control_stdout_log", "present", "bytes=%d" % log.stat().st_size))
+        except OSError:
+            checks.append(check("remote_control_stdout_log", "missing", "log unavailable"))
+    else:
+        checks.append(check("remote_control", "unknown", "status check is macOS-only"))
+
+    scope_file = Path(os.environ.get("BRIDGE_SCOPE_FILE", str(home / ".local/state/slack-bridge/scopes.json")))
+    try:
+        scopes = json.loads(scope_file.read_text(encoding="utf-8"))
+        old = sum(1 for item in scopes if __import__("time").time() - float(item["recorded"]) > 86400)
+        checks.append(check("scope_records", "warning" if old else "present", "expired_records=%d" % old))
+    except (OSError, ValueError, TypeError, KeyError):
+        checks.append(check("scope_records", "unknown", "scope state unavailable"))
+
     checks.append(check("end_to_end", "unknown",
                         "Grok Bot connector and a real handoff have not been verified by this check"))
     print(json.dumps({"checks": checks}, ensure_ascii=False, indent=2))
@@ -121,7 +171,8 @@ def main(argv=None):
     optional_cli.update("cli:" + name for name, gate in
                         (("grok", "BRIDGE_GROK_ENABLED"), ("cursor", "BRIDGE_CURSOR_ENABLED"))
                         if env.get(gate) != "1")
-    blocking = any(c["state"] == "missing" and c["name"] not in optional_cli for c in checks)
+    blocking = any(c["state"] == "missing" and c["name"] not in optional_cli | {"github_auth", "remote_control_stdout_log"}
+                   for c in checks)
     blocking |= any(c["state"] == "unknown" and c["name"] in ("cursor_identity", "github_repo", "launchd")
                     for c in checks)
     return 1 if blocking else 0

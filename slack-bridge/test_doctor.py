@@ -104,6 +104,21 @@ class DoctorTests(unittest.TestCase):
         self.assertEqual(self.by_name(result, "cli:cursor")[0]["state"], "missing")
         self.assertEqual(self.by_name(result, "cli:grok")[0]["state"], "missing")
 
+    def test_github_auth_and_login_report_only_safe_status(self):
+        with tempfile.TemporaryDirectory() as directory:
+            env_file = Path(directory) / "env"
+            env_file.write_text("BRIDGE_TRANSPORT=github\nBRIDGE_ALLOWED_SENDERS=org\n"
+                                "BRIDGE_ALLOWED_REPOS=%s\nBRIDGE_GITHUB_REPO=org/tasks\n" % directory,
+                                encoding="utf-8")
+            fake_gh = Path(directory) / "gh"
+            fake_gh.write_text("#!/bin/sh\ncase \"$1 $2\" in\n  'api user') echo bridge-bot;;\n  'auth status') echo TOKEN-SECRET >&2; exit 0;;\nesac\n", encoding="utf-8")
+            fake_gh.chmod(0o755)
+            with mock.patch.dict(os.environ, {"PATH": directory}), mock.patch("doctor.sys_platform_is_macos", return_value=False):
+                code, result = self.run_doctor("--env-file", str(env_file))
+        self.assertEqual(self.by_name(result, "github_auth")[0]["state"], "present")
+        self.assertEqual(self.by_name(result, "github_login")[0]["state"], "present")
+        self.assertNotIn("TOKEN-SECRET", json.dumps(result))
+
 
 if __name__ == "__main__":
     unittest.main()
