@@ -17,7 +17,7 @@
 
 要点は三つ。
 1. 起票できる controller は同時に一つ（通常は Grok、Grok が止まったときだけ Duet）。bridge 側で owned files の重複を拒否し、二重編集を機械的に防ぐ。
-2. 承認は人のタップだけ。通知は GitHub Mobile の push と Duet の二経路、返答は Issue コメント `APPROVED:` 一本に統一する。
+2. 承認は人のタップだけ。通知は GitHub Mobile の push と Duet の二経路、返答は本人が GitHub Mobile から書く Issue コメント `APPROVED:` 一本に統一する。Bot には書かせない。
 3. 追加 Grok Bot 3 体（検品係・運用ハブ・Bot設計係）の計画は取り下げる。Duet と Mac 側 publisher で同じ役割を、規約同意なしで満たす。
 
 ## 1. 現状と摩擦点（2026-11-01 観測）
@@ -39,7 +39,7 @@
 1. **台帳は GitHub 一つ。** 依頼・契約・結果・承認・検品の記録はすべて `maylac/agent-tasks` の Issue に残す。チャットは入口と出口であって記録ではない。
 2. **実行は Mac だけ。** Grok（xAI）、Duet（Anthropic）、Muse（Meta）の VM はどれも Mac の SSH 鍵・NAS 認証・API key を持たない。クラウド側は読む・起票する・通知するまで。
 3. **controller は同時に一つ。** 起票は Grok コード屋。Duet は Grok が止まったときだけ `via: duet` を付けて起票する。bridge は owned files が重なる契約を機械的に拒否する。
-4. **人の判断は人のタップだけ。** Bot のメッセージは承認にならない。承認の返答は Issue コメント `APPROVED: <正確な操作>` に統一し、どの入口（GitHub Mobile、Grok、Duet）からでも同じ場所に落ちる。
+4. **人の判断は人のタップだけ。** Bot のメッセージは承認にならない。承認の返答は Issue コメント `APPROVED: <正確な操作>` に統一し、本人の GitHub login で書かれたものだけを bridge が認める。Grok と Duet の connector は本人の account で動くので、GitHub からは人と Bot を区別できない。だから Bot には `APPROVED:` を書かせず、通知と下書きまでにする（7.2）。
 5. **予算を分ける。** Grok Bot は独自の利用枠、Duet は Claude プランの枠（Claude Code と共有）、Mac の launchd は 0 トークン。頻繁なポーリングは Grok か launchd に、低頻度で判断が要るものだけ Duet に置く。
 6. **通知は push 二経路。** GitHub Mobile（assignee 通知）と Duet（Gmail 経由）。どちらか一方が止まっても承認待ちを見落とさない。
 
@@ -53,7 +53,7 @@
 | 監視・朝ブリーフ | 08:00 routine（差分要約） | 朝ブリーフ（Gmail の GitHub 通知から） | — | — | 30 分ごとに issue 6 を更新 |
 | 検品 | 依頼の読み戻し | `VERIFIED:` コメント（別ベンダーで独立） | — | — | Codex / Cursor の読み取り専用レビュー |
 | 承認の通知 | 会話で転送 | push | — | — | assignee 追加（GitHub Mobile push） |
-| 承認の返答 | 人の返答を `APPROVED:` に転記 | 同左（送信前に Duet が確認を求める） | — | 直接コメント | `APPROVED:` を検知して再開 |
+| 承認の返答 | 通知と下書きまで（転記しない） | 通知と下書きまで（転記しない） | — | 本人が GitHub Mobile から `APPROVED:` をコメント | 本人 login の `APPROVED:` だけ検知して再開 |
 | 個人用件 | — | 予定・メール | 主 | — | — |
 | 秘密 | 持たない | 持たない | 持たない | Mac 上 | Mac 上 |
 
@@ -82,7 +82,7 @@ Grok は今のまま司令塔にする。変えるのは周辺で、Grok が「�
 |---|---|---|
 | 状況 | なし | issue 6 の「判断待ち」「異常」「実行中」をそのまま 5 行以内で返す |
 | 起票 | 依頼文 | `README.md` の契約形式で Issue 1 本。`Owned files` と `Acceptance` を必ず埋める |
-| 承認転送 | 本人の返答 | 対象 Issue に `APPROVED: <操作>` をコメント（本人の文面を要約せず転記） |
+| 承認案内 | 本人の返答 | 対象 Issue の URL と、そのまま貼れる `APPROVED: <操作>` の 1 行を返す。Grok 自身は Issue に書かない |
 
 ### 4.5 やらないこと
 - クラウドで実装・修正しない。Issue 本文の要約転記をしない。issue 6 の本文を書き換えない（publisher の仕事）。
@@ -109,8 +109,8 @@ Grok は今のまま司令塔にする。変えるのは周辺で、Grok が「�
 
 ### 5.5 承認の運び屋
 - bridge が `NEEDS-APPROVAL:` をコメントすると GitHub からメールが届く。Duet はこれを「要承認」として push 通知する。
-- 本人が Duet に「やっていい」と返す → Duet が対象 Issue に `APPROVED: <操作>` をコメントする（送信前に Duet が確認）。
-- bridge が `APPROVED:` を検知して再開する（7.2）。Grok を経由しない最短経路。
+- Duet は Issue の URL と、そのまま貼れる `APPROVED: <操作>` の 1 行を添える。本人は GitHub Mobile を開いてその行をコメントする。bridge が本人 login の `APPROVED:` を検知して再開する（7.2）。Grok を経由しない最短経路。
+- Duet に書かせない理由: Duet の送信は Duet 側の確認を通るが、GitHub に残るのは本人 account の投稿で、bridge からは Bot の投稿と区別できない。Bot 用の別 GitHub account を作れば Duet 経由の返答も許可できる（9 の判断項目）。
 
 ### 5.6 予備の司令塔
 - Grok Bot が rate limit や障害で止まったときだけ、Duet が同じ契約形式で起票する。ヘッダに `via: duet` を足す（`parse_contract` は未知のヘッダ行を受け付けるので bridge の変更は不要）。
@@ -147,9 +147,10 @@ Grok は今のまま司令塔にする。変えるのは周辺で、Grok が「�
 - GitHub Mobile が assignee 通知を push する。0 トークン、即時。本人は `assignee:@me label:needs-approval` で承認待ちを一覧できる。
 
 ### 7.2 `APPROVED:` コメントで再開する（F5）
-- 毎 poll で `--label needs-approval` の open issue も読む。bridge の `NEEDS-APPROVAL:` コメントより後の top-level コメントのうち、`BRIDGE_ALLOWED_SENDERS` の login が書いた `APPROVED:` で始まるものを承認とみなす。
+- 毎 poll で `--label needs-approval` の open issue も読む。bridge の `NEEDS-APPROVAL:` コメントより後の top-level コメントのうち、`BRIDGE_APPROVERS` の login が書いた `APPROVED:` で始まるものを承認とみなす。
 - 再開時は `needs-approval` label を外し、契約ヘッダに `approved: <APPROVED: の本文>` を足して `run_task` を呼ぶ。`harness.PREAMBLE` に「`approved:` にある操作だけ、一度だけ実行してよい」を追記する。
-- Bot の login は senders に入れない。Grok や Duet が転記したコメントは、本人の login で投稿されたときだけ有効になる（connector が本人 account で動くため、転記の文面を本人が承認した事実が前提）。
+- 承認者は `BRIDGE_APPROVERS`（本人の GitHub login だけ。未設定なら再開機能は無効）で判定する。senders とは別にする。
+- 弱点: Grok と Duet の connector は本人 account で投稿するので、Bot が `APPROVED:` を書けば bridge は本人と区別できない。対策は二段。今すぐ: 説明欄と skill で Bot に `APPROVED:` を禁止し、本人は GitHub Mobile から書く。恒久: Bot の connector を別 GitHub account（例 `maylac-bot`）に付け替え、`BRIDGE_ALLOWED_SENDERS` にはその account、`BRIDGE_APPROVERS` には本人だけを入れる。これで login が人と Bot の境界になる。
 
 ### 7.3 scope 重複を拒否する（原則 3）
 - 契約本文の `Owned files:` 行を読み、`repo + path` を `$HOME/.local/state/slack-bridge/inflight.json` に実行中の間だけ記録する。
@@ -192,10 +193,10 @@ git diff --check
 
 ### Phase 1（本人の判断が要る）
 1. `com.maylac.mission-hub-publish` を bootstrap する。
-2. bridge の env に `BRIDGE_APPROVAL_ASSIGNEE` と `reskilling-os` を足し、idle のときに 1 回だけ再起動する。
+2. bridge の env に `BRIDGE_APPROVAL_ASSIGNEE`、`BRIDGE_APPROVERS`、`reskilling-os` を足し、idle のときに 1 回だけ再起動する。
 3. `agents-setup` host の plist を `/dev/null` 化して再起動する（2 と同じ保守時間で）。
 4. `reskilling-os-rc` の trust を登録し、`vantik` host を再起動する。
-5. GitHub Mobile を入れ、assignee 通知を on にする（スマホ操作のみ）。
+5. GitHub Mobile を入れ、assignee 通知を on にする（スマホ操作のみ）。承認はここから `APPROVED:` をコメントする。
 
 確認:
 ```sh
@@ -225,6 +226,7 @@ smoke: `NEEDS-APPROVAL:` を出す契約を 1 本流す → GitHub Mobile に pu
 - Duet の waitlist 登録と、Gmail / Slack の OAuth 接続。
 - Muse の利用可否と Slack `#inbox` の接続。
 - Grok の追加 3 Bot を作らない決定（規約同意をしない）。
+- Bot の GitHub connector を別 account（例 `maylac-bot`）に分けるか。分ければ Grok / Duet 経由の承認返答を login で区別して許可できる。分けないなら承認は GitHub Mobile からだけ。
 - 課金・プラン・自動チャージは一切変えない。
 
 ## 10. 参考
