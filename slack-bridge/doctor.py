@@ -79,9 +79,10 @@ def main(argv=None):
                 help_text = result.stdout + "\n" + result.stderr
                 identity = (result.returncode == 0 and re.search(r"(?i)\bcursor\s+(?:cli|agent)\b", help_text)
                             and "-p" in help_text and "--output-format" in help_text
-                            and re.search(r"(?i)\btext\b", help_text))
+                            and re.search(r"(?i)\btext\b", help_text)
+                            and "--mode" in help_text and re.search(r"\bask\b", help_text))
                 checks.append(check("cursor_identity", "present" if identity else "unknown",
-                                    "help identifies Cursor print/text options" if identity else
+                                    "help identifies Cursor print/text and --mode ask options" if identity else
                                     "configured executable identity/options not confirmed"))
             except (OSError, subprocess.TimeoutExpired):
                 checks.append(check("cursor_identity", "unknown", "help check unavailable"))
