@@ -167,7 +167,7 @@ write_codex_template() {
 # Public-safe Codex config template.
 # Do not paste live bearer tokens, auth files, sqlite state, or local cache paths.
 
-approval_policy = "never"
+approval_policy = "on-request"
 sandbox_mode = "workspace-write"
 model = "gpt-6-astra"
 model_reasoning_effort = "high"
@@ -177,7 +177,9 @@ default_subagent_model = "gpt-6-luna"
 default_subagent_reasoning_effort = "high"
 
 [sandbox_workspace_write]
-network_access = true
+network_access = false
+exclude_tmpdir_env_var = true
+exclude_slash_tmp = true
 
 [tui]
 status_line = [
@@ -264,6 +266,7 @@ write_claude_settings_template() {
       preferredNotifChannel,
       skipDangerousModePermissionPrompt,
       skipWorkflowUsageWarning,
+      sandbox,
       permissions: (
         (.permissions // {})
         | .allow = ((.allow // []) - [
