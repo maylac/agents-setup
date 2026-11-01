@@ -72,6 +72,17 @@ check_json() {
 }
 
 check_phone_dispatcher_docs() {
+  local instructions="$ROOT/docs/grok-bot/dispatcher-instructions.md"
+  local skill="$ROOT/skills/phone-dispatcher/SKILL.md"
+  if [ ! -f "$instructions" ] && [ ! -f "$skill" ]; then
+    return 0  # Minimal legacy fixtures may contain only validate.sh.
+  fi
+  if [ ! -f "$instructions" ] || [ ! -f "$skill" ] || \
+     [ ! -f "$ROOT/tests/test_phone_dispatcher_skill_parity.py" ] || \
+     [ ! -f "$ROOT/tests/test_restore_permission_merge.py" ]; then
+    fail "phone dispatcher source or required checks are missing"
+    return
+  fi
   if ! python3 -m unittest discover -s "$ROOT/tests" -p 'test_*.py' >/dev/null; then
     fail "phone dispatcher docs or restore candidate checks failed"
   fi
