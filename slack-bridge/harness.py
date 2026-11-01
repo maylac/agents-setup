@@ -15,6 +15,7 @@ PREAMBLE = """\
 [dispatched run] Follow ~/AGENTS.md (Hard Stops, Core Principles) and this repo's AGENTS.md.
 - Stay inside the owned files; do not re-scope. Do not delegate to another harness.
 - Hard Stop (force push, irreversible deletion, payments/credentials, publishing, prod deploy, daemon restart): do not do it; print one line starting with NEEDS-APPROVAL: and the exact action, then stop.
+- Approved action only authorizes the exact action in the `Approved action:` preamble, once. Never bypass a denied operation; report the denied line and stop.
 - Commit on the current branch. Run the acceptance checks; stop when they pass; after two failed approaches stop and report blocked.
 - Final message: status, changed files, each check command pass/fail, commit/PR link, notes (max 5 lines). No transcripts or full diffs.
 
