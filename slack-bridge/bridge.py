@@ -557,7 +557,7 @@ def resume_approved_issue(cfg, issue):
             raise ValueError()
     except Exception:
         _block_resume(cfg, num, "blocked (worktree missing)")
-        return
+        return True
     source = source_comment(cfg, issue.get("body", ""))
     if source is False:
         _block_resume(cfg, num, "failed (source mismatch)")

@@ -260,41 +260,7 @@ class BridgeTest(unittest.TestCase):
                                "body": "agent: claude\nrepo: %s\n\nGoal: conflicting same-poll task\nOwned files: docs/" % repo}
             with open(state_path, "w", encoding="utf-8") as f:
                 json.dump({"issues": [issue, duplicate_issue], "comments": {"41": [], "42": []}, "source": exact_source}, f)
-            gh_script = r'''#!/usr/bin/env python3
-import json, os, sys, urllib.parse
-p=os.environ["FAKE_GH_STATE"]
-s=json.load(open(p)); a=sys.argv[1:]
-def save(): json.dump(s,open(p,"w"))
-if a[:2]==["api","user"]: print("bridge-bot"); raise SystemExit
-if a and a[0]=="api":
- path=a[-1]
- if "issues?state=open" in path:
-  label=urllib.parse.parse_qs(urllib.parse.urlparse(path).query).get("labels",[""])[0]
-  print(json.dumps([[i for i in s["issues"] if i["state"]=="open" and label in i["labels"]]])); raise SystemExit
- if path.endswith("/issues/41/comments"):
-  print(json.dumps([s["comments"]["41"]])); raise SystemExit
- if path.endswith("/issues/comments/7"):
-  print(json.dumps({"body":s["source"]})); raise SystemExit
-if a[:2]==["issue","edit"]:
- i=next(x for x in s["issues"] if str(x["number"])==a[2])
- if "--remove-label" in a:
-  v=a[a.index("--remove-label")+1]
-  if v in i["labels"]: i["labels"].remove(v)
- if "--add-label" in a:
-  v=a[a.index("--add-label")+1]
-  if v not in i["labels"]: i["labels"].append(v)
- if "--add-assignee" in a: i.setdefault("assignees",[]).append(a[a.index("--add-assignee")+1])
- save(); raise SystemExit
-if a[:2]==["issue","comment"]:
- n=a[2]; body=a[a.index("--body")+1]
- s["comments"][n].append({"user":{"login":"bridge-bot"},"body":body}); save(); raise SystemExit
-if a[:2]==["issue","close"]:
- i=next(x for x in s["issues"] if str(x["number"])==a[2]); i["state"]="closed"; save(); raise SystemExit
-raise SystemExit("unexpected fake gh arguments")
-'''
-            ghbin = os.path.join(bindir, "gh")
-            Path(ghbin).write_text(gh_script, encoding="utf-8")
-            os.chmod(ghbin, 0o755)
+            self.write_fake_gh(bindir)
             agent = os.path.join(bindir, "claude")
             Path(agent).write_text(r'''#!/usr/bin/env python3
 import json, os, sys
@@ -375,6 +341,74 @@ else: print("completed")
             self.assertTrue(any("duplicate scope #41" in c["body"] for c in data["comments"]["44"]))
             self.assertEqual(read_json(scope_file)[0]["number"], 41)
 
+    def test_fake_gh_negative_poll_cases(self):
+        with tempfile.TemporaryDirectory() as d:
+            repo = self.setup_git_repo(d)
+            bindir = os.path.join(d, "bin")
+            os.makedirs(bindir)
+            self.write_fake_gh(bindir)
+            agent = os.path.join(bindir, "claude")
+            Path(agent).write_text('''#!/usr/bin/env python3
+import os
+p=os.environ["FAKE_AGENT_COUNT"]
+try:
+ with open(p) as f: n=int(f.read())
+except OSError: n=0
+with open(p,"w") as f: f.write(str(n+1))
+print(os.environ.get("FAKE_AGENT_OUTPUT","unexpected agent run"))
+''', encoding="utf-8")
+            os.chmod(agent, 0o755)
+            before = dict(os.environ)
+            os.environ.update({"PATH": bindir + os.pathsep + os.environ["PATH"],
+                               "FAKE_GH_STATE": os.path.join(d, "gh-state.json")})
+            self.addCleanup(lambda: (os.environ.clear(), os.environ.update(before)))
+            body_base = "agent: claude\nrepo: %s\n\nGoal: verify negative case\n" % repo
+            cases = [
+                ("missing-owned", "agent-task", body_base + "Owned files:\nAcceptance: check\n", None),
+                ("source-mismatch", "agent-task",
+                 "agent: claude\nrepo: %s\nsource: https://github.com/acme/project/issues/3#issuecomment-7 sha256:%s\n\n"
+                 "Goal: mismatch\nOwned files: docs/a.md\n" % (repo, "0" * 64), None),
+                ("missing-worktree", "needs-approval", body_base + "Owned files: docs/a.md\n",
+                 [{"user": {"login": "bridge-bot"}, "body": "NEEDS-APPROVAL: x\nworktree: %s\nbranch: gone" %
+                   os.path.join(d, "worktrees", "missing")},
+                  {"user": {"login": "human"}, "body": "APPROVED: do x"}]),
+                ("assignee-unset", "agent-task", body_base + "Owned files: docs/a.md\n", None),
+            ]
+            for offset, (name, label, body, comments) in enumerate(cases):
+                number = 51 + offset
+                state_path = os.environ["FAKE_GH_STATE"]
+                issue = {"number": number, "state": "open", "labels": [label],
+                         "user": {"login": "dispatcher"}, "body": body}
+                with open(state_path, "w", encoding="utf-8") as f:
+                    json.dump({"issues": [issue], "comments": {str(number): comments or []},
+                               "source": "exact source"}, f)
+                count_path = os.path.join(d, name + ".count")
+                os.environ["FAKE_AGENT_COUNT"] = count_path
+                os.environ["FAKE_AGENT_OUTPUT"] = "NEEDS-APPROVAL: do x" if name == "assignee-unset" else "unexpected agent run"
+                cfg_env = dict(ENV, BRIDGE_TRANSPORT="github", BRIDGE_GITHUB_REPO="acme/tasks",
+                               BRIDGE_ALLOWED_SENDERS="dispatcher", BRIDGE_ALLOWED_REPOS=repo,
+                               BRIDGE_APPROVERS="human", BRIDGE_WORKTREE_DIR=os.path.join(d, "worktrees"),
+                               BRIDGE_SCOPE_FILE=os.path.join(d, name + ".scopes.json"),
+                               BRIDGE_COOLDOWN_FILE=os.path.join(d, name + ".cooldowns.json"))
+                cfg = bridge.load_config(cfg_env)
+                bridge.poll_github_once(cfg)
+                with open(state_path, encoding="utf-8") as f:
+                    result = json.load(f)
+                issue_result = result["issues"][0]
+                calls = result["calls"]
+                if name == "assignee-unset":
+                    self.assertEqual(issue_result["state"], "open")
+                    self.assertIn("needs-approval", issue_result["labels"])
+                    self.assertFalse(any("--add-assignee" in call for call in calls))
+                    self.assertEqual(Path(count_path).read_text(encoding="utf-8"), "1")
+                else:
+                    self.assertEqual(issue_result["state"], "closed")
+                    self.assertFalse(os.path.exists(count_path), name)
+                    expected = {"missing-owned": "failed (no owned files)",
+                                "source-mismatch": "failed (source mismatch)",
+                                "missing-worktree": "blocked (worktree missing)"}[name]
+                    self.assertTrue(any(expected in c["body"] for c in result["comments"][str(number)]), name)
+
     def setup_git_repo(self, root):
         repo = os.path.join(root, "repo")
         os.makedirs(repo)
@@ -382,6 +416,46 @@ else: print("completed")
         subprocess.run(["git", "-C", repo, "-c", "user.name=t", "-c", "user.email=t@t",
                         "commit", "-q", "--allow-empty", "-m", "init"], check=True)
         return repo
+
+    def write_fake_gh(self, bindir):
+        ghbin = os.path.join(bindir, "gh")
+        Path(ghbin).write_text(r'''#!/usr/bin/env python3
+import json, os, sys, urllib.parse
+p=os.environ["FAKE_GH_STATE"]
+with open(p) as f: s=json.load(f)
+a=sys.argv[1:]
+def save():
+ with open(p,"w") as f: json.dump(s,f)
+s.setdefault("calls",[]).append(a)
+if a[:2]==["api","user"]: print("bridge-bot"); save(); raise SystemExit
+if a and a[0]=="api":
+ path=a[-1]
+ if "issues?state=open" in path:
+  label=urllib.parse.parse_qs(urllib.parse.urlparse(path).query).get("labels",[""])[0]
+  print(json.dumps([[i for i in s["issues"] if i["state"]=="open" and label in i["labels"]]])); save(); raise SystemExit
+ if path.endswith("/comments"):
+  n=path.split("/")[-2]
+  print(json.dumps([s["comments"].get(n,[])])); save(); raise SystemExit
+ if path.endswith("/issues/comments/7"):
+  print(json.dumps({"body":s.get("source","")})); save(); raise SystemExit
+if a[:2]==["issue","edit"]:
+ i=next(x for x in s["issues"] if str(x["number"])==a[2])
+ if "--remove-label" in a:
+  v=a[a.index("--remove-label")+1]
+  if v in i["labels"]: i["labels"].remove(v)
+ if "--add-label" in a:
+  v=a[a.index("--add-label")+1]
+  if v not in i["labels"]: i["labels"].append(v)
+ if "--add-assignee" in a: i.setdefault("assignees",[]).append(a[a.index("--add-assignee")+1])
+ save(); raise SystemExit
+if a[:2]==["issue","comment"]:
+ n=a[2]; body=a[a.index("--body")+1]
+ s["comments"].setdefault(n,[]).append({"user":{"login":"bridge-bot"},"body":body}); save(); raise SystemExit
+if a[:2]==["issue","close"]:
+ i=next(x for x in s["issues"] if str(x["number"])==a[2]); i["state"]="closed"; save(); raise SystemExit
+raise SystemExit("unexpected fake gh arguments")
+''', encoding="utf-8")
+        os.chmod(ghbin, 0o755)
 
 
 class RoutingTest(unittest.TestCase):
