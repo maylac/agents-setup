@@ -4,6 +4,7 @@ import json
 import os
 from pathlib import Path
 import tempfile
+import time
 import unittest
 from unittest import mock
 
@@ -118,6 +119,50 @@ class DoctorTests(unittest.TestCase):
         self.assertEqual(self.by_name(result, "github_auth")[0]["state"], "present")
         self.assertEqual(self.by_name(result, "github_login")[0]["state"], "present")
         self.assertNotIn("TOKEN-SECRET", json.dumps(result))
+
+    def test_fake_github_and_launchctl_keep_secrets_out_and_report_services(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            bindir = root / "bin"
+            bindir.mkdir()
+            env_file = root / "env"
+            scope_file = root / "scopes.json"
+            scope_file.write_text(json.dumps([{"number": 1, "paths": ["x"], "recorded": time.time() - 90000}]),
+                                  encoding="utf-8")
+            env_file.write_text("BRIDGE_TRANSPORT=github\nBRIDGE_ALLOWED_SENDERS=org\n"
+                                "BRIDGE_ALLOWED_REPOS=%s\nBRIDGE_GITHUB_REPO=org/tasks\nGH_TOKEN=fixture-token\n"
+                                "BRIDGE_SCOPE_FILE=%s\n" % (directory, scope_file),
+                                encoding="utf-8")
+            (bindir / "gh").write_text(
+                "#!/usr/bin/env python3\nimport os,sys\n"
+                "assert os.environ.get('GH_TOKEN') == 'fixture-token'\n"
+                "print('SECRET-STDERR',file=sys.stderr)\n"
+                "print('bridge-identity') if sys.argv[1:3] == ['api','user'] else None\n", encoding="utf-8")
+            (bindir / "launchctl").write_text(
+                "#!/usr/bin/env python3\nimport sys\nprint('state = running')\nprint('SECRET-LAUNCHCTL',file=sys.stderr)\n", encoding="utf-8")
+            for name in ("claude", "codex"):
+                (bindir / name).write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+            for path in bindir.iterdir(): path.chmod(0o755)
+            launch_agents = root / "Library/LaunchAgents"
+            launch_agents.mkdir(parents=True)
+            (launch_agents / "local.claude.remote-control.plist").touch()
+            (launch_agents / "local.claude.remote-control-vantik.plist").touch()
+            log = root / ".claude/remote-control/stdout.log"
+            log.parent.mkdir(parents=True)
+            log.write_bytes(b"12345")
+            with mock.patch.dict(os.environ, {"PATH": str(bindir) + os.pathsep + os.environ["PATH"],
+                                             "BRIDGE_SCOPE_FILE": str(scope_file)}), \
+                    mock.patch("doctor.Path.home", return_value=root), \
+                    mock.patch("doctor.sys_platform_is_macos", return_value=True):
+                _, result = self.run_doctor("--env-file", str(env_file))
+        self.assertEqual(self.by_name(result, "github_login")[0]["detail"], "bridge-identity")
+        self.assertTrue(any(c["name"] == "remote_control:local.claude.remote-control" and
+                            c["detail"] == "state=running" for c in result["checks"]))
+        self.assertTrue(any(c["detail"] == "bytes=5" for c in self.by_name(result, "remote_control_stdout_log")))
+        self.assertEqual(self.by_name(result, "scope_records")[0]["state"], "warning")
+        self.assertNotIn("fixture-token", json.dumps(result))
+        self.assertNotIn("SECRET-STDERR", json.dumps(result))
+        self.assertNotIn("SECRET-LAUNCHCTL", json.dumps(result))
 
 
 if __name__ == "__main__":
