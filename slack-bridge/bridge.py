@@ -197,6 +197,12 @@ def run_task(cfg, text, task_id, say):
         if not all(flag in help_text for flag in ("-p", "--output-format")) or not re.search(r"(?i)\btext\b", help_text):
             say("rejected: Cursor CLI does not advertise required print/text options")
             return "rejected"
+        # The argv stays `-p BODY --output-format text` because the configured adapter
+        # rejects any other shape and itself prepends `--mode ask`; require that the CLI
+        # behind it actually offers the read-only Ask mode.
+        if "--mode" not in help_text or not re.search(r"\bask\b", help_text):
+            say("rejected: Cursor CLI does not advertise read-only --mode ask")
+            return "rejected"
     if header["agent"] == "cursor":
         routes = [("cursor", header.get("model", ""))]
     else:
