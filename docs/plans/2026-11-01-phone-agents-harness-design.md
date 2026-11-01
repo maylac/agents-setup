@@ -127,7 +127,7 @@ Grok は今のまま司令塔にする。変えるのは周辺で、Grok が「�
 ## 6. Muse（個人用件専任）
 
 ### 6.1 制御系に入れない理由
-- Muse の公開 connector に GitHub は無い（Notion・Slack・Asana・Dropbox・Zoom・Shopify・Stripe など）。US（18 歳以上）と Canada 向けで、WhatsApp・iOS・Android・web から使う。
+- Muse の公開 connector に GitHub は無い（Notion・Slack・Asana・Dropbox・Zoom・Shopify・Stripe など）。日本でも利用できる（2026-11-01 に本人が確認）。WhatsApp・iOS・Android・web から使う。
 - 第三の controller を増やすと二重編集の経路が増える。原則 3 に反する。
 - Meta の VM に開発情報を置く理由が無い。
 
@@ -136,7 +136,7 @@ Grok は今のまま司令塔にする。変えるのは周辺で、Grok が「�
 - 開発のアイデアを思いついたら Muse に「メモ」と言い、Muse は Slack `#inbox` に 1 行投げる（Notion でも可）。`#agent-tasks` には書かせない。
 - Grok の 08:00 routine が `#inbox` を読み、契約にできるものだけ本人に「起票しますか」と聞く。
 
-### 6.3 使えない場合
+### 6.3 Muse が止まっても
 - 何も失わない。`#inbox` は本人が直接書けばよい。
 
 ## 7. Mac mini 側の変更（決定的・低コスト）
@@ -226,10 +226,11 @@ smoke: `NEEDS-APPROVAL:` を出す契約を 1 本流す → GitHub Mobile に pu
 4. 朝ブリーフに 07:30 のコメントが載ることを 2 日続けて確認する。
 5. 検品 1 本（`VERIFIED:` を Duet が下書き、本人が送信承認）。
 
-### Phase 3（Muse、任意）
-1. Muse を使える条件を本人が判断する。
-2. Slack `#inbox` を作り、Muse を接続する。
-3. Grok の 08:00 routine に「`#inbox` を読む」を足す。
+### Phase 3（Muse）
+1. Slack `#inbox` を作り、Muse の Slack connector を接続する。
+2. Muse に「メモ」と言ったら `#inbox` に 1 行投げる手順を Muse 側で固定する。`#agent-tasks` には書かせない。
+3. Grok の 08:00 routine に「`#inbox` を読む」を足す。Grok への Slack connector 追加は 9 の判断項目。
+4. 1 週間後に `#inbox` の件数と、契約になった件数を数える。
 
 ## 9. 本人の判断が必要な項目
 
@@ -239,7 +240,7 @@ smoke: `NEEDS-APPROVAL:` を出す契約を 1 本流す → GitHub Mobile に pu
 - Grok の日次 routine を読み取り専用に変える Bot 設定の変更。`#inbox` を読むための Grok への Slack connector 追加（Phase 3 まで不要）。
 - 新 LaunchAgent `com.maylac.mission-hub-publish` の登録。
 - Duet の waitlist 登録と、Gmail / Slack の OAuth 接続。
-- Muse の利用可否と Slack `#inbox` の接続。
+- Muse を Slack `#inbox` に接続すること（Meta 側の connector 追加）。
 - Grok の追加 3 Bot を作らない決定（規約同意をしない）。
 - Grok の GitHub connector を別 account（例 `maylac-grok`）に分けるか。分ければ Grok 経由の承認返答を login で区別して許可できる。分けないなら承認は GitHub Mobile からだけ。
 - 課金・プラン・自動チャージは一切変えない。
@@ -247,7 +248,7 @@ smoke: `NEEDS-APPROVAL:` を出す契約を 1 本流す → GitHub Mobile に pu
 ## 10. 参考
 
 - Claude Duet: [Get started with Claude Duet](https://support.claude.com/en/articles/17631495-get-started-with-claude-duet)、[Introducing Claude Duet](https://claude.com/resources/articles/claude-duet)（2026-11-01 閲覧。接続先の一覧に GitHub と Claude Code は無い。利用枠はプランと共有）
-- Muse: [Meta introduces Muse](https://www.therundown.ai/news/meta-muse-personal-ai-agent)、[Meta Muse Connectors list](https://postfa.st/blog/meta-muse-connectors-list)（二次情報。公式の connector 一覧は未公開）
+- Muse: [Meta introduces Muse](https://www.therundown.ai/news/meta-muse-personal-ai-agent)、[Meta Muse Connectors list](https://postfa.st/blog/meta-muse-connectors-list)（二次情報。公式の connector 一覧は未公開。記事の「US と Canada 向け」は古く、日本でも利用できる）
 - Grok Bot: `docs/grok-bot/README.md`、`bot-roles.md`、`dispatcher-instructions.md`、`activation-plan.md`
 - 監査: `docs/harness-audit-2026-10-13.md`（A7・A9・A10・E が未対応のまま）
 - bridge: `slack-bridge/bridge.py`（`classify_output`、`poll_github_once`、`github_tasks`、`parse_contract`）、`harness.py`（`PREAMBLE`、routing）、`mission_hub.py`
