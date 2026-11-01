@@ -16,7 +16,7 @@ import publish_hub
 HERE = Path(__file__).resolve().parent
 FIXTURE = HERE / "fixtures" / "publish-hub.json"
 TEMPLATE = HERE.parent / "launchd" / "com.maylac.mission-hub-publish.plist.template"
-SENTINEL = "ghp_SENTINEL_do_not_leak_0123456789"
+SENTINEL = "fixture-secret-do-not-leak-0123456789"
 
 FAKE_GH = """#!%s
 import json, os, sys
