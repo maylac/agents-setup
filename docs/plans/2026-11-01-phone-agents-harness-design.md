@@ -184,7 +184,7 @@ Grok は今のまま司令塔にする。変えるのは周辺で、Grok が「�
 - 規則: 「どの入口でも、実装は worktree の host で」。`workspace` host で始めた作業がコードに及ぶときは、契約を起票するか `vantik` / `agents-setup` host で開き直す。
 
 ### 7.6 doctor に健康診断を足す
-- `gh auth status` の成否、`launchctl print` の各 Remote Control host の state、`stdout.log` の size、`inflight.json` の古さ（1 時間超は警告）。
+- `gh auth status` の成否、`launchctl print` の各 Remote Control host の state、`stdout.log` の size、`scopes.json` の古さ（24 時間超の記録が残っていれば警告）。
 - publisher がこの結果を issue 6 の末尾に「Mac の状態」として載せる。本人は「状況」Skill だけで Mac の健康を知れる。
 
 ## 8. 段階計画と受け入れ確認
