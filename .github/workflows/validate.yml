@@ -16,6 +16,8 @@ jobs:
         run: bash scripts/validate.sh
       - name: Test untrusted-directory guard
         run: python3 tests/untrusted-directory-guard.test.py
+      - name: Test autonomous-team evidence gate
+        run: python3 -m unittest discover -s skills/autonomous-team/tests -v
       - name: Run harness tests
         run: |
           for test in tests/*.test.sh; do

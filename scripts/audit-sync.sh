@@ -328,7 +328,9 @@ skill_frontmatter_check
 # also keeps a pinned TOML superset for language/runtime specialists that
 # Claude no longer loads globally (see manifests/ai-config-sync.json
 # intentional_differences).
-AGENTS_CODEX_EXCEPTIONS='^[[:space:]]*(architect|chief-of-staff|cpp-build-resolver|cpp-reviewer|database-reviewer|doc-updater|docs-lookup|e2e-runner|fable-advisor|fable-verifier|flutter-reviewer|implementation-worker|go-build-resolver|go-reviewer|harness-optimizer|java-build-resolver|java-reviewer|kotlin-build-resolver|kotlin-reviewer|loop-operator|planner|python-reviewer|pytorch-build-resolver|refactor-cleaner|rust-build-resolver|rust-reviewer|tdd-guide|typescript-reviewer)$'
+# team-worker uses Claude's native worktree isolation; Codex uses its native
+# worker through the shared autonomous-team skill instead of a paired TOML.
+AGENTS_CODEX_EXCEPTIONS='^[[:space:]]*(architect|chief-of-staff|cpp-build-resolver|cpp-reviewer|database-reviewer|doc-updater|docs-lookup|e2e-runner|fable-advisor|fable-verifier|flutter-reviewer|implementation-worker|go-build-resolver|go-reviewer|harness-optimizer|java-build-resolver|java-reviewer|kotlin-build-resolver|kotlin-reviewer|loop-operator|planner|python-reviewer|pytorch-build-resolver|refactor-cleaner|rust-build-resolver|rust-reviewer|tdd-guide|team-worker|typescript-reviewer)$'
 
 agents_repo_live_parity_check() {
   local repo_dir="$ROOT/claude/agents"
