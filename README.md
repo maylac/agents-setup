@@ -10,7 +10,7 @@ repo keeps reusable assets and restore instructions:
 - public-safe global skills from `~/.agents/skills`
 - home-level `AGENTS.md` / `CLAUDE.md` instruction snapshots
 - Claude/Codex instruction files, RTK guidance, rules, agents, hooks, and output styles that pass redaction checks
-- plugin inventory and restore notes
+- plugin inventory and restore notes, including [pstack setup](docs/pstack.md)
 - public templates for settings that should not be copied verbatim
 - an AI config sync manifest and audit for Claude/Codex paired behavior
 - validation scripts that block common secret and local-path leaks

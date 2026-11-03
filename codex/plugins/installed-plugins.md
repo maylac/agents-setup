@@ -33,4 +33,5 @@ pages@openai-curated-remote                                       installed, ena
 sites@openai-curated-remote                                       installed, enabled  1.0.1                                               plugin_connector_1p_689987207de08191979cf68eca2941c6
 plugin-management@openai-curated-remote                           installed, enabled  0.1.0                                               plugin_connector_1p_b3438d6beb9081918fba3625bc988128
 work-pets@openai-curated-remote                                   installed, enabled  0.1.6                                               plugin_connector_1p_bccf6c8660c08191ae4470d9ae4877fa
+pstack@pstack-claude                                             installed, enabled  0.9.126                                             $HOME/.codex/plugins/cache/pstack-claude/pstack/0.9.126
 ```
