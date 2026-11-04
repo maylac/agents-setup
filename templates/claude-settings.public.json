@@ -43,8 +43,16 @@
     "ask": [
       "Bash(brew install *)",
       "Bash(brew uninstall *)",
+      "Bash(gh api --method DELETE *)",
+      "Bash(gh api -X DELETE *)",
+      "Bash(gh auth *)",
       "Bash(gh pr create *)",
+      "Bash(gh pr merge *)",
       "Bash(gh release *)",
+      "Bash(gh release create *)",
+      "Bash(gh repo archive *)",
+      "Bash(gh repo delete *)",
+      "Bash(gh secret *)",
       "Bash(git -C * push *)",
       "Bash(git push *)",
       "Bash(npm publish *)",
@@ -319,6 +327,9 @@
     "autoAllowBashIfSandboxed": true,
     "allowUnsandboxedCommands": false,
     "failIfUnavailable": true,
+    "excludedCommands": [
+      "gh *"
+    ],
     "filesystem": {
       "denyRead": [
         "~/.codex/auth.json",
