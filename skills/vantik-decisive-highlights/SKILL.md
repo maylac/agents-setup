@@ -11,14 +11,13 @@ Each choice gets source-exact phrases (Japanese and English) stored in `question
 
 Scope is every active question version of every exam, `past_exam` and `original`. The first run (SAP-C02 past exams, 2026-11-07/08, 537 questions / 2,304 choices) is the reference implementation: `scripts/sap_decisive_highlights.py`, `scripts/choice_key_points.py`, `scripts/generate_choice_key_points.py`, `scripts/choice_highlight_render.mjs` in reskilling-os, and `docs/learnings/2026-11-03-choice-highlight-clause-boundaries.md`. Read that note before starting.
 
-## Prerequisite: lift the SAP-only gates (code change, once)
+## Tooling (any exam)
 
-As of revision `88f660a` two places are SAP-only. Fix them in a reskilling-os PR before generating data for another exam:
-
-- `backend/reskilling_os/services/key_points.py` assigns `role` only when `code == "aws-sap-c02"`, `source_classification == "past_exam"` and `source == "sap-decisive-highlights-v1"`. Replace it with a source-name check for this pipeline (for example a `decisive-highlights-v1` family) that works for any exam and classification. Keep the SAP rows rendering identically, and add tests for another exam plus an `original` question.
-- `scripts/sap_decisive_highlights.py` hard-codes `aws-sap-c02` and `past_exam`. Add `--exam` and `--classification` arguments, and keep the SAP defaults byte-compatible so the existing manifests still verify.
-
-Release that through the normal CI → Publish → Watchtower → `/health` revision check (`vantik-prod-verify`) before any data wave.
+- Source `decisive-highlights-v1` (reskilling-os commit `1d4ba72`): the backend gives its choice points a `correct_reason` / `elimination_reason` role for every exam and classification. The older `sap-decisive-highlights-v1` source stays limited to SAP past exams.
+- `scripts/choice_key_points.py --exam <code> --export` writes the scope (all active versions, past exams and originals). `--manifest m.json` validates exact spans against the served text; `--source decisive-highlights-v1 --apply` replaces the legacy `choice-key-points-tool` rows of each applied choice. A choice with `"hold"` keeps its legacy highlight.
+- Before relying on roles in production, confirm `/health` serves a revision that contains `1d4ba72`.
+- DVA-C02 reference run (2026-11-08): `~/workspace/maylac/dva-highlights-20261108/` holds `BRIEF.md` (generation rules), `REVIEW.md` (independent review), `build_manifest.py` (merge, exact-span and renderer checks, holds) and `apply_production.sh` (backup, dry run, apply, zero-change rerun, integrity). Copy them for the next exam and change the exam code.
+- In the Claude sandbox the venv Python hangs at site startup; run it as `python -S` with `PYTHONPATH=backend:.:<venv site-packages>`.
 
 ## What counts as a decisive phrase
 
