@@ -73,6 +73,9 @@ enabled = true
 [plugins."chrome@openai-bundled"]
 enabled = true
 
+[plugins."pstack@pstack-claude"]
+enabled = true
+
 [mcp_servers.github]
 url = "https://api.githubcopilot.com/mcp/"
 

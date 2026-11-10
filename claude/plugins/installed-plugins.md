@@ -20,6 +20,11 @@ Installed plugins:
     Scope: user
     Status: ✔ enabled
 
+  ❯ pstack@pstack-claude
+    Version: 0.9.126
+    Scope: user
+    Status: ✔ enabled
+
 Skills-directory plugins (.claude/skills/*):
 
   ❯ yomiyasu@skills-dir
