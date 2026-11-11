@@ -4,7 +4,8 @@
 # usage: snapshot.sh [--out PATH] [--keep] [--integrity SCRIPT]
 #   --out PATH        local destination (default /tmp/vantik-snapshot-<UTC ts>.db)
 #   --keep            use the app's `vantik backup` so a dated copy also stays in /app/backups
-#   --integrity PATH  additionally run reskilling-os scripts/vantik_integrity_check.py on the copy
+#   --integrity PATH  additionally run reskilling-os server/scripts/vantik_integrity_check.ts on the copy
+#                     (run from the reskilling-os checkout as `node --import tsx PATH`)
 # env: VANTIK_SSH (default ugnas; may be user@host), VANTIK_SSH_OPTS (extra ssh options, e.g. -o HostKeyAlias=...),
 #      VANTIK_CONTAINER (default vantik), VANTIK_DB_PATH (default /app/data/vantik.db)
 set -euo pipefail
@@ -19,7 +20,7 @@ while [ $# -gt 0 ]; do
     --out) OUT="$2"; shift 2 ;;
     --keep) KEEP=1; shift ;;
     --integrity) INTEGRITY="$2"; shift 2 ;;
-    -h|--help) sed -n '2,10p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,11p' "$0"; exit 0 ;;
     *) echo "unknown argument: $1" >&2; exit 2 ;;
   esac
 done
@@ -31,21 +32,22 @@ if ! ssh -o BatchMode=yes -o ConnectTimeout=15 $SSH_OPTS "$SSH_HOST" true 2>/dev
 fi
 
 if [ "$KEEP" = 1 ]; then
-  REMOTE="$(ssh $SSH_OPTS "$SSH_HOST" "docker exec $CONTAINER sh -c 'cd /app && .venv/bin/vantik backup'" | tail -n 1)"
+  REMOTE="$(ssh $SSH_OPTS "$SSH_HOST" "docker exec $CONTAINER vantik backup" | tail -n 1)"
   case "$REMOTE" in /app/backups/*.db) ;; *) echo "unexpected backup output: $REMOTE" >&2; exit 4 ;; esac
   ssh $SSH_OPTS "$SSH_HOST" "docker exec $CONTAINER cat '$REMOTE'" > "$OUT"
   echo "retained backup in container: $REMOTE" >&2
 else
   REMOTE="/tmp/vantik-snapshot-$$.db"
-  ssh $SSH_OPTS "$SSH_HOST" "docker exec -i $CONTAINER /app/.venv/bin/python - '$DB_PATH' '$REMOTE'" <<'PY' >/dev/null
-import sqlite3, sys
-src_path, dst_path = sys.argv[1], sys.argv[2]
-src = sqlite3.connect(f"file:{src_path}?mode=ro", uri=True)
-dst = sqlite3.connect(dst_path)
-src.backup(dst)
-dst.close(); src.close()
-print(dst_path)
-PY
+  # cwd /app so require() resolves better-sqlite3 from /app/node_modules.
+  ssh $SSH_OPTS "$SSH_HOST" "docker exec -i -w /app $CONTAINER node - '$DB_PATH' '$REMOTE'" <<'JS' >/dev/null
+const Database = require("better-sqlite3");
+const [srcPath, dstPath] = process.argv.slice(2);
+const src = new Database(srcPath, { readonly: true, fileMustExist: true });
+src.backup(dstPath).then(
+  () => { src.close(); console.log(dstPath); },
+  (err) => { console.error(err); process.exit(1); },
+);
+JS
   ssh $SSH_OPTS "$SSH_HOST" "docker exec $CONTAINER sh -c 'cat $REMOTE && rm -f $REMOTE'" > "$OUT"
 fi
 
@@ -75,5 +77,8 @@ PY
 rm -f "$OUT-shm" "$OUT-wal"
 
 if [ -n "$INTEGRITY" ]; then
-  python3 "$INTEGRITY" "$OUT"
+  # tsx needs the reskilling-os checkout (two levels above server/scripts/) as cwd.
+  abs() { (cd "$(dirname "$1")" && printf '%s/%s' "$PWD" "$(basename "$1")"); }
+  INTEGRITY_ABS="$(abs "$INTEGRITY")"; OUT_ABS="$(abs "$OUT")"
+  (cd "$(dirname "$INTEGRITY_ABS")/../.." && node --import tsx "$INTEGRITY_ABS" "$OUT_ABS")
 fi
