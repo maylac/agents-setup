@@ -54,6 +54,22 @@ class DoctorTests(unittest.TestCase):
                 _, result = self.run_doctor("--env-file", str(env_file))
         self.assertEqual(self.by_name(result, "cursor_identity")[0]["state"], "unknown")
 
+    def test_cursor_identity_requires_ask_mode(self):
+        for help_text, expected in (("Start the Cursor Agent -p --output-format text", "unknown"),
+                                    ("Start the Cursor Agent -p --output-format text --mode ask", "present")):
+            with tempfile.TemporaryDirectory() as directory:
+                binary = Path(directory) / "cursor-agent"
+                binary.write_text("#!/bin/sh\necho '%s'\n" % help_text, encoding="utf-8")
+                binary.chmod(0o755)
+                env_file = Path(directory) / "env"
+                env_file.write_text("BRIDGE_TRANSPORT=github\nBRIDGE_ALLOWED_SENDERS=org\n"
+                                    "BRIDGE_ALLOWED_REPOS=%s\nBRIDGE_GITHUB_REPO=org/tasks\n"
+                                    "BRIDGE_CURSOR_BIN=%s\nBRIDGE_CURSOR_ENABLED=1\n" % (directory, binary),
+                                    encoding="utf-8")
+                with mock.patch.dict(os.environ, {"PATH": directory + os.pathsep + "/bin:/usr/bin"}):
+                    _, result = self.run_doctor("--env-file", str(env_file))
+            self.assertEqual(self.by_name(result, "cursor_identity")[0]["state"], expected, help_text)
+
     def test_github_check_can_report_present_or_unknown_without_response_data(self):
         with tempfile.TemporaryDirectory() as directory:
             env_file = Path(directory) / "env"

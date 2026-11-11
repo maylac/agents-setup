@@ -153,7 +153,8 @@ class CursorRunTest(unittest.TestCase):
         code = """#!/usr/bin/env python3
 import json, os, sys
 if '--help' in sys.argv:
-    print('Cursor CLI\\n  -p, --print\\n  --output-format <text|json>')
+    print('Usage: agent\\nStart the Cursor Agent\\n  -p, --print\\n  --output-format <text|json>\\n'
+          '  --mode <mode>  ask: Q&A style (read-only). (choices: "plan", "ask")')
     raise SystemExit(0)
 if os.environ.get('BRIDGE_TEST_CAPTURE'):
     with open(os.environ['BRIDGE_TEST_CAPTURE'], 'w') as f:
@@ -248,6 +249,40 @@ raise SystemExit(%d)
             self.assertEqual(status, "rejected")
             self.assertIn("does not advertise required", said[0])
             self.assertFalse(os.path.exists(cfg["worktrees"]))
+
+    def test_cursor_help_without_ask_mode_is_rejected(self):
+        with tempfile.TemporaryDirectory() as d:
+            repo = self.setup_repo(d)
+            binary = os.path.join(d, "cursor-agent")
+            with open(binary, "w") as f:
+                f.write("#!/bin/sh\necho 'Cursor Agent -p --print --output-format text'\n")
+            os.chmod(binary, os.stat(binary).st_mode | stat.S_IEXEC)
+            cfg = self.config(d, repo, binary)
+            said = []
+            status = bridge.run_task(cfg, "agent: cursor\nrepo: %s\n\nReview." % repo, "no-ask", said.append)
+            self.assertEqual(status, "rejected")
+            self.assertIn("--mode ask", said[0])
+            self.assertFalse(os.path.exists(cfg["worktrees"]))
+
+    def test_cursor_run_argv_has_no_write_or_bypass_flags(self):
+        with tempfile.TemporaryDirectory() as d:
+            repo = self.setup_repo(d)
+            binary = os.path.join(d, "cursor-agent")
+            self.fake_cursor(binary)
+            capture = os.path.join(d, "argv.json")
+            os.environ["BRIDGE_TEST_CAPTURE"] = capture
+            self.addCleanup(os.environ.pop, "BRIDGE_TEST_CAPTURE", None)
+            said = []
+            status = bridge.run_task(self.config(d, repo, binary), "agent: cursor\nrepo: %s\n\nReview." % repo,
+                                     "argv", said.append)
+            self.assertEqual(status, "done")
+            with open(capture) as f:
+                argv = json.load(f)
+            self.assertEqual(argv[0], "-p")
+            self.assertTrue(argv[1].startswith(harness.CURSOR_PREAMBLE))
+            self.assertEqual(argv[2:], ["--output-format", "text"])
+            self.assertFalse(set(argv) & {"--force", "-f", "--yolo", "--sandbox", "--approve-mcps",
+                                          "--auto-review", "--api-key", "--endpoint", "--worktree"})
 
     def test_cursor_help_failure_is_blocked(self):
         with tempfile.TemporaryDirectory() as d:

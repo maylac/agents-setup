@@ -27,7 +27,7 @@ Acceptance:
 Time budget: 30m
 ```
 
-パス内の `<user>` は Mac mini の実際のユーザー名に置き換えます。`cursor` は本統合に必要な読み取り専用レビュー route です。実 CLI と認証を確認するまでは無効のままにし、確認後に有効化します。Cursor に実装や修正を委任しません。設定例は [Grok Bot 導入ガイド](../docs/grok-bot/README.md) を参照してください。
+パス内の `<user>` は Mac mini の実際のユーザー名に置き換えます。`cursor` は本統合に必要な読み取り専用レビュー route です。実 CLI と認証を確認するまでは無効のままにし、確認後に有効化します。Cursor に実装や修正を委任しません。bridge は Cursor CLI の help が読み取り専用の `--mode ask` を示さない場合も拒否します。対話セッションからの利用と Issue 契約は [Cursor チーム連携](../docs/cursor-team.md) を参照してください。設定例は [Grok Bot 導入ガイド](../docs/grok-bot/README.md) を参照してください。
 
 ## 動作と結果確認
 
