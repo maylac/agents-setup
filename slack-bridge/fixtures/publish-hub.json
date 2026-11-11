@@ -1,0 +1,20 @@
+{
+  "summary": {
+    "waiting_approval": [],
+    "attention": [
+      {"number": 11, "title": "closed failure", "state": "CLOSED", "url": "https://github.com/maylac/agent-tasks/issues/11", "status": "failed", "last_report_at": "2026-10-31T09:33:28+00:00"},
+      {"number": 54, "title": "open blocked task", "state": "OPEN", "url": "https://github.com/maylac/agent-tasks/issues/54", "status": "blocked", "last_report_at": "2026-11-01T22:10:00+00:00"}
+    ],
+    "in_flight": [
+      {"number": 43, "title": "trap sol aws-dop-c02", "state": "OPEN", "url": "https://github.com/maylac/agent-tasks/issues/43", "status": "started", "started_at": "2026-11-01T22:00:00+00:00", "stale": false},
+      {"number": 12, "title": "closed in-flight leftover", "state": "CLOSED", "url": "https://github.com/maylac/agent-tasks/issues/12", "status": "started", "started_at": "2026-10-30T00:00:00+00:00", "stale": true}
+    ],
+    "completed": [],
+    "active_jobs": [],
+    "ignored_count": 1
+  },
+  "approvals": [
+    {"number": 60, "title": "deploy approval", "url": "https://github.com/maylac/agent-tasks/issues/60", "createdAt": "2026-11-01T21:00:00Z"},
+    {"number": 3, "title": "old approval", "url": "https://github.com/maylac/agent-tasks/issues/3", "createdAt": "2026-10-20T15:30:00Z"}
+  ]
+}
