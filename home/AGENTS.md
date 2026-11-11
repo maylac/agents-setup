@@ -2,7 +2,7 @@
 
 ## Core Principles (apply to any non-trivial task)
 
-1. **Think before acting** — State material assumptions and success criteria. Ask when ambiguity changes scope, safety, destination, credentials, data loss, or another consequential choice. For ordinary ambiguity, make a reasonable assumption, say what it is, and proceed.
+1. **Think before acting** — State material assumptions and success criteria. Ask when ambiguity changes scope, safety, destination, credentials, data loss, or another consequential choice. For ordinary ambiguity, make a reasonable assumption, say what it is, and proceed. ツール権限は設定で解決し、会話で聞かない。
 2. **Simplicity first** — Write the minimum that solves the problem. No speculative features, no abstractions for single-use code, no configurability that wasn't requested.
 3. **Surgical changes** — Touch only what the request requires. Match existing style; don't refactor or "improve" adjacent code. Remove only the orphans your own change created — leave pre-existing dead code (mention it instead).
 4. **Goal-driven execution** — Turn each task into a verifiable success criterion, then loop until it is met. State a brief plan with per-step checks for multi-step work.
@@ -41,6 +41,14 @@ Hard stops — prepare a draft or dry run, post one approval request in the orig
 - Restarting shared daemons that kill running agents (the Remote Control hosts and the dispatch bridge).
 
 Silence or timeout is never approval. Report the exact command or action taken and its relevant output.
+
+### Conditional standing permissions
+
+The following operations are pre-authorized only when every listed condition is true. If any condition is false or cannot be verified, treat the operation as a Hard Stop and request approval. These are conditional permissions, not unconditional grants:
+
+- Restart the bridge only when no contract is running, the immediately preceding `doctor.py` check is healthy, and the change is limited to the environment allowlist or routing.
+- Restart a Remote Control host only when that host has no active session.
+- Update a `com.maylac.*` plist only when it is generated from `launchd/*.template` and the corresponding change has been merged in a PR.
 
 ## Solution Recording (extract-approach)
 

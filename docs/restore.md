@@ -157,3 +157,81 @@ the live file.
 Plugin cache directories are not backed up. Use the inventories under
 `claude/plugins` and `codex/plugins` to reinstall or enable plugins from their
 marketplaces.
+
+## Permission boundary templates
+
+These are reviewable templates. Apply them only after the human approves the exact change. The installer does not install either permissions template.
+
+### Claude Code
+
+`templates/claude-settings.permissions.json` contains the proposed `permissions` and `sandbox` values. The executing agent backs up the live file and generates a candidate that merges only these sections, but leaves the live file untouched. The agent reports the changed-key summary without printing config values. The human reviews that intent from GitHub Mobile; only after the exact `APPROVED:` reply does the agent replace the live file. Existing hooks, unrelated top-level keys, unrelated permission keys, and extra sandbox keys are preserved. Permission and sandbox arrays are additive and deduplicated, except the obsolete blanket `Bash(launchctl:*)` entry is removed from `permissions.allow`; template values are otherwise added. The template's `defaultMode` and sandbox scalar keys are updated.
+
+```sh
+cp -p "$HOME/.claude/settings.json" "$HOME/.claude/settings.json.backup.$(date +%Y%m%d%H%M%S)"
+python3 - "$HOME/.claude/settings.json" "$PWD/templates/claude-settings.permissions.json" "$HOME/.claude/settings.json.candidate" <<'PYTHON'
+import json, sys
+from pathlib import Path
+live, template, candidate = map(Path, sys.argv[1:])
+current = json.loads(live.read_text())
+proposed = json.loads(template.read_text())
+permissions = current.setdefault('permissions', {})
+for key, value in proposed['permissions'].items():
+    if isinstance(value, list):
+        existing = permissions.get(key, [])
+        if key == 'allow':
+            existing = [item for item in existing if item != 'Bash(launchctl:*)']
+        permissions[key] = list(dict.fromkeys([*existing, *value]))
+    else:
+        permissions[key] = value
+sandbox = current.setdefault('sandbox', {})
+def merge(existing, updates):
+    for key, value in updates.items():
+        if isinstance(value, dict):
+            existing[key] = merge(existing.get(key, {}), value)
+        elif isinstance(value, list):
+            existing[key] = list(dict.fromkeys([*existing.get(key, []), *value]))
+        else:
+            existing[key] = value
+    return existing
+current['sandbox'] = merge(sandbox, proposed['sandbox'])
+candidate.write_text(json.dumps(current, indent=2, ensure_ascii=False) + '\n')
+print('Candidate created. Updated keys: permissions.allow, permissions.ask, permissions.deny, permissions.defaultMode, sandbox.*')
+print('Removed obsolete Bash(launchctl:*) from permissions.allow.')
+PYTHON
+```
+
+The printed summary names changed keys only; it does not print hooks, credentials, or unrelated settings. The candidate stays local and no full-config diff is printed or sent. After the agent reports the backup, candidate result, and fixed changed-key summary, the human approves the exact replacement from GitHub Mobile; the agent then runs `cp -p "$HOME/.claude/settings.json.candidate" "$HOME/.claude/settings.json"`.
+
+### Codex
+
+`templates/codex-config.workspace-write.toml` is a partial template. Its `$HOME` strings are literal placeholders; TOML does not expand `$HOME` or `~`. The executing agent backs up the live config and creates a candidate copy, but leaves the live config untouched. The agent edits only top-level `approval_policy` and `sandbox_mode`, plus `[sandbox_workspace_write]` keys `network_access` and `writable_roots`. Render each `$HOME` placeholder in the `writable_roots` values to the absolute home path. Replace the entire existing value of each listed key, including a multiline `writable_roots` array; do not leave old array continuation lines behind. Preserve every other key, table, MCP entry, and local setting.
+
+```sh
+cp -p "$HOME/.codex/config.toml" "$HOME/.codex/config.toml.backup.$(date +%Y%m%d%H%M%S)"
+cp -p "$HOME/.codex/config.toml" "$HOME/.codex/config.toml.candidate"
+python3 -c 'import os,sys; print(sys.stdin.read().replace("$HOME", os.path.expanduser("~")), end="")' < "$PWD/templates/codex-config.workspace-write.toml" > "$HOME/.codex/config.workspace-write.rendered.toml"
+cat "$HOME/.codex/config.workspace-write.rendered.toml"
+# Agent: edit only the four listed keys in config.toml.candidate; leave config.toml untouched.
+command -v python3.12 >/dev/null || { echo "python3.12 with tomllib required; candidate not validated" >&2; exit 1; }
+python3.12 - "$HOME/.codex/config.toml.candidate" <<'PYTHON'
+import sys, tomllib
+from pathlib import Path
+config = tomllib.loads(Path(sys.argv[1]).read_text())
+print({
+    'approval_policy': config['approval_policy'],
+    'sandbox_mode': config['sandbox_mode'],
+    'sandbox_workspace_write.network_access': config['sandbox_workspace_write']['network_access'],
+    'sandbox_workspace_write.writable_roots': config['sandbox_workspace_write']['writable_roots'],
+})
+PYTHON
+```
+
+The final command parses the full candidate TOML and prints only the four changed values, so it validates syntax without exposing MCP or other config values. If `python3.12` is unavailable, stop before replacement; do not install a parser for this step. After the agent reports the backup, successful parse, and four changed-key summary, the human approves the exact replacement from GitHub Mobile; the agent then runs `cp -p "$HOME/.codex/config.toml.candidate" "$HOME/.codex/config.toml"`.
+
+After any approved instruction-file installation, the intended command is:
+
+```sh
+scripts/install.sh --apply-instructions --instructions-only
+```
+
+This applies instruction files only, not either permissions template. Review first with `scripts/install.sh --instructions-only`.
