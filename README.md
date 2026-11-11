@@ -69,3 +69,6 @@ scripts/install.sh --apply
 Hooks, plugins, and main settings are documented in `docs/restore.md` because
 they can include machine-specific trust hashes, application paths, or auth
 state.
+
+For isolated workers, evidence checks, and review loops, use
+[`/autonomous-team`](docs/autonomous-team.md).
