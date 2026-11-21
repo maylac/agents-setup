@@ -2,7 +2,7 @@
 //
 // Runs inside the vantik container (stdin-piped), dry-run unless --apply:
 //
-//   ssh ugnas 'docker exec -i -w /app vantik node --input-type=module - --exam aws-clf-c02 --unreliable --dedupe' < prune.mjs
+//   ssh "${NAS_SSH_HOST:?set NAS_SSH_HOST}" 'docker exec -i -w /app vantik node --input-type=module - --exam aws-clf-c02 --unreliable --dedupe' < prune.mjs
 //
 // Questions are never deleted: they get active=0 plus a dated note naming the
 // reason, so the admin UI can restore them. Previously missed questions are kept.
@@ -226,13 +226,19 @@ const main = () => {
     // Quotas follow the official weights; missed questions always stay, the rest go newest first
     // (a higher source number was added to the source later, so it is closer to the current exam).
     const weights = new Map();
+    if (args.weights === "") fail("--target needs --weights");
     for (const pair of args.weights.split(",")) {
-      if (!pair) continue;
       const cut = pair.lastIndexOf(":");
       if (cut < 0) fail(`not enough values to unpack (expected 2, got 1): ${pyStr(pair)}`);
-      const value = Number(pair.slice(cut + 1));
-      if (pair.slice(cut + 1).trim() === "" || Number.isNaN(value)) fail(`could not convert string to float: ${pyStr(pair.slice(cut + 1))}`);
-      weights.set(pair.slice(0, cut).trim(), value);
+      const key = pair.slice(0, cut).trim();
+      const rawValue = pair.slice(cut + 1);
+      const value = Number(rawValue);
+      if (key === "") fail("--weights domains must not be empty");
+      if (rawValue.trim() === "" || Number.isNaN(value)) {
+        fail(`could not convert string to float: ${pyStr(rawValue)}`);
+      }
+      if (!Number.isFinite(value) || value < 0) fail("--weights values must be finite and non-negative");
+      weights.set(key, value);
     }
     if (weights.size === 0) fail("--target needs --weights");
     const bucket = (domain) => [...weights.keys()].find((k) => domain.includes(k)) ?? "";
@@ -246,7 +252,14 @@ const main = () => {
       fail(`--weights does not cover these domains: ${pyList(unmatched)}`);
     }
     const total = [...weights.values()].reduce((a, b) => a + b, 0);
-    const quota = new Map([...weights].map(([k, w]) => [k, pyRound((args.target * w) / total)]));
+    if (!Number.isFinite(total) || total <= 0) fail("--weights total must be finite and greater than zero");
+    const quota = new Map(
+      [...weights].map(([k, w]) => {
+        const value = (args.target * w) / total;
+        if (!Number.isFinite(value)) fail(`--target quota for ${pyStr(k)} is not finite`);
+        return [k, pyRound(value)];
+      }),
+    );
     const pool = new Map();
     for (const it of items) {
       if (drop.has(it.id)) continue;
