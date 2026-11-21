@@ -12,19 +12,20 @@ plan本文をNotebookLMでインフォグラフィック化し、ユーザーの
 1. **plan保存**: 直近のplan本文（ExitPlanModeで提示したもの）を
    `~/tasks/plan-reviews/YYYY-MM-DD-<slug>.md` に保存する（slugは英小文字ケバブケース）。
    ディレクトリが無ければ作る。
-2. **生成実行**: `~/bin/plan-infographic ~/tasks/plan-reviews/<file>.md` を実行する。
-   数分かかる（生成ポーリング30秒間隔、上限10分）。バックグラウンド実行
+2. **生成実行**: `~/.agents/skills/plan-infographic/scripts/plan-infographic ~/tasks/plan-reviews/<file>.md`
+   を実行する（ランチャーが `nlm` の Python を自動解決する）。
+   1〜3分かかる（生成ポーリング30秒間隔、上限10分）。バックグラウンド実行
    （Bash run_in_background）にして完了通知を待ってよい。
+   Claude Code のサンドボックス内では Bash の `allowed_domains` に
+   `notebooklm.google.com`, `accounts.google.com`, `lh3.googleusercontent.com`, `lh3.google.com`
+   を渡す（`lh3.google.com` は PNG ダウンロードのリダイレクト先。欠けると exit=4 / 403）。
    成功時はstdoutにJSON（png_path / notebook_url / notebook_id / source_id / artifact_id）。
    stdout は exit=0 のときだけ JSON として解釈する（失敗時はパッケージがエラー文を stdout に出すことがある）。
-3. **配信（3系統）**:
-   - `SendUserFile` で png_path をセッションに送付（display: render）
-   - `~/.agents/hooks/notify-mobile-photo.sh <png_path> "<planタイトル> の実装プラン — <notebook_url>"`
-     でモバイルに送信（Telegramトークン設定時はTelegram、未設定時はhermes経由のSlack DMに
-     自動フォールバック。どちらに届いたかを報告で言い分けない場合は「モバイルに送信」と表現する）
-   - 本文にも notebook_url を記載
-   - notify-mobile-photo.sh が非0終了しても中断しない（SendUserFileとURLで届いているため、
-     配信失敗をひとこと添えて続行）
+3. **配信**:
+   - `SendUserFile` で png_path をセッションに送付（display: render）。送付できない
+     セッション（project thread 外など）では、その旨と png_path を本文で伝える
+   - 本文にも notebook_url を記載（スマホからは NotebookLM で開ける）
+   - 配信失敗で中断しない
 4. **承認ゲート**: AskUserQuestion で「承認 / 修正 / 却下」を確認する。
    - 承認 → 実装開始
    - 修正 → plan改訂後、手順1から再実行（ファイルは同名で上書きしてよい。
