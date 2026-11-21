@@ -122,3 +122,25 @@ the flashcards' `domains[].tasks[]`; for Claude exams (one task per domain) a pe
   0.64 em per lowercase letter. Frame QA flags any remaining title wrap.
 - Codex consult runs can exit 1 on unrelated MCP auth noise; rerun the same brief.
 - Claude-certification exams have no official icon set; do not dress them in AWS service icons.
+
+- **VOICEVOX misreads (user-reported 2026-11-15).** Standalone 値 → ね, 行 (table row) → くだり, JSON → ジェーエスオーエヌ,
+  Parquet, Lustre, L1/L2, RAG, SHAP, SMOTE, A2I, Word2Vec, MLflow, IPv4 were all wrong. `synthesize.py` now has the fixes
+  (PRONUNCIATIONS + context regex KANJI_READINGS). Before audio for a new exam, run
+  `python3 scripts/reading_audit.py content/*.json` (needs VOICEVOX) and add every misread token to PRONUNCIATIONS.
+  Audio-only fixes don't change the content hash: delete `videos/<id>.hash` for affected clips or they are not re-rendered.
+- Glossary series (`series_label` 用語, kickers 場面/正体/違い/確認) was added 2026-11-15 (MLA-C01, 112 clips). Workers padded
+  narration with spliced filler and drew placeholder nodes (用語/基本の考え) in a whole part; the linter now rejects shared
+  14-char narration runs, nodes reused in 5+ episodes, and non-question 確認 titles.
+- Ids must match `[a-z]{3}-r\d{2}`: past 99 episodes workers renamed ids to fit and collided with published ids (dva-r01).
+  Use a fresh 3-letter prefix per 99 clips and check new row ids against the live catalog before publishing.
+- NAS `/tmp` is a 3.8 GB tmpfs: stage uploads under `/volume1/docker/vantik-video-library` (mktemp -p), not mktemp's default.
+- Standing permission (2026-11-15): publish batches to the NAS library and Vantik without asking; keep the backup + rollback.
+- **One bad row takes down every exam's list (2026-11-18).** Workers wrote two URLs as `source_url: "a | b"`; Vantik's
+  catalog loader rejected the whole manifest ("Rule short catalog is invalid") until reverted. The linter now rejects
+  spaces/`|` in source_url. Before swapping, run `scripts/check_manifest.py <manifest>` (mirror of reskilling-os
+  reviewVideoCatalog.ts), and after `sync-to-nas.sh` call `/api/rule-shorts?exam_code=<exam>` inside the vantik container;
+  on `{"detail": ...}` revert the vantik-content commit and sync immediately.
+- Workers spelled hard kanji in hiragana for TTS (冪等性 → べきとうせい) and it showed on screen. Keep the official
+  spelling and fix the reading in PRONUNCIATIONS only if `reading_audit.py` shows a misread.
+- SQL keywords in caps (COPY, UNLOAD, CTAS, SELECT, ANALYZE, VACUUM, KEY …) are spelled out letter by letter; they are
+  now in PRONUNCIATIONS. 行レベル/行条件/行指向/現在行 needed extra 行 rules.

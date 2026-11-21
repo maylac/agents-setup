@@ -73,9 +73,32 @@ def speaker():
     raise RuntimeError("VOICEVOX speaker ずんだもん / ノーマル not found")
 
 
+# ML / data terms VOICEVOX misreads (checked against its audio_query kana, 2026-11-15).
+PRONUNCIATIONS = [("SHAP値", "シャップち"), ("JSON", "ジェイソン"), ("Parquet", "パーケイ"),
+                  ("Lustre", "ラスター"), ("L1", "エルワン"), ("L2", "エルツー"), ("RAG", "ラグ"),
+                  ("SHAP", "シャップ"), ("SMOTE", "スモート"), ("A2I", "エーツーアイ"),
+                  ("REST", "レスト"), ("A/B", "エービー"),
+                  ("Word2Vec", "ワードツーベック"), ("Object2Vec", "オブジェクトツーベック"), ("Seq2Seq", "シークツーシーク"),
+                  ("MLflow", "エムエルフロー"), ("IPv4", "アイピーブイフォー"), ("JupyterLab", "ジュピターラボ"),
+                  ("Studio Lab", "スタジオラボ"), ("Insights", "インサイツ"), ("Agents", "エージェンツ"), ("Labels", "ラベルズ"),
+                  ("CREATE TABLE AS SELECT", "クリエイト テーブル アズ セレクト"), ("CTAS", "シータス"), ("COPY", "コピー"),
+                  ("UNLOAD", "アンロード"), ("SELECT", "セレクト"), ("INSERT", "インサート"), ("CREATE", "クリエイト"),
+                  ("TABLE", "テーブル"), ("SaaS", "サース"), ("WORM", "ワーム"),
+                  ("ANALYZE", "アナライズ"), ("VACUUM", "バキューム"), ("GRANT", "グラント"), ("SPICE", "スパイス"),
+                  ("PartiQL", "パーティクル"), ("bzip2", "ビージップツー"), ("KEY", "キー")] + PRONUNCIATIONS
+# Standalone 値 is read ね and 行 (table row) くだり; compounds (数値, 実行, 行列, 行う) are read correctly.
+KANJI_READINGS = [(re.compile(r"しきい値"), "しきいち"), (re.compile(r"絶対値"), "ぜったいち"),
+                  (re.compile(r"各値"), "かくあたい"), (re.compile(r"各行"), "かくぎょう"),
+                  (re.compile(r"(?<![一-龥ァ-ヶーA-Za-z0-9])値"), "あたい"),
+                  (re.compile(r"現在行"), "げんざいぎょう"),
+                  (re.compile(r"(?<![一-龥])行(?=[をやにがはごとのでもま単数ず]|レベル|条件|指向)"), "ぎょう")]
+
+
 def speech_text(text: str) -> str:
     for src, dst in PRONUNCIATIONS:
         text = text.replace(src, dst)
+    for pattern, reading in KANJI_READINGS:
+        text = pattern.sub(reading, text)
     return text
 
 
