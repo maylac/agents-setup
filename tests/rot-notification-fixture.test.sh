@@ -115,8 +115,9 @@ for weeks_ago in (1, 2, 3):
 """
     (reports / f"rot-{day.isoformat()}.md").write_text(text, encoding="utf-8")
 PY
-ZSH=$(command -v zsh) || fail 'zsh is required to run the weekly wrapper fixture'
-HOME="$TMP/weekly-home" "$ZSH" "$FIXTURE/selfimprove/scripts/rot_check_weekly.sh" >"$TMP/weekly.stdout" \
+WEEKLY_SHELL=/bin/sh
+if [ "$(uname -s)" = Darwin ]; then WEEKLY_SHELL=/bin/zsh; fi
+HOME="$TMP/weekly-home" "$WEEKLY_SHELL" "$FIXTURE/selfimprove/scripts/rot_check_weekly.sh" >"$TMP/weekly.stdout" \
   || fail 'weekly wrapper failed'
 grep -Fq 'note selfimprove rot週次: WARN 1件、期限超過 1件、同内容 3週連続' "$TMP/weekly-home/weekly-notification.log" \
   || fail 'weekly summary was not sent through the repo-local hook path'
