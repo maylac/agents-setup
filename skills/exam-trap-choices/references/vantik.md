@@ -1,0 +1,5 @@
+# Vantik input notes
+
+Use this note only when the questions and choices came from Vantik. Read the supplied current snapshot and preserve the source question ID, version ID, explanation/source provenance when supplied, and every choice's original label and zero-based index. The reviewed snapshot contained one explicit trap mapping per mapped explanation, but that observation is not a permanent schema rule. Keep any explicit mapping separate from a newly inferred candidate. If the source version or answer key is missing, mark the record held and request the correct snapshot; do not infer identity from display order or question text alone.
+
+This skill returns review records only. It does not write to Vantik, alter flags, or update a database. If a later task explicitly requests applying reviewed records, follow the repository's current Vantik workflow, verify stable IDs, versions, explanation priority, and existing conflicts, and keep the application step separate from candidate generation.

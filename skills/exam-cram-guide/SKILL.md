@@ -60,7 +60,7 @@ were used once; prefer HTML unless the user asks for illustrated posters.
 - **iCloud**: copy the PDF (and `png/`) to the learner's iCloud Drive certification
   folder (`~/Library/Mobile Documents/com~apple~CloudDocs/<資格カテゴリ>/<EXAM>/`); confirm
   the folder exists before writing and report the path.
-- **Vantik exam guides** (reskilling-os `backend/reskilling_os/content/exam_guides/`):
+- **Vantik exam guides** (reskilling-os `server/data/content/exam_guides/`):
   copy the HTML as `<guide_id>.html`, strip the grey body background so it sits in the
   app, append an entry to `manifest.json`
   (`guide_id, exam_code, title, summary, page_count, checked_at, file`), run

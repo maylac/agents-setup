@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Launcher: run plan_infographic.py with the interpreter that owns the installed `nlm`
+# (notebooklm-mcp-cli), so a pipx -> uv reinstall does not break the pipeline.
+set -eu
+nlm_bin="$(command -v nlm || true)"
+[ -n "$nlm_bin" ] || nlm_bin="$HOME/.local/bin/nlm"
+[ -e "$nlm_bin" ] || { echo "nlm not found; install notebooklm-mcp-cli" >&2; exit 2; }
+py="$(head -1 "$(readlink -f "$nlm_bin")" | sed 's/^#![[:space:]]*//')"
+[ -x "$py" ] || { echo "nlm interpreter not found: $py" >&2; exit 2; }
+exec "$py" "$(dirname "$(readlink -f "$0")")/plan_infographic.py" "$@"

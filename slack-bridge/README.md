@@ -27,10 +27,14 @@ Acceptance:
 Time budget: 30m
 ```
 
-パス内の `<user>` は Mac mini の実際のユーザー名に置き換えます。`cursor` は本統合に必要な読み取り専用レビュー route です。実 CLI と認証を確認するまでは無効のままにし、確認後に有効化します。Cursor に実装や修正を委任しません。設定例は [Grok Bot 導入ガイド](../docs/grok-bot/README.md) を参照してください。
+パス内の `<user>` は Mac mini の実際のユーザー名に置き換えます。`cursor` は本統合に必要な読み取り専用レビュー route です。実 CLI と認証を確認するまでは無効のままにし、確認後に有効化します。Cursor に実装や修正を委任しません。bridge は Cursor CLI の help が読み取り専用の `--mode ask` を示さない場合も拒否します。対話セッションからの利用と Issue 契約は [Cursor チーム連携](../docs/cursor-team.md) を参照してください。設定例は [Grok Bot 導入ガイド](../docs/grok-bot/README.md) を参照してください。
 
 ## 動作と結果確認
 
 bridge の `done` は agent process が終了コード 0 で終わったことを示します。Dispatcher はそれだけで利用者向けの完了とせず、報告された PR の head、CI/check 結果、成果物の存在と内容を確認し、必要なら agent-task を再開する前に追加の証拠を求めます。
 
 設定されていない接続先は未接続として扱います。`doctor.py` は設定の存在を診断しますが、Issue の作成、daemon の起動、エージェントの推論は行いません。
+
+GitHub transport の追加設定は任意です。`BRIDGE_APPROVAL_ASSIGNEE` は `needs-approval` 時に通知対象として assignee を追加します。`BRIDGE_APPROVERS` は承認再開を許可する GitHub login のカンマ区切りリストです。空の場合は再開しません。bridge が GitHub API に使う login は `gh api user --jq .login` で判定します。本人のスマホ login を承認者にし、bridge 用の bot identity は `GH_TOKEN` で分ける運用を推奨します。設定値や token は診断出力に表示しません。
+
+`BRIDGE_SCOPE_FILE` は既定で `~/.local/state/slack-bridge/scopes.json` です。agent を実行して閉じた契約の Owned files は 24 時間重複確認に使われます。承認待ちコメントには bridge が worktree path と branch を記録し、承認再開ではその既存 worktree を検証して再利用します。任意の `source:` 行は `https://github.com/owner/repo/issues/123#issuecomment-456 sha256:<64桁の小文字hex>` 形式で指定します。bridge は GitHub API から本文を取り、UTF-8 byte列のハッシュ一致後にだけ原文を agent へ渡します。
