@@ -28,6 +28,37 @@ class DoctorTests(unittest.TestCase):
         self.assertEqual(self.by_name(result, "env_file")[0]["state"], "missing")
         self.assertEqual(self.by_name(result, "end_to_end")[0]["state"], "unknown")
 
+    def test_last_poll_fresh_stale_missing_and_invalid(self):
+        with tempfile.TemporaryDirectory() as directory:
+            env_file = Path(directory) / "env"
+            heartbeat = Path(directory) / "last_poll"
+            env_file.write_text("BRIDGE_HEARTBEAT_FILE=%s\n" % heartbeat, encoding="utf-8")
+            _, missing = self.run_doctor("--env-file", str(env_file))
+            self.assertEqual(self.by_name(missing, "last_poll")[0]["state"], "missing")
+            self.assertNotEqual(self.run_doctor("--env-file", str(env_file))[0], 0)
+
+            env_file.write_text("BRIDGE_TRANSPORT=github\nBRIDGE_HEARTBEAT_FILE=%s\n" % heartbeat, encoding="utf-8")
+            _, first_deploy = self.run_doctor("--env-file", str(env_file))
+            self.assertEqual(self.by_name(first_deploy, "last_poll")[0]["state"], "warning")
+
+            heartbeat.write_text(str(time.time()), encoding="utf-8")
+            fresh_code, fresh = self.run_doctor("--env-file", str(env_file))
+            self.assertEqual(self.by_name(fresh, "last_poll")[0]["state"], "present")
+
+            heartbeat.write_text(str(time.time() - 301), encoding="utf-8")
+            _, stale = self.run_doctor("--env-file", str(env_file))
+            self.assertEqual(self.by_name(stale, "last_poll")[0]["state"], "warning")
+            self.assertIn("stale by", self.by_name(stale, "last_poll")[0]["detail"])
+
+            heartbeat.write_text("not-an-epoch", encoding="utf-8")
+            bad_code, bad = self.run_doctor("--env-file", str(env_file))
+            self.assertEqual(self.by_name(bad, "last_poll")[0]["state"], "unknown")
+            self.assertNotEqual(bad_code, 0)
+
+            heartbeat.write_text("inf", encoding="utf-8")
+            _, nonfinite = self.run_doctor("--env-file", str(env_file))
+            self.assertEqual(self.by_name(nonfinite, "last_poll")[0]["state"], "unknown")
+
     def test_env_shell_substitution_is_never_executed_and_secrets_not_printed(self):
         with tempfile.TemporaryDirectory() as directory:
             marker = Path(directory) / "executed"
@@ -74,8 +105,11 @@ class DoctorTests(unittest.TestCase):
     def test_github_check_can_report_present_or_unknown_without_response_data(self):
         with tempfile.TemporaryDirectory() as directory:
             env_file = Path(directory) / "env"
+            heartbeat = Path(directory) / "last_poll"
+            heartbeat.write_text(str(time.time()), encoding="utf-8")
             env_file.write_text("BRIDGE_TRANSPORT=github\nBRIDGE_ALLOWED_SENDERS=org\n"
-                                "BRIDGE_ALLOWED_REPOS=%s\nBRIDGE_GITHUB_REPO=org/tasks\n" % directory,
+                                "BRIDGE_ALLOWED_REPOS=%s\nBRIDGE_GITHUB_REPO=org/tasks\nBRIDGE_HEARTBEAT_FILE=%s\n"
+                                % (directory, heartbeat),
                                 encoding="utf-8")
             fake_gh = Path(directory) / "gh"
             fake_gh.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
@@ -91,8 +125,11 @@ class DoctorTests(unittest.TestCase):
     def test_disabled_optional_clis_do_not_fail_preflight(self):
         with tempfile.TemporaryDirectory() as directory:
             env_file = Path(directory) / "env"
+            heartbeat = Path(directory) / "last_poll"
+            heartbeat.write_text(str(time.time()), encoding="utf-8")
             env_file.write_text("BRIDGE_TRANSPORT=github\nBRIDGE_ALLOWED_SENDERS=org\n"
-                                "BRIDGE_ALLOWED_REPOS=%s\nBRIDGE_GITHUB_REPO=org/tasks\n" % directory,
+                                "BRIDGE_ALLOWED_REPOS=%s\nBRIDGE_GITHUB_REPO=org/tasks\nBRIDGE_HEARTBEAT_FILE=%s\n"
+                                % (directory, heartbeat),
                                 encoding="utf-8")
             for name in ("claude", "codex"):
                 binary = Path(directory) / name

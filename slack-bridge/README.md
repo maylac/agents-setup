@@ -9,7 +9,7 @@ python3 slack-bridge/doctor.py
 python3 slack-bridge/doctor.py --check-github
 ```
 
-診断は既定で `~/.config/slack-bridge/env` をデータとして読み、必須キーの有無、許可パス、CLI、macOS launchd の状態を JSON で報告します。env ファイルを shell として読み込まず、値や認証情報も表示しません。`--check-github` は `gh repo view` の読み取り確認を追加します。`present` は存在確認の結果であり、Grok Bot の connector や本物の Issue handoff が動く証明ではありません。エンドツーエンドは常に `unknown` と表示します。
+診断は既定で `$HOME/.config/slack-bridge/env` をデータとして読み、必須キーの有無、許可パス、CLI、macOS launchd の状態を JSON で報告します。env ファイルを shell として読み込まず、値や認証情報も表示しません。`--check-github` は `gh repo view` の読み取り確認を追加します。`present` は存在確認の結果であり、Grok Bot の connector や本物の Issue handoff が動く証明ではありません。エンドツーエンドは常に `unknown` と表示します。
 
 ## 契約
 
@@ -17,7 +17,7 @@ python3 slack-bridge/doctor.py --check-github
 
 ```text
 agent: claude
-repo: /Users/<user>/workspace/maylac/<repo>
+repo: $HOME/workspace/<repo>
 model: claude-opus-5-5
 
 Goal: 1〜2文
@@ -37,4 +37,6 @@ bridge の `done` は agent process が終了コード 0 で終わったこと�
 
 GitHub transport の追加設定は任意です。`BRIDGE_APPROVAL_ASSIGNEE` は `needs-approval` 時に通知対象として assignee を追加します。`BRIDGE_APPROVERS` は承認再開を許可する GitHub login のカンマ区切りリストです。空の場合は再開しません。bridge が GitHub API に使う login は `gh api user --jq .login` で判定します。本人のスマホ login を承認者にし、bridge 用の bot identity は `GH_TOKEN` で分ける運用を推奨します。設定値や token は診断出力に表示しません。
 
-`BRIDGE_SCOPE_FILE` は既定で `~/.local/state/slack-bridge/scopes.json` です。agent を実行して閉じた契約の Owned files は 24 時間重複確認に使われます。承認待ちコメントには bridge が worktree path と branch を記録し、承認再開ではその既存 worktree を検証して再利用します。任意の `source:` 行は `https://github.com/owner/repo/issues/123#issuecomment-456 sha256:<64桁の小文字hex>` 形式で指定します。bridge は GitHub API から本文を取り、UTF-8 byte列のハッシュ一致後にだけ原文を agent へ渡します。
+`BRIDGE_SCOPE_FILE` は既定で `$HOME/.local/state/slack-bridge/scopes.json` です。agent を実行して閉じた契約の Owned files は 24 時間重複確認に使われます。承認待ちコメントには bridge が worktree path と branch を記録し、承認再開ではその既存 worktree を検証して再利用します。任意の `source:` 行は `https://github.com/owner/repo/issues/123#issuecomment-456 sha256:<64桁の小文字hex>` 形式で指定します。bridge は GitHub API から本文を取り、UTF-8 byte列のハッシュ一致後にだけ原文を agent へ渡します。
+
+`BRIDGE_GH_TIMEOUT_SECONDS` は `gh` の各呼び出しの上限秒数です（既定値: `60`）。タイムアウトするとその poll は失敗し、bridge は次の poll で再試行します。GitHub poll が正常に終わると `BRIDGE_HEARTBEAT_FILE`（既定値: `$HOME/.local/state/slack-bridge/last_poll`）へ epoch 秒を原子的に記録します。`doctor.py` は最終 poll が 300 秒より古い場合に警告します。完了したタスクの clean な worktree は削除しますが branch は残します。dirty な worktree と `needs-approval` の worktree は保持し、結果コメントにパスを記録します。
