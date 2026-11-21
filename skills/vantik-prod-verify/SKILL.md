@@ -23,22 +23,28 @@ Nothing in this skill writes to production except the optional retained backup.
 
 ```bash
 bash ~/.agents/skills/vantik-prod-verify/scripts/snapshot.sh            # → /tmp/vantik-snapshot-<ts>.db + JSON summary
-bash ~/.agents/skills/vantik-prod-verify/scripts/snapshot.sh --out ~/tasks/<task>/snapshot.db --integrity <reskilling-os>/scripts/vantik_integrity_check.py
+bash ~/.agents/skills/vantik-prod-verify/scripts/snapshot.sh --out ~/tasks/<task>/snapshot.db --integrity <reskilling-os>/server/scripts/vantik_integrity_check.ts
 bash ~/.agents/skills/vantik-prod-verify/scripts/snapshot.sh --keep     # also leaves a dated copy in /app/backups (use before a live write)
 ```
 
-- Default mode runs `sqlite3.Connection.backup()` inside the container from a
-  `mode=ro` connection into a container temp file, streams it out, deletes the temp
-  file. WAL content is included; a plain `cp` of `vantik.db` is not a valid copy.
+- Default mode runs better-sqlite3's online `backup()` inside the container
+  (`docker exec -i -w /app vantik node -`, script on stdin, module resolved from
+  `/app/node_modules`) from a read-only connection into a container temp file,
+  streams it out, deletes the temp file. WAL content is included; a plain `cp` of `vantik.db` is not a valid copy.
 - The script prints `quick_check`, `foreign_key_violations`, `journal_mode` and row
   counts for questions / attempts / study_sessions and exits non-zero if the copy is
   not `ok`. Report those numbers; they are the provenance of every later figure.
+- `--integrity` runs the reskilling-os TypeScript check on the local copy
+  (`node --import tsx <reskilling-os>/server/scripts/vantik_integrity_check.ts <copy>`;
+  the checkout needs `npm ci`). The host-side `python3` summary stays; it only reads the
+  local copy. Inside the container the same check is
+  `docker exec vantik node dist-server/vantik_integrity_check.js /app/data/vantik.db`.
 - Never open the live DB over SMB. Never analyse `vantik.db-wal` separately.
 - Analysis joins go through stable IDs (`attempt_id → question_version_id → question_id`),
   not question numbers. "Latest result per question" means latest attempt per
   `question_id`, not per version.
-- `--keep` uses the app's own `vantik backup` CLI (output `vantik-<timestamp>.db` in
-  `/app/backups`). Use it right before any write to production and record the path.
+- `--keep` uses the app's own `docker exec vantik vantik backup` CLI (the last line
+  is the destination, `/app/backups/vantik-<timestamp>.db`). Use it right before any write to production and record the path.
 
 ## 2. Deploy landed?
 

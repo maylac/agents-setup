@@ -20,7 +20,7 @@ Use auto-accept only for trusted, well-defined work. Keep exploratory work expli
 
 Follow `~/AGENTS.md` for shared approval rules and irreversible external side effects. Preserve existing local permission and hook configuration unless the user asks to change it.
 
-Full-auto does not mean irreversible: destructive operations, lockfile deletion, force push, publish/upload/send/archive, and payments/trading/account actions still require explicit user request or confirmation. Prefer draft/dry-run first and report commands/actions plus relevant output.
+Use `~/AGENTS.md` as the single source for effect-based authorization and hard stops. Tool-specific rules may narrow that policy but cannot widen it; follow concrete task and repository restrictions, and preserve system/runtime controls.
 
 ## TodoWrite
 

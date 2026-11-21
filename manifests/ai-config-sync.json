@@ -67,6 +67,10 @@
   ],
   "intentional_differences": [
     {
+      "id": "autonomous-team-native-lifecycle",
+      "reason": "The shared autonomous-team skill uses Claude-only scoped hooks and a native worktree team-worker. Codex uses a native Luna worker and explicitly runs the same evidence gate; Claude skill hooks and worktree frontmatter do not register in Codex."
+    },
+    {
       "id": "claude-settings-json",
       "reason": "Claude settings are hierarchical and mutable; keep a public-safe template instead of symlinking live settings."
     },
