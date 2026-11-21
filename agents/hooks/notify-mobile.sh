@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Mobile notification hook for Claude/Codex: notify-mobile.sh <approval|done|idle> <Agent>
+# Mobile notification hook for Claude/Codex: notify-mobile.sh <approval|done|idle|note> <Agent> [message]
 # Reads the hook JSON on stdin. Sends through the first configured transport in
 # ~/.config/agents-notify/env (owner-only): NOTIFY_NTFY_URL, or
 # NOTIFY_SLACK_BOT_TOKEN + NOTIFY_SLACK_CHANNEL. With none configured it only logs.
@@ -26,6 +26,9 @@ case "$kind" in
     cmd="$(field '.tool_input.command' | cut -c1-120)"
     message="$agent が承認待ち: ${tool:-tool}${cmd:+ — $cmd}" ;;
   idle) message="$agent が入力待ち" ;;
+  note)
+    shift 2 2>/dev/null || true
+    message="$*" ;;
   *) message="$agent が完了" ;;
 esac
 message="[$project] $message"
@@ -46,5 +49,9 @@ if [ -n "${NOTIFY_SLACK_BOT_TOKEN:-}" ] && [ -n "${NOTIFY_SLACK_CHANNEL:-}" ] &&
   log "slack failed kind=$kind"
 fi
 
-log "not sent (no transport configured) kind=$kind: $message"
+if [ "$kind" = note ]; then
+  log "not sent (no transport configured) kind=$kind"
+else
+  log "not sent (no transport configured) kind=$kind: $message"
+fi
 exit 0
