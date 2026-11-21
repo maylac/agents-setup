@@ -2,12 +2,14 @@
 """Read-only preflight for the local Slack/GitHub bridge."""
 import argparse
 import json
+import math
 import os
 from pathlib import Path
 import re
 import shutil
 import subprocess
 import sys
+import time
 
 
 def check(name, state, detail):
@@ -47,6 +49,22 @@ def main(argv=None):
                         "read as data; shell expressions are not evaluated"))
     if env is None:
         env = {}
+    heartbeat = Path(os.path.expanduser(env.get("BRIDGE_HEARTBEAT_FILE", str(home / ".local/state/slack-bridge/last_poll"))))
+    try:
+        raw = heartbeat.read_text(encoding="utf-8").strip()
+        epoch = float(raw)
+        age = time.time() - epoch
+        if not math.isfinite(epoch) or epoch <= 0 or age < -300:
+            checks.append(check("last_poll", "unknown", "heartbeat timestamp is invalid"))
+        elif age > 300:
+            checks.append(check("last_poll", "warning", "stale by %d seconds" % int(age)))
+        else:
+            checks.append(check("last_poll", "present", "age=%d seconds" % max(0, int(age))))
+    except FileNotFoundError:
+        state = "warning" if env.get("BRIDGE_TRANSPORT", "slack") == "github" else "missing"
+        checks.append(check("last_poll", state, "heartbeat file unavailable; no successful poll recorded"))
+    except (OSError, ValueError, OverflowError):
+        checks.append(check("last_poll", "unknown", "heartbeat file is unreadable or invalid"))
     gh_env = os.environ.copy()
     if "GH_TOKEN" in env:
         gh_env["GH_TOKEN"] = env["GH_TOKEN"]

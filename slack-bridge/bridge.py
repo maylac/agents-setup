@@ -29,6 +29,7 @@ import os
 import re
 import shlex
 import subprocess
+import tempfile
 import sys
 import time
 import urllib.parse
@@ -65,6 +66,7 @@ def load_config(env=os.environ):
         "worktrees": env.get("BRIDGE_WORKTREE_DIR", os.path.expanduser("~/.local/state/slack-bridge/worktrees")),
         "interval": int(env.get("BRIDGE_POLL_SECONDS", "20")),
         "timeout": int(env.get("BRIDGE_TASK_TIMEOUT_SECONDS", "3600")),
+        "heartbeat": env.get("BRIDGE_HEARTBEAT_FILE", os.path.expanduser("~/.local/state/slack-bridge/last_poll")),
         "claude_mode": env.get("BRIDGE_CLAUDE_PERMISSION_MODE", "auto"),
         "agy_model": env.get("BRIDGE_AGY_DEFAULT_MODEL", "Gemini 3.5 Flash (Low)"),
         "codex_bin": env.get("BRIDGE_CODEX_BIN", "codex"),
@@ -280,8 +282,31 @@ def run_task(cfg, text, task_id, say, existing_workdir=None):
         say("NEEDS-APPROVAL: %s\nworktree: %s\nbranch: %s" % (detail, workdir, name))
         say("Agent stopped for approval; output follows:\n```\n%s\n```" % tail)
     else:
-        say("%s\n%s%sbranch: %s\n```\n%s\n```" % (status, route_note, detail + "\n" if detail else "", name, tail))
+        cleanup = finish_worktree(repo, workdir, cfg["worktrees"])
+        say("%s\n%s%sbranch: %s\n%s\n```\n%s\n```" %
+            (status, route_note, detail + "\n" if detail else "", name, cleanup, tail))
     return status
+
+
+def finish_worktree(repo, workdir, managed_root):
+    """Remove a completed clean task worktree while preserving its branch."""
+    root = os.path.realpath(managed_root)
+    path = os.path.realpath(workdir)
+    if not path.startswith(root + os.sep):
+        return "worktree retained (outside managed path): %s" % workdir
+    try:
+        status = subprocess.run(["git", "-C", path, "status", "--porcelain", "--untracked-files=all", "--ignored"],
+                                capture_output=True, text=True, check=True).stdout
+    except (OSError, subprocess.CalledProcessError):
+        return "worktree retained (status unavailable): %s" % workdir
+    if status:
+        return "worktree retained (dirty): %s" % workdir
+    try:
+        subprocess.run(["git", "-C", repo, "worktree", "remove", path],
+                       capture_output=True, text=True, check=True)
+    except (OSError, subprocess.CalledProcessError):
+        return "worktree retained (remove failed): %s" % workdir
+    return "worktree removed; branch retained: %s" % os.path.basename(workdir)
 
 
 def read_state(path):
@@ -313,7 +338,26 @@ def poll_once(cfg):
 
 
 def gh(*args):
-    return subprocess.run(["gh"] + list(args), capture_output=True, text=True, check=True).stdout
+    timeout = int(os.environ.get("BRIDGE_GH_TIMEOUT_SECONDS", "60"))
+    return subprocess.run(["gh"] + list(args), capture_output=True, text=True,
+                          check=True, timeout=timeout).stdout
+
+
+def write_heartbeat(path):
+    directory = os.path.dirname(path) or "."
+    os.makedirs(directory, exist_ok=True)
+    fd, temp = tempfile.mkstemp(prefix=os.path.basename(path) + ".", suffix=".tmp", dir=directory)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            f.write("%d\n" % int(time.time()))
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(temp, path)
+    finally:
+        try:
+            os.unlink(temp)
+        except OSError:
+            pass
 
 
 def github_tasks(issues, cfg):
@@ -379,6 +423,7 @@ def poll_github_once(cfg):
             if cfg.get("_last_run_invoked"):
                 record_scopes(cfg["scope_file"], int(num), scopes)
                 executed = load_scopes(cfg["scope_file"])
+    write_heartbeat(cfg["heartbeat"])
 
 
 def list_open_issues(repo, label):
@@ -604,8 +649,12 @@ def main():
     while True:
         try:
             poll(cfg)
-        except Exception as e:  # keep the daemon alive; launchd logs stderr
-            print("slack-bridge: %s" % e, file=sys.stderr, flush=True)
+        except Exception as exc:  # keep the daemon alive; launchd logs stderr
+            if isinstance(exc, subprocess.TimeoutExpired):
+                print("slack-bridge: %s after %s seconds" %
+                      (type(exc).__name__, exc.timeout), file=sys.stderr, flush=True)
+            else:
+                print("slack-bridge: %s" % type(exc).__name__, file=sys.stderr, flush=True)
         time.sleep(cfg["interval"])
 
 

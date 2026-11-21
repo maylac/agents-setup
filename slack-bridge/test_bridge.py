@@ -1,3 +1,4 @@
+import io
 import json
 import os
 import re
@@ -6,6 +7,7 @@ import shlex
 import stat
 import subprocess
 import tempfile
+import time
 import unittest
 from unittest import mock
 
@@ -82,6 +84,107 @@ class BridgeTest(unittest.TestCase):
             bridge.load_config(env)
         cfg = bridge.load_config(dict(env, BRIDGE_GITHUB_REPO="maylac/agent-tasks"))
         self.assertEqual((cfg["transport"], cfg["github_label"]), ("github", "agent-task"))
+
+    def test_gh_timeout_is_bounded_and_configurable(self):
+        bridge.load_config(dict(ENV, BRIDGE_GH_TIMEOUT_SECONDS="7"))
+        with mock.patch.dict(os.environ, {"BRIDGE_GH_TIMEOUT_SECONDS": "7"}), \
+                mock.patch("bridge.subprocess.run", return_value=mock.Mock(stdout="ok")) as run:
+            self.assertEqual(bridge.gh("api", "user"), "ok")
+        self.assertEqual(run.call_args.kwargs["timeout"], 7)
+
+    def test_fake_gh_timeout_retries_and_only_success_advances_heartbeat(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bindir = Path(directory) / "bin"
+            bindir.mkdir()
+            calls = Path(directory) / "calls"
+            gh = bindir / "gh"
+            gh.write_text("#!/usr/bin/env python3\n"
+                          "import os, pathlib, sys, time\n"
+                          "p=pathlib.Path(os.environ['FAKE_GH_CALLS'])\n"
+                          "n=int(p.read_text()) if p.exists() else 0\n"
+                          "p.write_text(str(n+1))\n"
+                          "if n == 1: assert pathlib.Path(os.environ['FAKE_HEARTBEAT']).read_text().strip() == '123'\n"
+                          "if n == 0: time.sleep(2)\n"
+                          "print('[]')\n", encoding="utf-8")
+            gh.chmod(0o755)
+            heartbeat = Path(directory) / "last_poll"
+            heartbeat.write_text("123\n", encoding="utf-8")
+            cfg = dict(self.cfg, transport="github", interval=0, heartbeat=str(heartbeat),
+                       github_repo="org/tasks", github_label="agent-task", approvers=[], scope_file=str(Path(directory) / "scopes.json"))
+            stderr = io.StringIO()
+            env = dict(os.environ, PATH=str(bindir) + os.pathsep + os.environ["PATH"],
+                       FAKE_GH_CALLS=str(calls), FAKE_HEARTBEAT=str(heartbeat),
+                       BRIDGE_GH_TIMEOUT_SECONDS="1")
+            with mock.patch("bridge.load_config", return_value=cfg), \
+                    mock.patch.dict(os.environ, env), mock.patch("sys.stderr", stderr), \
+                    mock.patch("bridge.time.sleep", side_effect=[None, KeyboardInterrupt]):
+                with self.assertRaises(KeyboardInterrupt):
+                    bridge.main()
+            self.assertGreaterEqual(int(calls.read_text()), 3)
+            self.assertGreater(int(heartbeat.read_text()), 123)
+            log = stderr.getvalue()
+            self.assertIn("TimeoutExpired after 1 seconds", log)
+            self.assertNotIn("--body", log)
+
+    def test_successful_empty_github_poll_writes_atomic_heartbeat(self):
+        with tempfile.TemporaryDirectory() as directory:
+            heartbeat = os.path.join(directory, "last_poll")
+            cfg = bridge.load_config(dict(ENV, BRIDGE_TRANSPORT="github", BRIDGE_GITHUB_REPO="org/tasks",
+                                          BRIDGE_HEARTBEAT_FILE=heartbeat,
+                                          BRIDGE_SCOPE_FILE=os.path.join(directory, "scopes.json")))
+            with mock.patch("bridge.gh", return_value="[]"):
+                bridge.poll_github_once(cfg)
+            value = Path(heartbeat).read_text().strip()
+            self.assertGreaterEqual(int(value), int(time.time()) - 2)
+            self.assertFalse(os.path.exists(heartbeat + ".tmp"))
+
+    def test_heartbeat_replaces_symlink_and_cleans_unique_temp_file(self):
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory) / "target"
+            target.write_text("keep", encoding="utf-8")
+            heartbeat = Path(directory) / "last_poll"
+            heartbeat.symlink_to(target.name)
+            bridge.write_heartbeat(str(heartbeat))
+            self.assertFalse(heartbeat.is_symlink())
+            self.assertEqual(target.read_text(encoding="utf-8"), "keep")
+            self.assertRegex(heartbeat.read_text(encoding="utf-8"), r"^\d+\n$")
+            self.assertEqual(list(Path(directory).glob("last_poll.*.tmp")), [])
+
+    def test_failed_github_poll_does_not_advance_heartbeat(self):
+        with tempfile.TemporaryDirectory() as directory:
+            heartbeat = os.path.join(directory, "last_poll")
+            cfg = bridge.load_config(dict(ENV, BRIDGE_TRANSPORT="github", BRIDGE_GITHUB_REPO="org/tasks",
+                                          BRIDGE_HEARTBEAT_FILE=heartbeat,
+                                          BRIDGE_SCOPE_FILE=os.path.join(directory, "scopes.json")))
+            with mock.patch("bridge.gh", side_effect=subprocess.TimeoutExpired("gh", 60)):
+                with self.assertRaises(subprocess.TimeoutExpired):
+                    bridge.poll_github_once(cfg)
+            self.assertFalse(os.path.exists(heartbeat))
+
+    def test_completed_worktree_removal_preserves_branch_and_dirty_payload(self):
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.setup_git_repo(directory)
+            Path(repo, ".gitignore").write_text("evidence/\n", encoding="utf-8")
+            subprocess.run(["git", "-C", repo, "add", ".gitignore"], check=True)
+            subprocess.run(["git", "-C", repo, "-c", "user.name=t", "-c", "user.email=t@t",
+                            "commit", "-q", "-m", "ignore fixture"], check=True)
+            worktrees = os.path.join(directory, "worktrees")
+            os.makedirs(worktrees)
+            clean = os.path.join(worktrees, "clean")
+            subprocess.run(["git", "-C", repo, "worktree", "add", "-qb", "keep-clean", clean], check=True)
+            self.assertEqual(bridge.finish_worktree(repo, clean, worktrees), "worktree removed; branch retained: clean")
+            self.assertFalse(os.path.exists(clean))
+            branches = subprocess.run(["git", "-C", repo, "branch", "--list", "keep-clean"], capture_output=True, text=True, check=True).stdout
+            self.assertIn("keep-clean", branches)
+
+            dirty = os.path.join(worktrees, "dirty")
+            subprocess.run(["git", "-C", repo, "worktree", "add", "-qb", "keep-dirty", dirty], check=True)
+            ignored_dir = os.path.join(dirty, "evidence")
+            os.makedirs(ignored_dir)
+            Path(ignored_dir, "payload.txt").write_text("local payload", encoding="utf-8")
+            result = bridge.finish_worktree(repo, dirty, worktrees)
+            self.assertIn("worktree retained (dirty):", result)
+            self.assertTrue(os.path.exists(Path(ignored_dir, "payload.txt")))
 
     def test_github_tasks_only_from_allowlisted_authors(self):
         issues = [{"number": 1, "author": {"login": "U_ME"}}, {"number": 2, "author": {"login": "stranger"}},
@@ -229,7 +332,8 @@ class BridgeTest(unittest.TestCase):
             repo = os.path.join(d, "repo")
             os.makedirs(repo)
             cfg = bridge.load_config(dict(ENV, BRIDGE_TRANSPORT="github", BRIDGE_GITHUB_REPO="org/tasks",
-                                          BRIDGE_ALLOWED_REPOS=repo, BRIDGE_SCOPE_FILE=os.path.join(d, "scopes.json")))
+                                          BRIDGE_ALLOWED_REPOS=repo, BRIDGE_SCOPE_FILE=os.path.join(d, "scopes.json"),
+                                          BRIDGE_HEARTBEAT_FILE=os.path.join(d, "last_poll")))
             issue = {"number": 12, "author": {"login": "maylac"},
                      "body": "agent: claude\nrepo: %s\n\nGoal: x\nOwned files: src/a.py" % repo}
             calls = []
@@ -285,7 +389,8 @@ else: print("completed")
                                           BRIDGE_ALLOWED_SENDERS="dispatcher", BRIDGE_ALLOWED_REPOS=repo,
                                           BRIDGE_APPROVERS="human", BRIDGE_APPROVAL_ASSIGNEE="human",
                                           BRIDGE_WORKTREE_DIR=os.path.join(d, "worktrees"),
-                                          BRIDGE_SCOPE_FILE=scope_file, BRIDGE_COOLDOWN_FILE=os.path.join(d, "cooldowns.json")))
+                                          BRIDGE_SCOPE_FILE=scope_file, BRIDGE_COOLDOWN_FILE=os.path.join(d, "cooldowns.json"),
+                                          BRIDGE_HEARTBEAT_FILE=os.path.join(d, "last_poll")))
             env_before = dict(os.environ)
             os.environ.update({"PATH": bindir + os.pathsep + os.environ["PATH"], "FAKE_GH_STATE": state_path,
                                "GH_TOKEN": "fixture-gh-token",
@@ -340,6 +445,9 @@ else: print("completed")
             self.assertEqual(data["issues"][2]["state"], "closed")
             self.assertTrue(any("duplicate scope #41" in c["body"] for c in data["comments"]["44"]))
             self.assertEqual(read_json(scope_file)[0]["number"], 41)
+            self.assertTrue(os.path.exists(os.path.join(recorded, "dirty.txt")))
+            self.assertTrue(any("worktree retained (dirty): %s" % os.path.realpath(recorded) in c["body"]
+                                for c in data["comments"]["41"]), data["comments"]["41"])
 
     def test_fake_gh_negative_poll_cases(self):
         with tempfile.TemporaryDirectory() as d:
@@ -389,7 +497,8 @@ print(os.environ.get("FAKE_AGENT_OUTPUT","unexpected agent run"))
                                BRIDGE_ALLOWED_SENDERS="dispatcher", BRIDGE_ALLOWED_REPOS=repo,
                                BRIDGE_APPROVERS="human", BRIDGE_WORKTREE_DIR=os.path.join(d, "worktrees"),
                                BRIDGE_SCOPE_FILE=os.path.join(d, name + ".scopes.json"),
-                               BRIDGE_COOLDOWN_FILE=os.path.join(d, name + ".cooldowns.json"))
+                               BRIDGE_COOLDOWN_FILE=os.path.join(d, name + ".cooldowns.json"),
+                               BRIDGE_HEARTBEAT_FILE=os.path.join(d, name + ".last_poll"))
                 cfg = bridge.load_config(cfg_env)
                 bridge.poll_github_once(cfg)
                 with open(state_path, encoding="utf-8") as f:
