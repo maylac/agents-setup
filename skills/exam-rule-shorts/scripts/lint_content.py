@@ -46,8 +46,8 @@ def lint(path: Path) -> list[str]:
         for key in ("exam_code", "exam_label", "series_label", "title"):
             if not ep.get(key):
                 err(f"{key} required")
-        if ep.get("series_label") != "鉄則":
-            err("series_label must be 鉄則")
+        if ep.get("series_label") not in ("鉄則", "用語"):
+            err("series_label must be 鉄則 or 用語")
         if width(ep.get("title", "")) > 18:
             err("episode title > 18 wide chars")
         if ep.get("title") in seen_titles:
@@ -61,6 +61,8 @@ def lint(path: Path) -> list[str]:
         diagrams = [tuple(sorted(n.get("label", "") for n in sc.get("nodes", []))) for sc in scenes[:3]]
         if len(set(diagrams)) < 3:
             err("scenes 1-3 must each draw a different diagram (situation, wrong design, correct design)")
+        if ep.get("series_label") == "用語" and not str(scenes[3].get("title", "")).endswith(("？", "?")):
+            err("確認 scene title must be a question ending with ？")
         if not any(sc.get("rule") for sc in scenes[1:3]):
             err("scene 2 or 3 must state the rule")
         for index, sc in enumerate(scenes):
@@ -83,6 +85,8 @@ def lint(path: Path) -> list[str]:
                 e("narration must end with 'のだ。' (ずんだもん)")
             if width(sc.get("caption", "")) > 24:
                 e("caption > 24 wide chars")
+            if re.search(r"[\s|]", sc.get("source_url", "")):
+                e("source_url must be one URL (no spaces or |); Vantik rejects the whole catalog otherwise")
             if not OFFICIAL.match(sc.get("source_url", "")):
                 e("source_url must be an official AWS/Anthropic docs URL")
             texts = [sc.get(k, "") for k in ("title", "body", "caption", "narration", "rule", "wrong")]
@@ -143,6 +147,26 @@ def lint(path: Path) -> list[str]:
             for sentence in re.split(r"(?<=[。？])", narration):
                 if len(sentence.strip()) > 8:
                     sentences.setdefault(sentence.strip(), set()).add(eid)
+    # Filler spliced mid-sentence: any 14-char run of narration shared by 4+ episodes.
+    grams = {}
+    for ep in episodes if isinstance(episodes, list) else []:
+        for sc in ep.get("scenes", []):
+            narration = str(sc.get("narration", "")) if sc.get("kicker") != "確認" else ""
+            for i in range(len(narration) - 13):
+                grams.setdefault(narration[i:i + 14], set()).add(ep.get("id", "?"))
+    for gram, ids in grams.items():
+        if len(ids) >= 4 and sum(not ch.isascii() for ch in gram) >= 10:
+            errors.append(f"{path.name}: narration phrase reused in {len(ids)} episodes ({', '.join(sorted(ids)[:4])}): {gram}; write each episode's own explanation")
+            break
+    # Placeholder diagrams: the same node (label + sub) in 5+ episodes says nothing about the topic.
+    node_use = {}
+    for ep in episodes if isinstance(episodes, list) else []:
+        for sc in ep.get("scenes", [])[:3]:
+            for node in sc.get("nodes", []):
+                node_use.setdefault((node.get("label"), node.get("sub")), set()).add(ep.get("id", "?"))
+    for (label, sub), ids in node_use.items():
+        if len(ids) >= 5:
+            errors.append(f"{path.name}: placeholder node '{label} / {sub}' in {len(ids)} episodes ({', '.join(sorted(ids)[:4])}); draw each topic's own components")
     for text, ids in list(lines.items()) + list(sentences.items()):
         if len(ids) >= 3 and text not in ("問い → 答え",):
             errors.append(f"{path.name}: template text reused in {len(ids)} episodes ({', '.join(sorted(ids)[:4])}): {text}; write it for each episode's own rule")

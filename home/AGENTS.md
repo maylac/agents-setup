@@ -31,17 +31,20 @@ When a repository already uses Backlog.md, start with `backlog instructions over
 
 ## Autonomy and Hard Stops
 
-The user pre-authorizes autonomous execution through implementation. Do not ask for confirmation to plan, read, create or edit files, install project dependencies, run builds and tests, create branches or worktrees, commit, push non-default branches, or open PRs. Finish with the PR ready and a Slack report; merging to the default branch happens on the user's reply unless the repo explicitly enables auto-merge.
+Permission is determined by the effects of an action, not by whether it uses Bash, SSH, a CLI, an API, or another tool. For the current task, proceed through implementation and verification without asking again for actions within its concrete scope. Routine task-scoped shell commands, file edits, dependency installation, builds and tests, branches and worktrees, commits, ordinary pushes (including to the default branch), and merges when the task calls for them are pre-authorized, unless the repository or task sets a human-only boundary. This standing permission does not authorize unrelated Git operations. A push that triggers a production deployment is a production change and requires explicit authorization unless that deployment is already in scope.
 
-Hard stops — prepare a draft or dry run, post one approval request in the originating channel (Grok Bot app or Slack thread), and keep doing other unblocked work:
+Hard stops — prepare a draft or dry run where useful, request approval once in the originating channel (this chat for interactive work; the dispatch channel for dispatched work), and continue other unblocked work:
 
-- Force pushes or history rewrites on shared branches; lockfile deletion.
-- Irreversible deletion outside the task worktree (databases, backups, cloud resources).
-- Payments, trading, purchases, and account, credential, or permission changes.
-- Publishing, uploading, or sending to anyone other than the user (public posts, emails, releases, store or KDP submissions); production deploys.
-- Restarting shared daemons that kill running agents (the Remote Control hosts and the dispatch bridge).
+- Force pushes or other destructive rewrites of shared history.
+- Irreversible deletion or loss of user data, backups, cloud resources, or another worker's changes.
+- Payments, trades, purchases that create a new cost, or account, credential, IAM, sharing, public-access, or security-control changes.
+- Sending or publishing to third parties, including public posts, emails, releases, store submissions, or uploads, except for the routine Git/GitHub workflow authorized above.
+- Production changes or deployments, unless that exact change is already authorized in the task.
+- Restarts or shutdowns that interrupt shared workloads or other agents.
 
-Silence or timeout is never approval. Report the exact command or action taken and its relevant output.
+An explicit user request or approval for the exact operation within a defined task scope satisfies that operation's stop; do not ask again. Silence, timeout, bot output, or a tool prompt is not user approval. Preserve system/runtime safety controls. These shared rules set the common authorization floor: tool-specific instructions may narrow it but cannot widen it, and concrete task or repository restrictions take precedence.
+
+Report the exact command or action taken and its relevant output.
 
 ### Conditional standing permissions
 
