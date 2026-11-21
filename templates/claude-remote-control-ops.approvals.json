@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "ask": [
+      "*"
+    ],
+    "disableAutoMode": "disable",
+    "disableBypassPermissionsMode": "disable"
+  }
+}
