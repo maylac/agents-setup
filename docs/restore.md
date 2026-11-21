@@ -160,47 +160,79 @@ marketplaces.
 
 ## Permission boundary templates
 
-These are reviewable templates. Apply them only after the human approves the exact change. The installer does not install either permissions template.
+These are reviewable templates. The installer does not install them. For Claude Code, create and review a candidate before applying any approved change.
 
 ### Claude Code
 
-`templates/claude-settings.permissions.json` contains the proposed `permissions` and `sandbox` values. The executing agent backs up the live file and generates a candidate that merges only these sections, but leaves the live file untouched. The agent reports the changed-key summary without printing config values. The human reviews that intent from GitHub Mobile; only after the exact `APPROVED:` reply does the agent replace the live file. Existing hooks, unrelated top-level keys, unrelated permission keys, and extra sandbox keys are preserved. Permission and sandbox arrays are additive and deduplicated, except the obsolete blanket `Bash(launchctl:*)` entry is removed from `permissions.allow`; template values are otherwise added. The template's `defaultMode` and sandbox scalar keys are updated.
+`templates/claude-settings.permissions.json` contains only the permission list additions and two filesystem read-deny additions for this change. The candidate merge changes only `permissions.allow`, `permissions.ask`, `permissions.deny`, and `sandbox.filesystem.denyRead`. It adds template list entries without duplicates and removes only `Bash` and `Bash(launchctl:*)` from `permissions.allow`. It retains all existing deny rules and preserves all other keys, including the current default mode, sandbox settings, unrelated asks, hooks, and top-level extensions. It writes a mode-`0600` candidate atomically and never replaces the source. Its output contains only the dotted leaf names that actually changed. The procedure below uses paths rooted at `$HOME`; it does not expand private paths into the public template.
 
 ```sh
-cp -p "$HOME/.claude/settings.json" "$HOME/.claude/settings.json.backup.$(date +%Y%m%d%H%M%S)"
 python3 - "$HOME/.claude/settings.json" "$PWD/templates/claude-settings.permissions.json" "$HOME/.claude/settings.json.candidate" <<'PYTHON'
-import json, sys
+import json, os, sys, tempfile
 from pathlib import Path
-live, template, candidate = map(Path, sys.argv[1:])
-current = json.loads(live.read_text())
-proposed = json.loads(template.read_text())
+
+source, template, candidate = map(Path, sys.argv[1:])
+if source.resolve() == candidate.resolve():
+    raise ValueError('source and candidate must be different files')
+current = json.loads(source.read_text(encoding='utf-8'))
+proposed = json.loads(template.read_text(encoding='utf-8'))
+before = json.loads(json.dumps(current))
+
 permissions = current.setdefault('permissions', {})
-for key, value in proposed['permissions'].items():
-    if isinstance(value, list):
-        existing = permissions.get(key, [])
-        if key == 'allow':
-            existing = [item for item in existing if item != 'Bash(launchctl:*)']
-        permissions[key] = list(dict.fromkeys([*existing, *value]))
-    else:
-        permissions[key] = value
+if not isinstance(permissions, dict):
+    raise TypeError('permissions must be an object')
+proposed_permissions = proposed['permissions']
+for key in ('allow', 'ask', 'deny'):
+    existing = permissions.setdefault(key, [])
+    if not isinstance(existing, list):
+        raise TypeError(f'permissions.{key} must be an array')
+    if key == 'allow':
+        existing = [item for item in existing if item not in ('Bash', 'Bash(launchctl:*)')]
+    permissions[key] = list(dict.fromkeys([*existing, *proposed_permissions[key]]))
+
 sandbox = current.setdefault('sandbox', {})
-def merge(existing, updates):
-    for key, value in updates.items():
-        if isinstance(value, dict):
-            existing[key] = merge(existing.get(key, {}), value)
-        elif isinstance(value, list):
-            existing[key] = list(dict.fromkeys([*existing.get(key, []), *value]))
-        else:
-            existing[key] = value
-    return existing
-current['sandbox'] = merge(sandbox, proposed['sandbox'])
-candidate.write_text(json.dumps(current, indent=2, ensure_ascii=False) + '\n')
-print('Candidate created. Updated keys: permissions.allow, permissions.ask, permissions.deny, permissions.defaultMode, sandbox.*')
-print('Removed obsolete Bash(launchctl:*) from permissions.allow.')
+if not isinstance(sandbox, dict):
+    raise TypeError('sandbox must be an object')
+filesystem = sandbox.setdefault('filesystem', {})
+if not isinstance(filesystem, dict):
+    raise TypeError('sandbox.filesystem must be an object')
+deny_read = filesystem.setdefault('denyRead', [])
+if not isinstance(deny_read, list):
+    raise TypeError('sandbox.filesystem.denyRead must be an array')
+filesystem['denyRead'] = list(dict.fromkeys([*deny_read, *proposed['sandbox']['filesystem']['denyRead']]))
+
+changed = []
+for dotted in ('permissions.allow', 'permissions.ask', 'permissions.deny', 'sandbox.filesystem.denyRead'):
+    old, new = before, current
+    for part in dotted.split('.'):
+        old = old.get(part) if isinstance(old, dict) else None
+        new = new.get(part) if isinstance(new, dict) else None
+    if old != new:
+        changed.append(dotted)
+
+payload = (json.dumps(current, indent=2, ensure_ascii=False) + '\n').encode()
+fd, temporary = tempfile.mkstemp(prefix=f'.{candidate.name}.', dir=candidate.parent)
+try:
+    os.fchmod(fd, 0o600)
+    with os.fdopen(fd, 'wb') as output:
+        output.write(payload)
+        output.flush()
+        os.fsync(output.fileno())
+    os.replace(temporary, candidate)
+except BaseException:
+    try:
+        os.unlink(temporary)
+    except FileNotFoundError:
+        pass
+    raise
+for key in changed:
+    print(key)
 PYTHON
 ```
 
-The printed summary names changed keys only; it does not print hooks, credentials, or unrelated settings. The candidate stays local and no full-config diff is printed or sent. After the agent reports the backup, candidate result, and fixed changed-key summary, the human approves the exact replacement from GitHub Mobile; the agent then runs `cp -p "$HOME/.claude/settings.json.candidate" "$HOME/.claude/settings.json"`.
+An existing deny rule stays in effect if an added ask rule also matches. Resolve any such overlap separately before relying on mobile approval.
+
+The output lists actual changed leaf keys only. Do not print or send a full-config diff. Review the candidate locally. After approval of that exact candidate, apply it with `cp -p "$HOME/.claude/settings.json.candidate" "$HOME/.claude/settings.json"`.
 
 ### Codex
 
