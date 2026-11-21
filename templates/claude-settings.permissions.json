@@ -49,7 +49,7 @@
     "autoAllowBashIfSandboxed": true,
     "allowUnsandboxedCommands": false,
     "failIfUnavailable": true,
-    "excludedCommands": ["gh *", "codex *", "ssh ugnas *"],
+    "excludedCommands": ["gh *", "codex *"],
     "network": {
       "allowedDomains": [
         "github.com", "api.github.com", "objects.githubusercontent.com",
