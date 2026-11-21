@@ -9,9 +9,13 @@ NODE="$(command -v node)"
 }
 
 TEST_TMP="$(mktemp -d)"
-trap 'rm -rf "$TEST_TMP"' EXIT
 DB="$TEST_TMP/quota-fixture.sqlite"
 SHIM="$TEST_TMP/better-sqlite3-shim.mjs"
+cleanup() {
+  rm -f -- "$DB" "$DB-journal" "$DB-wal" "$DB-shm" "$SHIM"
+  rmdir "$TEST_TMP"
+}
+trap cleanup EXIT
 
 cat > "$SHIM" <<'SHIM'
 import Module from 'node:module';
