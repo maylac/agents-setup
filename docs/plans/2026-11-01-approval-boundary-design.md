@@ -17,22 +17,12 @@
 
 境界は一つにする。**「workspace-write + 固定ネットワーク許可 + 秘密の読み取り禁止」** を Claude と Codex に同じ値で置く。境界の内側は聞かない。外側は「聞く」ではなく「止めて理由を報告」（非対話）か「1 タップで許可し、繰り返すものは週次でルールに昇格」（対話。1 タップの許可はそのセッション限りで設定には残らない）にする。
 
-今日の Codex は境界なし（`sandbox_mode = "danger-full-access"`、`approval_policy = "never"`）で、ストレスは 0 だが防波堤も 0。2026-07-17 に却下された構成の再発（監査 A2）。Claude をそこへ揃える案は 6 に書くが推奨しない。推奨は Codex を共通境界へ戻すこと。
+現在の設定値と保護状態は環境固有のため、この設計では記録しない。
 
 ## 1. 今日のストレス源（観測）
 
-| # | 事象 | 根拠 | 種類 |
-|---|---|---|---|
-| S1 | PR 作成のために `git credential fill` を使おうとして auto mode の分類器に拒否された。branch は push 済みなのに PR が作れない | 本セッション 14:05 | ① |
-| S2 | sandbox 内では `gh` が keyring を読めず `gh auth status` が invalid、API 呼び出しは TLS エラー | 本セッション | ① |
-| S3 | ネットワーク先をコマンドごとに `allowed_domains` で申告しないと拒否される | `sandbox.network.allowedDomains` 未設定 | ① |
-| S4 | `~/tasks`、`~/.claude.json`、`~/Library/LaunchAgents` に書けない | `sandbox.filesystem.allowWrite` 未設定、`denyWrite: ~/.claude` | ① |
-| S5 | `Bash(launchctl:*)` が allow に入っているので、daemon の再起動（Hard Stop）が無承認で通る | `~/.claude/settings.json` | ②の抜け |
-| S6 | Remote Control の `vantik` host が workspace trust dialog で起動失敗。対話前提の承認 | `$HOME/.claude/remote-control/vantik-stderr.log` | ① |
-| S7 | 以前の Dispatcher（Dots）が小さな判断ごとに承認を求めた | 監査 B5 | ② |
-| S8 | Codex は `danger-full-access` + `never`。境界も承認も無い | `~/.codex/config.toml` | ①②の欠落 |
+S1〜S8 は非公開の監査記録にある観測番号。対応する運用要件を以下に記す。
 
-S1〜S4 は「境界が未定義なので、都度判断になっている」という同じ原因。S5 と S8 は逆に「境界が緩すぎて Hard Stop が設定で守られていない」。
 
 ## 2. 共通の権限境界（両ハーネス同じ値）
 
@@ -42,7 +32,7 @@ S1〜S4 は「境界が未定義なので、都度判断になっている」と
 | 書き込み禁止 | `~/.claude`、`~/.codex`、`~/Library/LaunchAgents`、`~/.config` | `sandbox.filesystem.denyWrite` | workspace-write の既定（cwd 外は不可） |
 | 読み取り禁止 | `~/.ssh`、`~/.codex/auth.json`、`~/.claude/.credentials.json`、`~/.config/slack-bridge/env`、`~/.config/gh` | `sandbox.filesystem.denyRead`（Bash 用）と `permissions.deny` の `Read(...)`（Read ツール用。`denyRead` だけでは Read ツールを止められない） | experimental の permission profile（`filesystem.<path> = "deny"`）。安定するまでは `AGENTS.md` の禁止と bridge の `harness.PREAMBLE` で補う |
 | ネットワーク | 固定の許可リスト（`github.com`、`api.github.com`、`objects.githubusercontent.com`、`api.anthropic.com`、`registry.npmjs.org`、`pypi.org`、`files.pythonhosted.org`、`code.claude.com`） | `sandbox.network.allowedDomains`（acceptEdits では外は prompt、auto では分類器が認めれば通る、dontAsk では拒否） | `[sandbox_workspace_write] network_access = true`（安定版に host 単位の制限は無い。experimental の permission profile に `network.domains` があるが `sandbox_mode` と併用しない前提なので、当面は `AGENTS.md` の「未確認の外部送信は Hard Stop」で補う） |
-| 境界の外へ出る出口 | `gh`（keyring が要る）、`ssh ugnas`（sandbox 内からは `allowedDomains` に入れても接続できず、`~/.ssh` の鍵も隠される）、`codex`（`auth.json` が要る） | `sandbox.excludedCommands` + allow / ask / deny rule（excluded でも rule は効くが、通ったコマンドは full access で動く） | 該当なし |
+| 境界の外へ出る出口 | `gh`（keyring が要る）、`ssh <NAS_SSH_ALIAS>`（sandbox 内からは `allowedDomains` に入れても接続できず、`~/.ssh` の鍵も隠される）、`codex`（`auth.json` が要る） | `sandbox.excludedCommands` + allow / ask / deny rule（excluded でも rule は効くが、通ったコマンドは full access で動く） | 該当なし |
 | 承認モード（対話） | 境界内は無承認、外は 1 タップ | `permissions.defaultMode: "acceptEdits"` + `autoAllowBashIfSandboxed: true` | `approval_policy = "on-request"` |
 | 承認モード（非対話） | 境界内は無承認、外は止めて報告 | bridge は `--permission-mode dontAsk`（prompt になる操作をすべて自動拒否し、agent は拒否行を報告して止まる）。分類器の柔軟さが欲しければ `auto`（未許可の host も分類器が認めれば通る） | `codex exec` は `never`（exec は質問できない） |
 | Hard Stop の防波堤 | force push、merge、daemon 再起動、repo 削除 | `permissions.deny` と `permissions.ask`。Bash rule は prompt を減らす仕組みで、プログラムを囲う security boundary ではない。force push の本当の防波堤は GitHub ruleset | experimental の `~/.codex/rules/*.rules`（`decision = "forbidden"` で prompt なしに拒否）。安定するまでは `AGENTS.md` と bridge の `PREAMBLE` |
@@ -56,7 +46,7 @@ S1〜S4 は「境界が未定義なので、都度判断になっている」と
 ## 3. ストレスを減らす七つの仕組み
 
 1. **境界は設定ファイルに一度だけ。** コマンドごとに聞かない。S1〜S4 は 2 の値を入れるだけで消える。
-2. **外に出る定番操作に出口を作る。** `gh` は `excludedCommands` で sandbox 外に出し、`Bash(gh issue:*)`、`Bash(gh pr create:*)`、`Bash(gh pr view:*)`、`Bash(gh run:*)` を allow、`Bash(gh auth:*)`、`Bash(gh secret:*)`、`Bash(gh repo delete:*)`、`Bash(gh issue delete:*)`、`Bash(gh pr merge:*)` を deny にする（評価順は deny → ask → allow）。`gh api` は範囲が広いので allow に入れない。`ssh ugnas *` も excluded にする（sandbox 内からは SSH が通らない）。`codex *` は `auth.json` を読む必要があるので excluded にするが、excluded は full access で動くため allow ではなく ask にし、`--dangerously-bypass-approvals-and-sandbox` を deny する。
+2. **外に出る定番操作に出口を作る。** `gh` は `excludedCommands` で sandbox 外に出し、`Bash(gh issue:*)`、`Bash(gh pr create:*)`、`Bash(gh pr view:*)`、`Bash(gh run:*)` を allow、`Bash(gh auth:*)`、`Bash(gh secret:*)`、`Bash(gh repo delete:*)`、`Bash(gh issue delete:*)`、`Bash(gh pr merge:*)` を deny にする（評価順は deny → ask → allow）。`gh api` は範囲が広いので allow に入れない。`ssh <NAS_SSH_ALIAS> *` も excluded にする（sandbox 内からは SSH が通らない）。`codex *` は `auth.json` を読む必要があるので excluded にするが、excluded は full access で動くため allow ではなく ask にし、`--dangerously-bypass-approvals-and-sandbox` を deny する。
 3. **既知の悪は deny。** 聞かずに止める。止まった理由がそのまま報告になる。
 4. **灰色は週に一度まとめて白黒にする。** `/fewer-permission-prompts` が transcript から頻出の read-only コマンドと MCP 呼び出しを集めて allow を提案する。`self-improve` の週次 rot 点検に「先週の prompt と classifier 拒否を allow / deny に昇格」を足す。
 5. **業務判断は GitHub Mobile に集約する。** bridge の `needs-approval` は assignee で push、返答は `APPROVED:` コメント（前文書 7.1 / 7.2）。Grok や Duet のチャットで承認を求めない。
@@ -124,7 +114,7 @@ S1〜S4 は「境界が未定義なので、都度判断になっている」と
     "autoAllowBashIfSandboxed": true,
     "allowUnsandboxedCommands": false,
     "failIfUnavailable": true,
-    "excludedCommands": ["gh *", "codex *", "ssh ugnas *"],
+    "excludedCommands": ["gh *", "codex *", "ssh <NAS_SSH_ALIAS> *"],
     "network": {
       "allowedDomains": [
         "github.com", "api.github.com", "objects.githubusercontent.com",
@@ -144,15 +134,15 @@ S1〜S4 は「境界が未定義なので、都度判断になっている」と
 
 - `excludedCommands` の `gh` は sandbox の外で動くが、deny / ask / allow の rule は効く。`gh api` は rule に無いので対話では prompt、bridge（dontAsk）では拒否になる。
 - `allowLocalBinding` は Playwright と `vite preview` のため。不要なら外す。
-- NAS の SSH は既存の allow（コマンド全文一致）をそのまま残し、`ssh ugnas *` を `excludedCommands` に入れる。sandbox 内からは `allowedDomains` に host を足しても SSH は接続できず、`~/.ssh` の鍵も見えない。
+- NAS の SSH はコマンド全文一致の allow rule を使い、`ssh <NAS_SSH_ALIAS> *` を `excludedCommands` に入れる。sandbox 内からは `allowedDomains` に host を足しても SSH は接続できず、`~/.ssh` の鍵も見えない。
 - `~/tasks` への書き込みは、Bash なら `allowWrite`、Write / Edit ツールなら `Edit(~/tasks/**)` の allow が要る。acceptEdits の自動承認は作業ディレクトリと `additionalDirectories` の内側だけに効く。
-- `denyRead` は Bash にしか効かない。`auth.json` と `.credentials.json` は `Read(...)` の deny でも守る（現行設定にはこれが無く、bridge の `-p` 実行では作業ディレクトリ外の Read も確認なしで通る）。
+- `denyRead` は Bash にしか効かない。`auth.json` と `.credentials.json` は `Read(...)` の deny でも守る。bridge の `-p` 実行では作業ディレクトリ外の Read も確認なしで通る。
 - `denyWrite` は sandbox がもともと書けない場所には何もしない。`~/Library/LaunchAgents` と `~/.config` は cwd 外なので書けず、追加の指定は不要。
-- 本セッションでは sandbox 内の HTTPS `git push` は成功した（credential helper が動いた）。失敗する環境なら `git push *` も excluded にする。
+- sandbox 内の HTTPS `git push` が使えない環境では、`git push *` も `excludedCommands` に入れる。
 - Bash rule は前方一致と `*` の文字列一致で、プログラムを囲う security boundary ではない。force push の本当の防波堤は GitHub の ruleset（7）。
 
 ### 4.2 Remote Control の plist
-`ProgramArguments` に `--permission-mode acceptEdits` を足す。spawn される session が分類器ではなく rule と sandbox で動くようになり、聞かれるのは境界の外だけになる。`workspace` host と `vantik` host の trust は `~/.claude.json` の `projects.<path>.hasTrustDialogAccepted` を `true` にして前倒しする（S6）。
+`ProgramArguments` に `--permission-mode acceptEdits` を足す。spawn される session が分類器ではなく rule と sandbox で動くようになり、聞かれるのは境界の外だけになる。利用前に本人が対象の作業ディレクトリを確認し、ハーネスの通常の信頼確認を完了する。
 
 ### 4.3 bridge
 `BRIDGE_CLAUDE_PERMISSION_MODE=dontAsk` に変える。prompt になる操作（境界の外、未許可 host、ask rule）はすべて自動拒否され、Codex の `exec` + `never` と同じ挙動になる。分類器の柔軟さが欲しければ `auto` のままでもよいが、未許可の host も分類器が認めれば通る点を理解して選ぶ。拒否は `NEEDS-APPROVAL:` か blocked として Issue に残る。`harness.PREAMBLE` に「deny された操作は回避せず、その行を報告して止まる」を一文足す。
@@ -189,15 +179,9 @@ bridge で: `NEEDS-APPROVAL:` を出す契約 1 本と、`gh issue comment` を�
 
 計測: 1 週間の transcript から prompt 回数と分類器拒否回数を数える（`/fewer-permission-prompts` の集計を流用）。目標は対話 1 session あたり prompt 0〜1 回、bridge の分類器拒否 0 回。達しなければ 3 の 4 で allow / deny に昇格する。
 
-## 6. 選択肢 B: Codex の現状（境界なし）に揃える
+## 6. セキュリティ境界の前提
 
-Claude を `defaultMode: "bypassPermissions"`、`sandbox.enabled: false` にすると prompt も分類器も消える。失うもの:
-- 秘密（SSH 鍵、auth.json、bridge env）の読み取り禁止。
-- ネットワーク先の制御。未知の host への送信が止まらない。
-- `rm -rf`、force push、daemon 再起動の防波堤。Hard Stop は `AGENTS.md` の文章だけで守ることになる。
-- Downloads 取り込みガードは hook なので残る。
-
-この案は推奨しない。承認ストレスの大半（S1〜S4）は 2 の境界を書けば消え、残るのは本来人が決めるべき②③だけになる。
+この設計では、共通のセキュリティ境界を維持する。
 
 ## 7. 本人の判断が必要な項目
 
@@ -206,5 +190,5 @@ Claude を `defaultMode: "bypassPermissions"`、`sandbox.enabled: false` にす�
 - main への force push を GitHub ruleset で禁止する（repo 設定の変更）。
 - bridge の Claude を `dontAsk` にするか `auto` のままにするか。
 - 常設許可の条件（3 の 7）。
-- 選択肢 A（共通境界）か B（境界なし）か。
+- 共通のセキュリティ境界を維持する前提。
 - `~/.claude/settings.json` と plist の変更は設定変更なので、適用は本人の了解の後に行う（適用自体は bridge 契約か Remote Control session で、PC 操作なし）。

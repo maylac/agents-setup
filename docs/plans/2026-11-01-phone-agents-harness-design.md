@@ -23,17 +23,7 @@
 
 ## 1. 現状と摩擦点（2026-11-01 観測）
 
-| # | 観測 | 根拠 | 摩擦 |
-|---|---|---|---|
-| F1 | bridge は稼働中。今日 08:23〜11:54 に worktree `bridge-gh45`〜`gh55` の 11 本が作られた | `$HOME/.local/state/slack-bridge/worktrees` | なし（健全） |
-| F2 | 許可 repo は `agents-setup` だけ | `BRIDGE_ALLOWED_REPOS` | Vantik（reskilling-os）の作業は Remote Control の手動セッション頼み |
-| F3 | Grok の追加 3 Bot は規約同意待ちで未作成 | `docs/grok-bot/bot-roles.md` | 検品と運用ハブが人手か Grok 1 体の兼任 |
-| F4 | 運用ハブ（issue 6）の更新は Grok の日次 routine 依存、初回 callback 未確認 | 同上 | 台帳の鮮度を Grok の稼働に賭けている |
-| F5 | `needs-approval` は Issue に label が付くだけ。bridge の `gh` は本人と同じ login で動くので、GitHub は「自分の操作」として本人に通知せず、push もメールも来ない。承認後の再開は再起票 | `bridge.py poll_github_once`、`~/.config/gh/hosts.yml` | 承認 1 回に Grok との往復が 2〜3 回要る |
-| F6 | Bot 間の引き継ぎで本文が欠落した（issue 5 の `[5件: ...]`） | `docs/grok-bot/README.md` 9 | 検品が原文に届かない |
-| F7 | Remote Control host が 3 本。`agents-setup` host の stdout.log が 363 MB（監査 A10 未対応）。`vantik` host は稼働中（10/14 の trust エラーは古いログで、本日も session が作られている）。`workspace` host は本日 13:11 作成 | `$HOME/.claude/remote-control/`、LaunchAgents | ディスクを食い続ける。host の再起動は Hard Stop なので保守窓が要る |
-| F8 | Claude の 5 時間枠がボトルネック（監査 A7 / E） | `docs/harness-audit-2026-10-13.md` | Duet も同じ枠を消費する。設計で頻度を縛る必要がある |
-| F9 | Remote Control のサンドボックス内では `gh`（keyring）と Codex（`auth.json` 読み取り拒否）が使えない | 本セッションの観測 | 本設計の実装は bridge 契約か通常セッションで行う |
+F1〜F9 は非公開の監査記録にある観測番号。対応する運用要件を以下に記す。
 
 ## 2. 設計原則
 
@@ -175,13 +165,13 @@ Grok は今のまま司令塔にする。変えるのは周辺で、Grok が「�
 - session-triage の `latest.md` があれば末尾に「Claude iOS セッションの要確認」として連結する。スマホから見る一覧が一枚になる。
 
 ### 7.5 Remote Control host の整理（F7）
-| host | 設定 | 用途 |
+| host role | 設定 | 用途 |
 |---|---|---|
-| `workspace` | `--spawn=same-dir --capacity 4`、cwd `$HOME/workspace` | 設計・調査・多 repo。実装はしない（同一 dir で隔離が無い） |
-| `vantik` | `--spawn=worktree --capacity 3`、cwd `$HOME/workspace/maylac/reskilling-os-rc`（`reskilling-os` の worktree） | Vantik の実装。稼働中（本日も session が作られている）。触らない |
-| `agents-setup` | `--spawn=worktree --capacity 4` | `StandardOutPath` を `/dev/null` にして `stdout.log` 363 MB を消す。再起動が要るので 9 の承認項目 |
+| `design` | `--spawn=same-dir --capacity 4` | 設計・調査・多 repo。実装はしない（同一 dir で隔離が無い） |
+| `product` | `--spawn=worktree --capacity 3` | 製品実装。worktree で隔離する |
+| `shared-config` | `--spawn=worktree --capacity 4` | 共有設定の実装。worktree で隔離する |
 
-- 規則: 「どの入口でも、実装は worktree の host で」。`workspace` host で始めた作業がコードに及ぶときは、契約を起票するか `vantik` / `agents-setup` host で開き直す。
+- 規則: 「どの入口でも、実装は worktree の host で」。`design` host で始めた作業がコードに及ぶときは、契約を起票するか、実装用 host で開き直す。
 
 ### 7.6 doctor に健康診断を足す
 - `gh auth status` の成否、`launchctl print` の各 Remote Control host の state、`stdout.log` の size、`scopes.json` の古さ（24 時間超の記録が残っていれば警告）。

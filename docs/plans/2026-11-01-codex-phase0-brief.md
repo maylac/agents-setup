@@ -55,7 +55,7 @@ branch `docs/phone-agents-harness-design`（push 済み、8 コミット）に�
 ```sh
 python3 -m unittest discover -s slack-bridge -p 'test_*.py'   # 既存 44 件 + 追加分がすべて pass
 git diff --check
-rg -n '/Users/(maylac|gotasasaki)' $(git diff --name-only origin/main)   # 0 件
+rg -n '/Users/[A-Za-z0-9_-]+/' $(git diff --name-only origin/main)   # 0 件
 scripts/validate.sh   # 既存の live parity 11 件（symlink 10 件、RTK hook 1 件）以外に新しい失敗が無いこと
 python3 slack-bridge/doctor.py   # PR 1 以降: 新しい check が JSON に出て、秘密値が無いこと
 python3 slack-bridge/publish_hub.py --input-json <fixture> --now 2026-11-02T07:35:00+09:00 --dry-run   # PR 2: 07:30 窓でコメント本文も出る
