@@ -1,0 +1,4 @@
+interface:
+  display_name: "Exam Trap Choice Review"
+  short_description: "Review plausible near-miss exam choices"
+  default_prompt: "Use $exam-trap-choices to review near-miss distractor candidates in this exam set."

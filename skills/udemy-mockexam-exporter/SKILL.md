@@ -8,6 +8,8 @@ Run only when the user invokes `/udemy-mockexam-exporter` directly.
 
 Udemyの模擬試験を取得し、内容を検査してNAS上のVantikへ取り込む。
 
+Vantikへ登録・更新する場合は、共通の [vantik-question-highlights](../vantik-question-highlights/SKILL.md) を読み、正答条件と除外理由の強調・全選択肢の欠落確認・配信検証を完了工程に含める。全試験の過去問・オリジナルに適用する。
+
 - **Vantik一括モード（推奨）** — 講座URLまたはエクスポート済みファイルを使う。英語問題なら先にLunaで日本語版を作成し、英日ペアのドライラン、オンラインDBバックアップと`PRAGMA quick_check`確認、本取込まで行う。本取込はNASの本番Vantik DBを変更する。
 - **既存Markdown取込モード** — `--input-dir`で既存のエクスポートを使い、同じドライラン・バックアップ・本取込を行う。
 - **講座一括モード（推奨）** — 講座URLを1本渡すと、その講座の全模試（practice test）を自動発見して回ごとにエクスポートする。assessments API を使うため**受験済み・未受験を問わず**正解・解説を取得できる。
