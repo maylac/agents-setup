@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>local.claude.remote-control-ops</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>__HOME__/.local/bin/claude</string>
+		<string>remote-control</string>
+		<string>--name</string>
+		<string>Mac ops</string>
+		<string>--spawn=same-dir</string>
+		<string>--capacity</string>
+		<string>2</string>
+		<string>--permission-mode</string>
+		<string>default</string>
+		<string>--settings</string>
+		<string>__HOME__/.claude/remote-control/ops-settings.json</string>
+	</array>
+	<key>WorkingDirectory</key>
+	<string>__HOME__/workspace/ops</string>
+	<key>RunAtLoad</key>
+	<false/>
+	<key>StandardOutPath</key>
+	<string>/dev/null</string>
+</dict>
+</plist>
