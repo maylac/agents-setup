@@ -1,6 +1,6 @@
 ---
 name: vantik-question-highlights
-description: "Vantikの問題取込・作成・解説改訂・ハイライト修正で、全試験の全問題・全選択肢に正答条件と除外理由の強調を付け、欠落と実画面を検証する。"
+description: "Vantikの問題取込・作成・解説改訂・ハイライト修正で、全試験の全問題・全選択肢に正答条件と除外理由の強調を付け、新しい問題に論点・サブ論点を付与し、欠落と実画面を検証する。"
 ---
 
 # Vantik question highlights
@@ -45,6 +45,16 @@ description: "Vantikの問題取込・作成・解説改訂・ハイライト修
 2. 正答条件は緑の実線、除外理由は赤の波線など、色と線種で区別し、凡例を付ける。回答前と成績非表示時には、正答を示す強調・注記・凡例を隠す。回答後は選んだ選択肢に限らず、問題分類に応じて対象となる選択肢に表示する。消去法の正解側と単語回答問題にはこの強調を出さない。
 3. 通常演習、問題バンク、回答振り返り、リハーサル履歴、機内モードの各経路で同じ意味を保つ。履歴が固定する旧版はその版の本文・正答・choice IDに独立に照合し、現行版のIDを転用しない。
 4. 現行実装の適用条件を確認する。試験コード、過去問分類、特定source名に依存する一回限りの実装・適用ツールを、全問題対応とみなして流用しない。全問題へ適用する際は型・API・表示・保存データの経路も対象範囲に対応させる。
+
+## 論点・サブ論点の付与（2026-11-28の指定）
+
+未合格の試験（`learning_settings` の `archived_exam_codes` にない試験）へ問題を取り込む・作成するときは、新しい問題すべてに論点とサブ論点を付けるまでを完了条件に含める。論点は公式のタスク区分（番号付き。AWSなら `1.1` など）、サブ論点はその試験が問う具体的な判断ポイント1つ。タグの正本は reskilling-os の `server/data/content/topic_tags/<EXAM>.json`（論点カタログ）で、サーバー起動時に本番へ自動反映される。手順の詳細は reskilling-os の `docs/topic-tags.md`「Tag newly imported questions」。
+
+1. 取込後、論点が付いていない問題を書き出す。本番に取り込んだ場合は `ssh ugnas docker exec vantik vantik export-topic-tag-tasks --exam-code <EXAM> --untagged --out /app/data/topic-tasks.jsonl` の後に `ssh ugnas docker exec vantik cat /app/data/topic-tasks.jsonl > topic-tasks.jsonl` で手元に取る。本番がまだ論点カタログ対応前の版なら、オンラインバックアップのコピーに対して `node --import tsx server/cli/main.ts export-topic-tag-tasks --db <copy> …` を使う。
+2. カタログに載っている論点・サブ論点だけを使い、問い（問題文末尾）と正解の選択肢から1問1タグで分類する。2つの判断を同時に問う問題だけ2タグにする。どのサブ論点にも合わない問題が同じ判断ポイントで2問以上あるときだけ、新しいサブ論点を taxonomy ファイル（`{"topics": [{"name": "<論点>", "subtopics": ["<サブ論点>"]}], "sources": [...]}`）で足す。名前は日本語40字以内、`>` と改行を含めない。カタログのない試験は、公式試験ガイドのタスク区分から論点を作り、実際の問題を読んでサブ論点を1つあたり8〜15問を目安に作る。AWS試験は `server/data/content/flashcards/<EXAM>.json` の `task` 番号と論点番号を照合する。大量の分類は Haiku で足りる（2026-11-28 の試行で盲検判定 95% 妥当、Sonnet 88%）。
+3. 1行1問 `{"k": "<stable_key>", "tags": ["<論点> > <サブ論点>"]}` を書き、`node --import tsx server/scripts/merge_topic_catalog.ts --catalog server/data/content/topic_tags/<EXAM>.json --assignments classified.jsonl [--taxonomy new-topics.json]` でカタログへ統合する。既に別のタグが付いたキーは `--replace` なしでは上書きされない。
+4. `npx vitest run server/services/topicCatalog.test.ts` を通し、reskilling-os にコミットして PR を出す。デプロイ後の起動で本番に反映される。デプロイ済みで起動を待たずに反映したいときは `ssh ugnas docker exec vantik vantik apply-topic-catalog --exam-code <EXAM>` のドライランを確認してから `--apply` を付ける（本番DBへの書き込みなので、取込と同じ承認範囲・オンラインバックアップの後に行う）。
+5. 完了の証拠: `export-topic-tag-tasks --untagged` が0件、`apply-topic-catalog --exam-code <EXAM>` のドライランで `missing_questions` 0・`applied` 0、付与した問題数とサブ論点の新設数を報告する。
 
 ## 欠落を残さない確認
 
