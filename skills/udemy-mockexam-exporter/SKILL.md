@@ -133,6 +133,10 @@ head -30 "$HOME/workspace/maylac/reskilling-os/data/imports/udemy_exports/<出�
 
 以前の手動取込手順は使わず、上記の `udemy_to_vantik.py` を使う。ドライラン・バックアップ確認を省略しないこと。
 
+### Step 3.5: 論点・サブ論点の付与
+
+未合格の試験へ取り込んだ場合は、新しい問題すべてに論点とサブ論点を付けるまでを完了条件に含める。手順と完了の証拠は [vantik-question-highlights](../vantik-question-highlights/SKILL.md) の「論点・サブ論点の付与」に従う（未付与の問題を `export-topic-tag-tasks --untagged` で書き出し、試験の論点カタログに沿って分類し、`merge_topic_catalog.ts` で統合して PR を出す）。
+
 ### Step 4: 解説の圧縮（ユーザーが希望した場合）
 
 ユーザーが「解説が冗長」「まとめて」などと言った場合、以下のスクリプトで圧縮する。
