@@ -10,6 +10,8 @@
     <string>$HOME/workspace/maylac/agents-setup/scripts/worktree-retention-report.py</string>
     <string>--output</string>
     <string>$HOME/tasks/worktree-retention-report.md</string>
+    <string>--repo</string>
+    <string>$HOME/workspace/maylac/agents-setup</string>
   </array>
   <key>RunAtLoad</key>
   <true/>

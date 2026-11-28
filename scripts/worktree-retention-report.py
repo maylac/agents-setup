@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Report removable myLife worktrees without deleting anything."""
+"""Report worktree retention without deleting anything."""
 
 from __future__ import annotations
 
@@ -81,7 +81,7 @@ def classify(repo: Path, record: dict[str, str]) -> dict[str, str | int | bool |
 def render(repo: Path) -> str:
     rows = [classify(repo, record) for record in worktrees(repo)]
     lines = [
-        "# myLife Worktree Retention Report",
+        f"# {repo.name} Worktree Retention Report",
         "",
         f"Generated: {datetime.now().astimezone().isoformat(timespec='seconds')}",
         "",
