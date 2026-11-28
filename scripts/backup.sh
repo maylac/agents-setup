@@ -131,7 +131,7 @@ sync_instruction_files() {
   fi
 
   if [ -f "$HOME_DIR/.codex/hooks.json" ]; then
-    jq '
+    jq -f "$ROOT/scripts/portable-codex-hooks.jq" "$HOME_DIR/.codex/hooks.json" | jq '
       if (.hooks | type) == "object" then
         .hooks |= with_entries(
           .value |= map(
@@ -147,7 +147,7 @@ sync_instruction_files() {
           | select(.value | length > 0)
         )
       else . end
-    ' "$HOME_DIR/.codex/hooks.json" > "$ROOT/codex/hooks.json.tmp"
+    ' > "$ROOT/codex/hooks.json.tmp"
     mv "$ROOT/codex/hooks.json.tmp" "$ROOT/codex/hooks.json"
   fi
 }
