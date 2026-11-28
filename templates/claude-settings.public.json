@@ -157,15 +157,6 @@
             "timeout": 5
           }
         ]
-      },
-      {
-        "hooks": [
-          {
-            "command": "$HOME/.claude/hooks/rtk-rewrite.sh",
-            "type": "command"
-          }
-        ],
-        "matcher": "Bash"
       }
     ],
     "SessionEnd": [

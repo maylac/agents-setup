@@ -78,7 +78,7 @@ expect_portable_codex_hooks() {
   expected="$(mktemp)"
   filtered_live="$(mktemp)"
   materialize_home "$src" | jq -S . > "$expected"
-  jq -S '
+  jq -f "$ROOT/scripts/portable-codex-hooks.jq" "$dest" | jq -S '
     .hooks |= with_entries(
       .value |= map(
         .hooks = ((.hooks // []) | map(
@@ -92,11 +92,11 @@ expect_portable_codex_hooks() {
       | .value |= map(select((.hooks // []) | length > 0))
       | select(.value | length > 0)
     )
-  ' "$dest" > "$filtered_live"
+  ' > "$filtered_live"
   if cmp -s "$expected" "$filtered_live"; then
     ok "$label"
   else
-    fail "$label differs after excluding Mac-managed Vibe Island and RunCat hooks: $src vs $dest"
+    fail "$label differs after excluding the single exact Mac-local Rex SessionStart group and Mac-managed Vibe Island and RunCat hooks: $src vs $dest"
   fi
   rm -f "$expected" "$filtered_live"
 }
@@ -191,7 +191,6 @@ expect_repo_files_in_live "$ROOT/claude/hooks" "$HOME_DIR/.claude/hooks" "repo C
 expect_repo_files_in_live "$ROOT/codex/hooks" "$HOME_DIR/.codex/hooks" "repo Codex hooks present in live home"
 expect_repo_files_in_live "$ROOT/codex/agents" "$HOME_DIR/.codex/agents" "repo Codex agents present in live home"
 
-json_has_hook_command "$HOME_DIR/.claude/settings.json" "PreToolUse" "Bash" ".claude/hooks/rtk-rewrite.sh" "Claude RTK PreToolUse hook"
 json_has_hook_command "$HOME_DIR/.codex/hooks.json" "PreToolUse" "Bash" ".codex/hooks/rtk-rewrite.sh" "Codex RTK PreToolUse hook"
 json_has_no_stop_ghostty "$HOME_DIR/.claude/settings.json" "Claude Ghostty Stop hook"
 json_has_no_stop_ghostty "$HOME_DIR/.codex/hooks.json" "Codex Ghostty Stop hook"

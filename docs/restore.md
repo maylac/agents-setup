@@ -75,10 +75,11 @@ The live `~/.codex/hooks.json` is not symlinked. It is materialized from
 `codex/hooks.json` with `$HOME` expanded so the active Codex hook trust state
 can continue to refer to the live file path.
 
-The backup intentionally removes Vibe Island and RunCat registrations from the
-portable `codex/hooks.json`. They are Mac-managed hooks and must not be enabled
-inside WSL. The Mac audit permits those two documented live-only additions but
-still rejects any other unexplained hook drift.
+The backup removes the single exact Mac-local Rex `SessionStart` group and
+Vibe Island and RunCat registrations from portable `codex/hooks.json`. Rex is
+local to this Mac. Vibe Island and RunCat are Mac-managed hooks and must not be
+enabled inside WSL. The audit rejects duplicate Rex groups and any other
+unexplained hook drift while permitting those documented live-only entries.
 
 Check Claude/Codex paired behavior after restore:
 
@@ -105,7 +106,9 @@ Existing destination files are backed up under
 `~/.agents-setup-backups/<timestamp>/`. The copy is additive: files that exist
 only in the live home are not deleted. A snapshotted Herdr hook may be copied,
 but the Surface/Linux Herdr installation remains its owner and may regenerate
-it. Vibe Island and RunCat registration is excluded from the portable snapshot.
+it. The single exact Mac-local Rex `SessionStart` group and Vibe Island and
+RunCat registrations are excluded from the portable snapshot. Duplicate exact
+Rex groups make the backup fail without replacing the previous snapshot.
 
 `compact-plus` is a Codex-only symlink to the separately restored
 `~/workspace/tools/compact-plus` repository and must be recreated from its

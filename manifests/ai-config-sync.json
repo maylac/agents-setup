@@ -52,7 +52,6 @@
       "matcher": "Bash",
       "claude_script": "claude/hooks/rtk-rewrite.sh",
       "codex_script": "codex/hooks/rtk-rewrite.sh",
-      "claude_registration": "~/.claude/settings.json",
       "codex_registration": "~/.codex/hooks.json"
     },
     {
@@ -96,7 +95,7 @@
     },
     {
       "id": "mac-managed-codex-hooks",
-      "reason": "Vibe Island and RunCat hooks are Mac-only. The portable hook snapshot and Surface install exclude them; the Mac live audit permits only these documented extras."
+      "reason": "Vibe Island, RunCat, and the Rex SessionStart command are Mac-only. The portable hook snapshot excludes them; the Mac live audit permits only these documented extras."
     },
     {
       "id": "codex-compact-plus",

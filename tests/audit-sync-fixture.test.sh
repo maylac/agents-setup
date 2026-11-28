@@ -52,12 +52,17 @@ mkdir -p \
   "$TEST_TMP/tmp"
 
 cp "$ROOT/scripts/audit-sync.sh" "$REPO/scripts/audit-sync.sh"
+cp "$ROOT/scripts/portable-codex-hooks.jq" "$REPO/scripts/portable-codex-hooks.jq"
 
 printf '{"version":1}\n' > "$REPO/manifests/ai-config-sync.json"
 cat > "$REPO/manifests/skill-store-exceptions.json" <<'JSON'
 {"version":1,"exceptions":[{"name":"hermes-local","source":"hermes-local","mirrors":["claude","codex"],"reason":"Fixture for a harness-managed local skill."}]}
 JSON
 printf '{"hooks":{}}\n' > "$REPO/templates/claude-settings.public.json"
+jq -e '(.hooks.PreToolUse // [] | any((.hooks // []) | any((.command // "") | contains("rtk-rewrite.sh"))) | not)' \
+  "$ROOT/templates/claude-settings.public.json" >/dev/null || fail 'Claude RTK PreToolUse registration remains in the shipped template'
+jq -e '.hook_pairs[] | select(.id == "rtk-rewrite") | (has("claude_registration") | not) and (.codex_registration == "~/.codex/hooks.json")' \
+  "$ROOT/manifests/ai-config-sync.json" >/dev/null || fail 'RTK registration manifest does not match the live Claude and Codex registrations'
 printf 'home agents\n' > "$REPO/home/AGENTS.md"
 printf 'claude\n' > "$REPO/claude/CLAUDE.md"
 printf 'claude agents\n' > "$REPO/claude/AGENTS.md"
@@ -83,10 +88,11 @@ done
 ln -s "../AGENTS.md" "$HOME_FIXTURE/.codex/AGENTS.md"
 
 cat > "$REPO/codex/hooks.json" <<'JSON'
-{"hooks":{"PreToolUse":[{"matcher":"Bash","hooks":[{"command":"$HOME/.codex/hooks/rtk-rewrite.sh"}]}]}}
+{"hooks":{"PreToolUse":[{"matcher":"Bash","hooks":[{"command":"$HOME/.codex/hooks/rtk-rewrite.sh"}]}],"SessionStart":[{"hooks":[{"command":"echo portable-startup","type":"command"}]}]}}
 JSON
-printf '{"hooks":{"PreToolUse":[{"matcher":"Bash","hooks":[{"command":"%s/.codex/hooks/rtk-rewrite.sh"}]}],"Stop":[{"hooks":[{"command":"%s/.vibe-island/bin/vibe-island-bridge"},{"command":"%s/.codex/runcat-hook.py"}]}]}}\n' "$HOME_FIXTURE" "$HOME_FIXTURE" "$HOME_FIXTURE" > "$HOME_FIXTURE/.codex/hooks.json"
-printf '{"hooks":{"PreToolUse":[{"matcher":"Bash","hooks":[{"command":"%s/.claude/hooks/rtk-rewrite.sh"}]}],"Stop":[{"hooks":[{"command":"echo done"}]}]}}\n' "$HOME_FIXTURE" > "$HOME_FIXTURE/.claude/settings.json"
+printf '{"hooks":{"PreToolUse":[{"matcher":"Bash","hooks":[{"command":"%s/.codex/hooks/rtk-rewrite.sh"}]}],"Stop":[{"hooks":[{"command":"%s/.vibe-island/bin/vibe-island-bridge"},{"command":"%s/.codex/runcat-hook.py"}]}],"SessionStart":[{"hooks":[{"command":"echo portable-startup","type":"command"}]},{"hooks":[{"command":"/bin/sh -c '\''rex __internal session-start --agent codex --feature-session-naming=false 2>/dev/null || true'\''","timeout":5,"type":"command"}]}]}}\n' \
+  "$HOME_FIXTURE" "$HOME_FIXTURE" "$HOME_FIXTURE" > "$HOME_FIXTURE/.codex/hooks.json"
+printf '{"hooks":{"PreToolUse":[{"matcher":"Bash","hooks":[{"command":"echo pretool"}]}],"Stop":[{"hooks":[{"command":"echo done"}]}]}}\n' > "$HOME_FIXTURE/.claude/settings.json"
 
 cat > "$HOME_FIXTURE/.agents/skills/alpha/SKILL.md" <<'SKILL'
 ---
@@ -112,6 +118,51 @@ assert_contains "$success_output" "ok: live Codex portable hook registration"
 assert_contains "$success_output" "ok: repo Codex agents present in live home"
 assert_contains "$success_output" "ok: canonical <-> Claude skills parity"
 assert_contains "$success_output" "AI config sync audit passed."
+cp "$HOME_FIXTURE/.codex/hooks.json" "$TEST_TMP/codex-hooks.json"
+
+jq '.hooks.SessionStart += [.["hooks"].SessionStart[1]]' "$HOME_FIXTURE/.codex/hooks.json" \
+  > "$HOME_FIXTURE/.codex/hooks.tmp"
+mv "$HOME_FIXTURE/.codex/hooks.tmp" "$HOME_FIXTURE/.codex/hooks.json"
+set +e
+rex_duplicate_output="$(HOME="$HOME_FIXTURE" TMPDIR="$TEST_TMP/tmp/" bash "$REPO/scripts/audit-sync.sh" 2>&1)"
+rex_duplicate_status=$?
+set -e
+[ "$rex_duplicate_status" -ne 0 ] || fail 'expected duplicate Rex groups to fail closed'
+assert_contains "$rex_duplicate_output" "duplicate exact Rex SessionStart groups"
+cp "$TEST_TMP/codex-hooks.json" "$HOME_FIXTURE/.codex/hooks.json"
+
+jq '.hooks.SessionStart[1].hooks[0].command |= sub("feature-session-naming=false"; "feature-session-naming=true")' \
+  "$HOME_FIXTURE/.codex/hooks.json" > "$HOME_FIXTURE/.codex/hooks.tmp"
+mv "$HOME_FIXTURE/.codex/hooks.tmp" "$HOME_FIXTURE/.codex/hooks.json"
+set +e
+rex_lookalike_output="$(HOME="$HOME_FIXTURE" TMPDIR="$TEST_TMP/tmp/" bash "$REPO/scripts/audit-sync.sh" 2>&1)"
+rex_lookalike_status=$?
+set -e
+[ "$rex_lookalike_status" -eq 1 ] || fail "expected Rex-like SessionStart drift to fail, got $rex_lookalike_status"
+assert_contains "$rex_lookalike_output" "FAIL: live Codex portable hook registration"
+cp "$TEST_TMP/codex-hooks.json" "$HOME_FIXTURE/.codex/hooks.json"
+
+jq '.hooks.SessionStart[1].hooks[0].timeout = 6' "$HOME_FIXTURE/.codex/hooks.json" \
+  > "$HOME_FIXTURE/.codex/hooks.tmp"
+mv "$HOME_FIXTURE/.codex/hooks.tmp" "$HOME_FIXTURE/.codex/hooks.json"
+set +e
+rex_schema_output="$(HOME="$HOME_FIXTURE" TMPDIR="$TEST_TMP/tmp/" bash "$REPO/scripts/audit-sync.sh" 2>&1)"
+rex_schema_status=$?
+set -e
+[ "$rex_schema_status" -eq 1 ] || fail "expected Rex SessionStart schema drift to fail, got $rex_schema_status"
+assert_contains "$rex_schema_output" "FAIL: live Codex portable hook registration"
+cp "$TEST_TMP/codex-hooks.json" "$HOME_FIXTURE/.codex/hooks.json"
+
+jq '.hooks.Stop = .hooks.SessionStart | del(.hooks.SessionStart)' "$HOME_FIXTURE/.codex/hooks.json" \
+  > "$HOME_FIXTURE/.codex/hooks.tmp"
+mv "$HOME_FIXTURE/.codex/hooks.tmp" "$HOME_FIXTURE/.codex/hooks.json"
+set +e
+rex_wrong_event_output="$(HOME="$HOME_FIXTURE" TMPDIR="$TEST_TMP/tmp/" bash "$REPO/scripts/audit-sync.sh" 2>&1)"
+rex_wrong_event_status=$?
+set -e
+[ "$rex_wrong_event_status" -eq 1 ] || fail "expected Rex on another event to fail, got $rex_wrong_event_status"
+assert_contains "$rex_wrong_event_output" "FAIL: live Codex portable hook registration"
+cp "$TEST_TMP/codex-hooks.json" "$HOME_FIXTURE/.codex/hooks.json"
 
 printf 'drift\n' >> "$HOME_FIXTURE/.claude/skills/hermes-local/SKILL.md"
 set +e
