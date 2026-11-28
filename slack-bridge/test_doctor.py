@@ -3,6 +3,7 @@ import io
 import json
 import os
 from pathlib import Path
+import sys
 import tempfile
 import time
 import unittest
@@ -12,6 +13,35 @@ import doctor
 
 
 class DoctorTests(unittest.TestCase):
+    def setUp(self):
+        self.gh_directory = tempfile.TemporaryDirectory()
+        self.addCleanup(self.gh_directory.cleanup)
+        self.gh_directory_path = Path(self.gh_directory.name)
+        self.gh_calls_file = self.gh_directory_path / "gh-calls.jsonl"
+        fake_gh = self.gh_directory_path / "gh"
+        fake_gh.write_text(
+            "#!%s\n"
+            "import json, pathlib, sys\n"
+            "with pathlib.Path(%r).open('a', encoding='utf-8') as calls:\n"
+            "    calls.write(json.dumps(sys.argv[1:]) + '\\n')\n"
+            "if sys.argv[1:3] == ['api', 'user']:\n"
+            "    print('bridge-fixture')\n"
+            % (sys.executable, str(self.gh_calls_file)),
+            encoding="utf-8",
+        )
+        fake_gh.chmod(0o755)
+        self.path_patch = mock.patch.dict(os.environ, {"PATH": self.path_with_gh(os.environ.get("PATH", ""))})
+        self.path_patch.start()
+        self.addCleanup(self.path_patch.stop)
+
+    def path_with_gh(self, *entries):
+        return os.pathsep.join((str(self.gh_directory_path), *(entry for entry in entries if entry)))
+
+    def gh_calls(self):
+        if not self.gh_calls_file.exists():
+            return []
+        return [json.loads(line) for line in self.gh_calls_file.read_text(encoding="utf-8").splitlines()]
+
     def run_doctor(self, *args):
         output = io.StringIO()
         with contextlib.redirect_stdout(output):
@@ -82,7 +112,7 @@ class DoctorTests(unittest.TestCase):
                                 "BRIDGE_ALLOWED_REPOS=%s\nBRIDGE_GITHUB_REPO=org/tasks\n"
                                 "BRIDGE_CURSOR_BIN=%s\nBRIDGE_CURSOR_ENABLED=1\n" % (directory, binary),
                                 encoding="utf-8")
-            with mock.patch.dict(os.environ, {"PATH": directory}):
+            with mock.patch.dict(os.environ, {"PATH": self.path_with_gh(directory)}):
                 _, result = self.run_doctor("--env-file", str(env_file))
         self.assertEqual(self.by_name(result, "cursor_identity")[0]["state"], "unknown")
 
@@ -98,7 +128,7 @@ class DoctorTests(unittest.TestCase):
                                     "BRIDGE_ALLOWED_REPOS=%s\nBRIDGE_GITHUB_REPO=org/tasks\n"
                                     "BRIDGE_CURSOR_BIN=%s\nBRIDGE_CURSOR_ENABLED=1\n" % (directory, binary),
                                     encoding="utf-8")
-                with mock.patch.dict(os.environ, {"PATH": directory + os.pathsep + "/bin:/usr/bin"}):
+                with mock.patch.dict(os.environ, {"PATH": self.path_with_gh(directory, "/bin", "/usr/bin")}):
                     _, result = self.run_doctor("--env-file", str(env_file))
             self.assertEqual(self.by_name(result, "cursor_identity")[0]["state"], expected, help_text)
 
@@ -114,7 +144,7 @@ class DoctorTests(unittest.TestCase):
             fake_gh = Path(directory) / "gh"
             fake_gh.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
             fake_gh.chmod(0o755)
-            with mock.patch.dict(os.environ, {"PATH": directory}):
+            with mock.patch.dict(os.environ, {"PATH": directory + os.pathsep + self.path_with_gh()}):
                 code, result = self.run_doctor("--env-file", str(env_file), "--check-github")
             self.assertEqual(self.by_name(result, "github_repo")[0]["state"], "present")
             with mock.patch("doctor.shutil.which", return_value=None):
@@ -167,11 +197,23 @@ class DoctorTests(unittest.TestCase):
             fake_gh = Path(directory) / "gh"
             fake_gh.write_text("#!/bin/sh\ncase \"$1 $2\" in\n  'api user') echo bridge-bot;;\n  'auth status') echo TOKEN-SECRET >&2; exit 0;;\nesac\n", encoding="utf-8")
             fake_gh.chmod(0o755)
-            with mock.patch.dict(os.environ, {"PATH": directory}), mock.patch("doctor.sys_platform_is_macos", return_value=False):
+            with mock.patch.dict(os.environ, {"PATH": directory + os.pathsep + self.path_with_gh()}), \
+                    mock.patch("doctor.sys_platform_is_macos", return_value=False):
                 code, result = self.run_doctor("--env-file", str(env_file))
         self.assertEqual(self.by_name(result, "github_auth")[0]["state"], "present")
         self.assertEqual(self.by_name(result, "github_login")[0]["state"], "present")
         self.assertNotIn("TOKEN-SECRET", json.dumps(result))
+
+    def test_default_github_checks_use_fixture_with_exact_arguments(self):
+        with tempfile.TemporaryDirectory() as directory:
+            env_file = Path(directory) / "env"
+            env_file.write_text("BRIDGE_TRANSPORT=github\nBRIDGE_ALLOWED_SENDERS=org\n"
+                                "BRIDGE_ALLOWED_REPOS=%s\nBRIDGE_GITHUB_REPO=org/tasks\n" % directory,
+                                encoding="utf-8")
+            _, result = self.run_doctor("--env-file", str(env_file))
+        self.assertEqual(self.by_name(result, "github_auth")[0]["state"], "present")
+        self.assertEqual(self.by_name(result, "github_login")[0]["detail"], "bridge-fixture")
+        self.assertEqual(self.gh_calls(), [["auth", "status"], ["api", "user", "--jq", ".login"]])
 
     def test_fake_github_and_launchctl_keep_secrets_out_and_report_services(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -203,7 +245,7 @@ class DoctorTests(unittest.TestCase):
             log = root / ".claude/remote-control/stdout.log"
             log.parent.mkdir(parents=True)
             log.write_bytes(b"12345")
-            with mock.patch.dict(os.environ, {"PATH": str(bindir) + os.pathsep + os.environ["PATH"],
+            with mock.patch.dict(os.environ, {"PATH": str(bindir) + os.pathsep + self.path_with_gh(os.environ.get("PATH", "")),
                                              "BRIDGE_SCOPE_FILE": str(scope_file)}), \
                     mock.patch("doctor.Path.home", return_value=root), \
                     mock.patch("doctor.sys_platform_is_macos", return_value=True):
